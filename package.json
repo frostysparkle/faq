@@ -1,0 +1,28 @@
+{
+  "name": "samagama-navigator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Premium institutional decision-intelligence platform built on the MERN stack.",
+  "workspaces": [
+    "client",
+    "server",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c cyan,magenta \"npm run dev --workspace server\" \"npm run dev --workspace client\"",
+    "dev:server": "npm run dev --workspace server",
+    "dev:client": "npm run dev --workspace client",
+    "build": "npm run build --workspace shared && npm run build --workspace server && npm run build --workspace client",
+    "build:server": "npm run build --workspace server",
+    "build:client": "npm run build --workspace client",
+    "test": "npm run test --workspace server && npm run test --workspace client",
+    "test:server": "npm run test --workspace server",
+    "test:client": "npm run test --workspace client",
+    "lint": "npm run lint --workspace server && npm run lint --workspace client",
+    "lint:server": "npm run lint --workspace server",
+    "lint:client": "npm run lint --workspace client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@samagama/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./constants": "./constants/index.js",
+    "./schemas": "./schemas/index.js",
+    "./schemas/*": "./schemas/*.js"
+  },
+  "scripts": {
+    "build": "node -e \"console.log('Shared package uses source exports')\"",
+    "lint": "node -e \"console.log('Shared linting is handled by workspace consumers')\"",
+    "test": "node -e \"console.log('No shared tests configured yet')\""
+  },
+  "dependencies": {
+    "zod": "^3.25.0"
+  }
+}
