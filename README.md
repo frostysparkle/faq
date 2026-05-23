@@ -8,13 +8,23 @@ Samagama Internship Portal Enhancement
 ### Product Type
 Web application module for FAQ discovery, community Q&A, moderation, and chatbot-assisted support.
 
-### Required Stack
-Strictly MERN stack:
+### Technology Stack
 
-- **MongoDB** for primary database, FAQ storage, community Q&A storage, analytics, and vector search storage.
-- **Express.js** for REST APIs, authentication middleware, role-based access control, moderation workflows, and chatbot orchestration.
-- **React.js** for student, moderator, and admin dashboards.
-- **Node.js** for backend services, search orchestration, embedding generation calls, chatbot response generation, scheduled jobs, and notification recommendation hooks.
+The product must use the following stack only for MVP implementation:
+
+| Layer / Purpose | Technology | Usage in Product | Notes |
+|---|---|---|---|
+| Frontend | React.js | Student portal, FAQ interface, chatbot UI, community Q&A, moderator dashboard, admin dashboard | Recommended setup: React with Vite |
+| Backend Runtime | Node.js | Server runtime for APIs, chatbot orchestration, embedding jobs, analytics, and scheduled tasks | All backend logic must run in Node.js |
+| Backend Framework | Express.js | REST APIs, authentication middleware, role-based access control, moderation workflow, and admin APIs | Keep controllers thin and place business logic in services |
+| Database | MongoDB | Users, FAQs, categories, tags, questions, answers, flags, chat sessions, feedback, audit logs, and analytics | MongoDB Atlas preferred for deployment |
+| Semantic Search / Vector Storage | MongoDB Atlas Vector Search | FAQ similarity search, duplicate detection, existing-answer checks, and chatbot retrieval | Keeps RAG implementation within MERN; avoid separate vector DB for MVP |
+| Authentication | JWT + bcrypt in Node.js | Login, protected routes, refresh sessions, password hashing, and role-based access | Can be replaced by existing Samagama auth if available |
+| Validation | Zod or Joi | Request body validation, form validation rules, and API safety | Use consistently across backend APIs |
+| Frontend API State | TanStack Query | Data fetching, caching, pagination, mutations, and loading states | Recommended for clean React API handling |
+| Forms | React Hook Form | FAQ editor, question submission, answer submission, login, and admin forms | Pair with Zod/Joi validation schema where possible |
+| LLM Provider Adapter | Gemini API or Node-compatible local model endpoint | Chatbot answer generation after MongoDB retrieval | Keep provider swappable through a backend adapter |
+| Optional RAG Orchestration | LangChain.js | Optional orchestration for retrieval and prompt chains | Use only if direct Node.js implementation becomes complex |
 
 No Python service, separate backend framework, or separate vector database should be introduced for the MVP.
 
@@ -1470,17 +1480,5 @@ The MVP is complete when:
 
 Build the MVP from scratch unless an existing GitHub repository already has at least 60% of the required modules. A generic FAQ repository may save time on UI but will likely not include semantic duplicate detection, moderated Q&A, role-specific dashboards, and MongoDB Vector Search. Starting from scratch with a clean MERN architecture may be faster and safer than heavily modifying an unsuitable repo.
 
-Recommended MVP stack details:
-
-- React + Vite for frontend.
-- Express.js + Node.js for backend.
-- MongoDB Atlas for database and vector search.
-- Mongoose for schema modeling.
-- JWT + bcrypt for authentication.
-- Zod or Joi for validation.
-- TanStack Query for frontend API state.
-- React Hook Form for forms.
-- Gemini API or compatible Node-based provider for MVP LLM calls.
-- MongoDB Atlas Vector Search for semantic retrieval and duplicate detection.
-- Optional LangChain.js only after the direct RAG pipeline is working.
+Use the single technology stack defined in the Product Summary section. Avoid adding additional databases, backend frameworks, Python services, or separate vector stores during MVP development.
 
