@@ -1,37 +1,4 @@
 # AI Modules — Component Detail & Integration Guide
-### (100% Local / Offline Architecture)
-
-> **Audience:** Backend engineers integrating the `RAG_Based_chatbot` and  
-> `Semantic_question_checking` modules into the wider MERN application.  
-> No external API keys are required at runtime.
-
----
-
-## Table of Contents
-
-1. [Architecture Overview](#1-architecture-overview)
-2. [Component Map](#2-component-map)
-3. [Environment Variables](#3-environment-variables)
-4. [Local Dependency Setup](#4-local-dependency-setup)
-   - 4.1 Install npm packages
-   - 4.2 Install & run Ollama
-   - 4.3 Pull Gemma 3 model
-   - 4.4 Create Atlas Vector Search indexes
-5. [Integration Guide](#5-integration-guide)
-   - 5.1 Mounting in Express
-   - 5.2 RAG Chatbot endpoints
-   - 5.3 Semantic Deduplication endpoints
-6. [Isolated Testing Instructions](#6-isolated-testing-instructions)
-   - 6.1 Verify local embedding pipeline
-   - 6.2 Verify Ollama / Gemma 3
-   - 6.3 Seed the QA vector store
-   - 6.4 Test RAG chatbot (cURL)
-   - 6.5 Test semantic deduplication (cURL)
-   - 6.6 All-in-one test script
-7. [Key Variable Glossary](#7-key-variable-glossary)
-8. [Error Reference](#8-error-reference)
-
----
 
 ## 1. Architecture Overview
 
