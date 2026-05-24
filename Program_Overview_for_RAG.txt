@@ -1,0 +1,1908 @@
+================================================================================
+TITLE: VICHARANASHALA SUMMERSHIP 2026 — CONSOLIDATED KNOWLEDGE BASE
+================================================================================
+Document Type   : Internal Knowledge Base / RAG-Ready Reference
+Version         : 1.0
+Source Files    : FAQ_Queries.md (v22.1.0, updated 2026-05-24) |
+                  whatsapp_analysis_and_solution_framework.md
+Compiled        : 2026-05-24
+Scope           : Internship programme information, student support analysis,
+                  and intelligent support system design framework
+================================================================================
+
+
+================================================================================
+SECTION 1 — OVERVIEW
+================================================================================
+
+The Vicharanashala Summership 2026 (also referred to as VINS — Vicharanashala
+Internship) is a two-month, free, online internship programme run by the
+Vicharanashala Lab for Education Design (VLED) at the Indian Institute of
+Technology (IIT) Ropar. The programme involves real open-source software
+contributions under the mentorship of the Vicharanashala research and
+engineering team. The certificate upon successful completion is issued by the
+Vicharanashala Lab for Education Design at IIT Ropar.
+
+The programme is open to currently-enrolled undergraduate, postgraduate, and
+doctoral students at any recognised college or university. Working professionals
+and candidates who have already graduated without current enrolment are not
+eligible. There is no stipend; however, stellar performers may receive a
+discretionary stipend at the lab's discretion.
+
+The primary management and communication platform for the internship is
+samagama.in, where students interact with the AI-powered chat assistant named
+Yaksha, submit required documents, confirm internship dates, and access offer
+letters and other official communications.
+
+This knowledge base consolidates all programme FAQ content with an analytical
+framework derived from 13 days (May 11–23, 2026) of WhatsApp troubleshoot
+group data (5,437 chat lines, 227 media files), identifying systemic support
+gaps and recommending technology-driven solutions.
+
+
+================================================================================
+SECTION 2 — OBJECTIVES
+================================================================================
+
+Programme Objectives:
+- Provide real open-source contributions to enrolled students under professional
+  mentorship from the Vicharanashala research team.
+- Award certificates from Vicharanashala, IIT Ropar upon successful completion
+  of Bronze and Silver phases.
+- Build cohort-level peer learning and networking during the May–July window.
+- Recognize exceptional contributors through Gold and Platinum designations.
+
+Knowledge Base Objectives:
+- Serve as a single authoritative reference for all programme rules, processes,
+  and policies (suitable for RAG retrieval).
+- Document the systemic student support failures identified through WhatsApp
+  chat analysis.
+- Provide an actionable technology framework to eliminate repetitive manual
+  support workload and improve student experience.
+
+
+================================================================================
+SECTION 3 — PROGRAMME STRUCTURE AND PHASES
+================================================================================
+
+3.1 Four-Phase Structure with Badges
+
+VINS is organized into four phases, each represented by a badge:
+
+Bronze Phase (Phase 1):
+A short training period at the start of the internship, calibrated to the
+student's existing knowledge. If a student already possesses foundational
+competency, the mentor may advance the student directly to the Silver phase.
+During Bronze, all students complete mandatory coursework on the ViBe Learning
+Management System (LMS). This includes a MERN Stack course (waivable for
+returning VLED interns) and the new AI Fundamentals course (Fundamentals of AI
+using an Agriculture Dataset), which is mandatory for all participants including
+returning interns.
+
+Silver Phase (Phase 2):
+The main internship work phase. Students contribute to a real open-source
+project under a Vicharanashala mentor. Completing both Bronze and Silver earns
+the internship certificate. Silver requires team-based work; all teams are fixed
+at four members from different institutions.
+
+Gold Phase (Phase 3):
+A recognition awarded during Silver if the student's contribution constitutes a
+meaningful, standalone feature rather than a minor fix. Gold is not guaranteed;
+it is awarded based on the quality and independence of the contribution.
+
+Platinum Phase (Phase 4):
+A standing invitation to visit the IIT Ropar lab for a short trip at any time
+during the year following internship completion. Vicharanashala provides a small
+visit stipend to assist with travel. Platinum is an additional recognition, not
+a default outcome.
+
+Most interns complete at the Bronze plus Silver level, which is the standard
+certificate outcome. Gold and Platinum are awarded based on merit.
+
+3.2 Programme Comparison: VINS vs. VISE
+
+VINS (Vicharanashala Internship — Online): Online programme. No fellowship or
+stipend. Certificate is identical to VISE.
+
+VISE (Vicharanashala Internship — Offline): On-campus programme at IIT Ropar.
+Includes a fellowship. Fixed capacity determined by mentor bandwidth, hostel
+availability, and stipend allocation.
+
+The two tracks are finalized at the interview stage. Candidates cannot switch
+between tracks after selection. The certificate does not distinguish whether
+completion was online or on-campus.
+
+3.3 Distinction from IIT Ropar's Official Internship
+
+Summership 2026 is a VLED Lab initiative, not IIT Ropar's centrally-run
+institutional summer research internship. The certificate is issued by the
+Vicharanashala Lab for Education Design, not by IIT Ropar centrally. Students
+must not represent the two programmes as equivalent.
+
+
+================================================================================
+SECTION 4 — ELIGIBILITY
+================================================================================
+
+Eligible Candidates:
+- Currently enrolled undergraduate, postgraduate, or doctoral students at any
+  recognised college or university.
+
+Ineligible Candidates:
+- Candidates who have graduated and are not currently enrolled in any programme.
+- Candidates whose only academic engagement is an online-only course (Masai,
+  NPTEL, Coursera, Udacity, bootcamps, or similar) without concurrent enrollment
+  in a full-time degree programme.
+- IIT Ropar Minor/Major in AI students (these candidates have a separate
+  internship-equivalent track and must write to Vicharanashala separately).
+- Working professionals.
+
+Dual-Degree and IITM BS Online Students:
+- Dual-degree students may submit a No Objection Certificate (NOC) from either
+  institution, whichever is easier.
+- IITM BS Online Degree (standalone) students may have a BS office officer sign.
+  Note: the IITM BS Online is considered a full-time degree programme for
+  eligibility, unlike standalone MOOC enrolments.
+
+IIT Ropar/Masai Online AIML Programme:
+- This is a certification course, not a full-time degree programme. Candidates
+  enrolled only in this programme are not eligible. Prof. Sudarshan Iyengar
+  cannot sign the NOC for such candidates in a personal capacity.
+
+
+================================================================================
+SECTION 5 — TIMING, DATES, AND COHORT STRUCTURE
+================================================================================
+
+5.1 Programme Duration and Deadline
+
+The internship lasts two months from the student's chosen start date, with an
+optional one-month grace period. The absolute hard deadline for completion is
+31 December 2026. No exceptions are made to this end date.
+
+5.2 Start Date Flexibility
+
+VINS allows flexible start dates within 2026. However, the programme strongly
+recommends starting as early as possible (May–July) for three reasons:
+
+Cohort Networking: The main cohort progresses through Bronze together. Peer
+discussions, parallel problem-solving, and lasting connections are concentrated
+in this window. Students who start later are largely working solo.
+
+Teaching Assistant (TA) Support: TAs are full-time during May–July. After this
+period, TAs return to their own college work and their availability is
+significantly reduced.
+
+Training Rollout: Training material is delivered with cohort-wide discussion
+during the main window, not as static standalone documents for late starters.
+
+5.3 Exam Conflicts and Leave Policy
+
+Leave is not permitted during the internship. If a student is concurrently
+attending classes or sitting examinations, the student will be relieved
+immediately and invited to join the next batch.
+
+Students with exams during the main cohort window must defer their start date to
+after their exams conclude and then opt in. Attempting to juggle the internship
+with ongoing exams is explicitly prohibited. If the programme later discovers
+that a candidate was sitting college exams during the internship period, the
+internship may be terminated or the certificate withheld, including after
+otherwise completing the programme.
+
+No relaxation or exemption is offered for exams scheduled during the internship
+window. The 55-day continuous attendance requirement is non-negotiable.
+
+5.4 Late Starters
+
+Students who start after the main May–July cohort can still complete the
+internship and earn the certificate, provided they finish by 31 December 2026.
+However, late starters will not have access to orientation recordings (see
+Section 10.3 for details on the mandatory proctored catch-up path), will
+experience reduced TA support, and will miss the cohort networking effect.
+
+
+================================================================================
+SECTION 6 — NO OBJECTION CERTIFICATE (NOC)
+================================================================================
+
+6.1 Purpose
+
+The NOC is institutional consent that the student is permitted to commit their
+time to the internship. It is required before the formal offer letter is issued.
+
+6.2 Date Range for NOC
+
+The NOC should cover the student's chosen start date through the end date (start
+plus two months, with up to one month grace), ensuring the end date is on or
+before 31 December 2026. The start date on the NOC must match the dates the
+student confirms on the samagama.in dashboard.
+
+6.3 Authorised Signatories
+
+Any of the following officers at the student's institution may sign the NOC:
+Head of Department (HOD), Acting HOD (during holiday periods), Principal, Dean,
+Director, or Training and Placement Officer.
+
+6.4 Required Elements on NOC
+
+Whether using the Vicharanashala printable format or the college's own format,
+the NOC must contain all four of the following elements:
+1. The authorised signatory's handwritten signature (most critical).
+2. The authorised signatory's official institutional email address (used for
+   cross-verification).
+3. The student's full name.
+4. The student's signature.
+
+Additionally, when using the Vicharanashala printable NOC format, an
+institutional rubber stamp or seal must be applied in the designated area.
+Digital signatures are not accepted on the PDF path.
+
+6.5 Submission Method — PDF Path
+
+Students download the blank NOC from the samagama.in dashboard using the
+"Download blank NOC" button, print it, obtain handwritten signature and
+institutional stamp, scan it, and upload the signed PDF using the "Upload signed
+NOC (PDF)" button. The file must be a PDF of at most 1 MB.
+
+6.6 Submission Method — Email Forward Path (Equivalent Alternative)
+
+If a physical printout is impractical, the HOD may use the email-forward path:
+1. Student downloads the "text NOC (email path)" from the dashboard.
+2. Student fills in the student-side fields and emails the document to the HOD.
+3. The HOD forwards the email to sudarshan@iitrpr.ac.in from their official
+   institutional email address (not a personal Gmail or Outlook account).
+4. Subject line must be exactly: "NOC for my student [Student Full Name]".
+The forward itself counts as the signature. The HOD's official institutional
+email domain serves as the verification, equivalent to the signatory-email field
+on the PDF NOC.
+
+6.7 Verification Timeline
+
+NOC verification typically takes anywhere from one hour to one full working day
+after upload.
+
+6.8 Tentative Offer Letter Route
+
+If the student's start date is approaching and NOC verification has not
+completed, the student may upload a self-declaration on their profile at
+samagama.in. A tentative offer letter on Vicharanashala letterhead is issued
+immediately. The formal offer letter is issued once the NOC clears verification.
+Both the tentative and formal offer letters are valid institutional documents.
+
+6.9 HOD Requires Written Confirmation Before Signing
+
+If the HOD requires a document before signing the NOC, the student should use
+the tentative offer letter route: upload a self-declaration, receive the
+tentative offer letter, and present it to the HOD. The HOD then signs the NOC,
+which the student uploads to receive the formal offer letter.
+
+6.10 Online-Course-Only Students
+
+If the student's only academic engagement is an online-only course (Masai,
+NPTEL, Coursera, Udacity, or a bootcamp) without concurrent enrollment in a
+full-time degree programme, the internship is not open to that student in this
+cycle. If the student is concurrently enrolled in a full-time degree programme,
+they should obtain the NOC from that institution.
+
+6.11 NOC Upload Locations on Dashboard
+
+The NOC section appears in three places on the samagama.in interface:
+1. A compact pill in the dark header bar at the top of every screen.
+2. A standalone NOC card on the dashboard, between the Results card and the
+   Talk-to-Yaksha button.
+3. A NOC section at the bottom of the full Result message.
+All three locations are backed by the same endpoints. The chat surface no longer
+carries any NOC affordance; students must use the dashboard buttons.
+
+
+================================================================================
+SECTION 7 — SELECTION, OFFER LETTER, AND ACCEPTANCE
+================================================================================
+
+7.1 Confirming Selection
+
+A student is selected when a yellow VINS result panel is visible on their
+samagama.in dashboard. No separate selection confirmation email is sent.
+
+7.2 Opting Into VINS
+
+To formally opt in, the student tells Yaksha in the chat: "I want to take up
+the online internship without stipend." Yaksha confirms. No separate
+confirmation email is sent at this stage.
+
+7.3 Confirming Internship Dates
+
+After opting in via Yaksha, the student logs in to samagama.in and accesses the
+"Confirm your internship dates" card on the dashboard. Date pickers pre-fill
+with sensible defaults. The student adjusts if needed and saves. The end date
+must be on or before 31 December 2026. The student can edit dates from this same
+card at any time before the offer letter is generated.
+
+7.4 Offer Letter Issuance
+
+Formal offer letter: Issued automatically once (a) the signed NOC has been
+verified and (b) the student has confirmed internship dates on the dashboard.
+Issuance typically occurs within one hour of the second step completing.
+
+Tentative offer letter: Issued immediately upon upload of a self-declaration
+if the student cannot wait for NOC verification. The formal offer letter follows
+once NOC verification clears.
+
+The offer letter is available for download from the dashboard at samagama.in,
+not from email. A notification email from no-reply@vicharanashala.ai (subject:
+"Your Vicharanashala Offer Letter is ready — please log in to download") is sent
+as a notification only. The actual document must be downloaded from the dashboard.
+
+7.5 Accepting the Offer Letter
+
+The acceptance must follow a precise format. The student must Reply All on the
+offer-letter email thread (which already contains sudarshan@iitrpr.ac.in) and
+paste the following statement exactly:
+
+  "I, [Full Name], confirm that I have read, understood, and accepted all terms,
+  conditions, and obligations set out in this offer letter and in the program FAQ
+  at samagama.in. I formally accept the offer of Summer Internship 2026."
+
+Single-word slips and obvious typing mistakes in an otherwise complete statement
+are tolerated. The reply must arrive within 5 days of the offer letter being
+sent.
+
+Alternatively, the student may download the offer letter PDF, fill in their name
+and date in the acceptance block, sign and scan it as a PDF, and attach it to
+the reply.
+
+7.6 Non-Compliant Acceptance
+
+If the acceptance does not follow the stated format exactly (paraphrasing,
+missing the date, missing the FAQ reference, bare "I accept"), the offer is
+withdrawn immediately with no further correspondence. The withdrawal is final.
+
+7.7 Appeal Process for Withdrawn Offers
+
+The student must send a fresh email (not a reply to the withdrawal) to
+sudarshansudarshan@gmail.com with the subject line exactly:
+"Request to Reconsider: Confirmation Reply Error"
+
+The subject line must be copied exactly; any deviation causes the AI routing
+engine to miss the appeal. If the reason stated is genuine, a response is
+provided within 24 hours. A successful appeal places the student on a separate
+track requiring completion of a short attention-to-detail course before the
+internship proceeds.
+
+7.8 Dashboard and Acceptance Tracking
+
+The samagama.in dashboard tracks NOC status, internship dates, and the offer
+letter. It does not track the acceptance email. No dashboard update occurs after
+the acceptance is sent. This is expected behaviour.
+
+7.9 Changing Internship Dates
+
+Before offer letter generation: The student edits dates freely from the
+"Confirm Internship Dates" card on the dashboard.
+
+After offer letter generation: The dates are locked on the dashboard. To change
+them, the NOC signing authority from the student's institution must email:
+  To: harshdeep.r@vicharanashala.ai
+  CC: sudarshan@iitrpr.ac.in
+  Subject: "Date change request — [Student Full Name] — Vicharanashala
+   Summership 2026"
+  Body: Reason for change and new proposed start and end dates.
+  Attachment: A justification letter written by the student, signed by the NOC
+   approver.
+
+The email must originate from the NOC approver's institutional address. Student-
+sent requests are not accepted at this stage. Once processed, the Confirm
+Internship Dates card is unlocked and the offer letter is re-issued.
+
+7.10 Certificate
+
+Every intern who completes both Bronze and Silver phases receives an
+e-certificate issued by Vicharanashala, IIT Ropar. The certificate is
+downloaded from the dashboard. No physical copies are mailed. The certificate
+does not specify whether the internship was completed online or on-campus. It
+is digitally signed and verifiable using the certificate number.
+
+Vicharanashala does not send grade reports or evaluations to universities. The
+certificate is the document for college or placement office submission.
+
+
+================================================================================
+SECTION 8 — COMMUNICATION CHANNELS AND CODE OF CONDUCT
+================================================================================
+
+8.1 Official Channels
+
+All programme communication must occur through official channels only:
+
+Yaksha Chat on samagama.in: Primary channel for any query. Start a message
+with #escalate to escalate to a human support agent.
+
+Email (Outbound Only): Notifications are sent FROM no-reply@vicharanashala.ai.
+This is an outbound-only address — replies to this address are not read. For
+direct team contact (only when Yaksha genuinely cannot help), students email
+sudarshansudarshan@gmail.com.
+
+Moderated WhatsApp Troubleshooting Group: Vicharanashala invites students to
+this group after their offer letter is issued. This is the only WhatsApp group
+operated by Vicharanashala.
+
+8.2 Prohibited Channels
+
+Creating, joining, or operating any unofficial group — including parallel
+WhatsApp groups, Telegram channels, Discord servers, or any peer-coordinated
+space that purports to represent Vicharanashala, Samagama, or the internship
+cohort — is strictly prohibited. This prohibition applies regardless of the
+group's name, description, or stated affiliation.
+
+Candidates found to be running or actively participating in such unofficial
+channels face consequences including but not limited to: withdrawal of the offer
+letter, removal from the internship, blacklisting from future Vicharanashala
+programmes, and formal communication to the student's college or placement
+office.
+
+Exception: A four-person team WhatsApp or email thread limited to project
+teammates for internal coordination is acceptable under Section 13.23. This is
+distinct from cohort-wide or programme-wide unofficial groups.
+
+8.3 No Discord Server
+
+Vicharanashala does not operate a Discord server. Any Discord server claiming
+to represent the programme is unofficial.
+
+8.4 No WhatsApp Broadcast Group by Default
+
+There is no general WhatsApp group for all candidates. The moderated
+troubleshooting group (invite-only, post offer letter) is the only WhatsApp
+channel operated by Vicharanashala.
+
+8.5 Kickoff Orientation
+
+A kickoff orientation is held for the main summer cohort (candidates starting in
+the May–July window). The Zoom link is delivered via email to the registered
+samagama.in address and through the Yaksha chat portal.
+
+For students starting after the main window, there is no separate kickoff event.
+Late starters must complete orientation through a special proctored catch-up
+path on ViBe. The catch-up is fully proctored and includes quizzes. Completion
+of the catch-up is mandatory before participating in regular daily standups.
+Orientation session recordings are not shared with interns.
+
+8.6 Daily Zoom Standups
+
+Daily standup links are posted in the Announcements section on the samagama.in
+dashboard (accessible via the announcement bell at the top of the page).
+Vicharanashala does not send separate emails for daily standups. Attendance at
+daily standups is mandatory for all interns.
+
+
+================================================================================
+SECTION 9 — WORK, MENTORSHIP, AND PROJECTS
+================================================================================
+
+9.1 Project Assignment
+
+Students are assigned to a real open-source project from the Vicharanashala
+portfolio. Assignment is based on the student's background and the lab's current
+needs. Project areas include AI/ML, web development, NLP, computer vision,
+agriculture-tech (Annam.AI project), education-tech (ViBe platform), and open-
+source infrastructure. The specific project is not pre-announced; students
+accept assignment upon joining.
+
+9.2 Workload
+
+The internship requires 6 to 10 hours of focused work per day, sometimes more
+during the build phase. It is a full-time commitment for the two-month duration.
+Most dropouts occur among candidates attempting to juggle other commitments
+simultaneously.
+
+9.3 Mentorship Model
+
+The mentorship model is fluid and mirrors real open-source collaboration. A
+student may work with a senior researcher, a peer, or a subject-matter expert
+depending on the question or task. Mentor assignment occurs when the student
+completes Bronze phase coursework and moves into Phase 2 (Silver). Mentors do
+not reach out on Day 1 of the internship.
+
+9.4 Equipment Requirements
+
+Students must have a personal laptop. Linux or macOS is preferred. Windows users
+must install a Unix-compatible terminal environment such as Windows Subsystem
+for Linux (WSL) or a tool such as PuTTY, as SSH and Unix-style command-line
+operations are integral to the work. No fixed software preload list is
+maintained; the assigned mentor will guide on specific tooling requirements.
+
+9.5 Email and Platform Identity
+
+The student's registered samagama.in email is the sole identifier across all
+programme platforms, including GitHub, Zoom, and ViBe. Progress tracking,
+mentor assignment, and certificate issuance are all tied to this email. Using a
+different email on any platform cannot be retroactively corrected.
+
+Exception for ViBe: ViBe requires a Gmail address for signup. If the registered
+samagama.in email is not a Gmail address (for example, a college email), the
+student may use a personal Gmail for ViBe and must notify Yaksha using the tag:
+  "#vibe-email [gmail-address]"
+This links the ViBe record to the samagama.in record.
+
+
+================================================================================
+SECTION 10 — VIBЕ LEARNING MANAGEMENT SYSTEM (VIBE LMS)
+================================================================================
+
+10.1 About ViBe
+
+ViBe (https://vibe.vicharanashala.ai/auth) is the Learning Management System
+used during Phase 1 (Bronze) for mandatory coursework. It is a free and open-
+source platform built and improved by interns and students. The platform features
+proctored learning with real-time monitoring via camera and microphone.
+
+10.2 Course Registration
+
+1. Click the AI Fundamentals registration link from the Phase 1 launch email.
+2. Sign in or create a ViBe account using the registered Gmail address.
+3. Open the registration link again after logging in — the second click triggers
+   enrollment.
+4. Complete the registration form and submit.
+5. The course appears immediately on the ViBe dashboard.
+
+10.3 Proctoring on ViBe
+
+ViBe's proctoring system is modular. Each check — face visibility, single face
+in frame, adequate lighting, absence of background voices, gaze on screen, and
+camera/microphone permissions — can be independently enabled or disabled by the
+instructor for each specific course or cohort. Students must not assume proctoring
+rules from one course apply to another course on the same platform.
+
+The five real-time checks when proctoring is fully enabled:
+1. A face is visible in the camera frame.
+2. Only one face is in the frame.
+3. There is sufficient lighting on the face.
+4. The room does not contain sustained background voices.
+5. The student's gaze is directed at the screen.
+
+Brief and normal movements (stretching, sneezing, glancing at a notebook) are
+acceptable. Only sustained anomalous patterns trigger intervention.
+
+ViBe does not continuously record video of students. The camera and microphone
+are used for real-time presence checks only. Long recordings of faces or voices
+are not stored.
+
+10.4 Linear Progression
+
+All ViBe courses enforce linear progression. Students must complete each video
+and quiz in the exact order displayed in the left panel before the next item
+unlocks. Clicking ahead through the left panel triggers an "Access Restricted"
+alert, which is intentional and not a bug.
+
+To resolve "Access Restricted": scroll through the left panel from the beginning,
+find any item without a completion tick, complete it, and refresh the page.
+
+10.5 Quiz Formats
+
+ViBe quizzes appear in four formats:
+- Multiple Choice Question (MCQ): One correct answer from several options.
+- Multiple Select Question (MSQ): One or more correct options; "select all
+  that apply."
+- Numerical Answer Type (NAT): A text box for a numeric value; enter only the
+  number without units unless explicitly requested.
+- True or False: A statement with two options; single qualifier words such as
+  "always," "never," or "only" can change the correct answer.
+
+10.6 Re-Watch Mechanism
+
+If a check-in quiz answer does not register correctly, ViBe returns the student
+to the clip to attempt again. Re-watches are not recorded against the student;
+they do not affect Health Points (HP) or evaluation scores.
+
+10.7 Penalty Scores
+
+Penalty scores are generated when anomalies are detected during video lessons or
+quizzes. High penalty scores may require the student to rewatch the video and
+retake the quiz. As of the current cycle, penalty scores do not affect HP or
+overall performance evaluation; their purpose is to ensure genuine engagement.
+
+10.8 Progress Saving
+
+Progress is saved server-side, tied to the registered email. Clearing the
+browser cache, refreshing, switching browsers, or reinstalling the browser does
+not erase progress. Logging back in with the same registered email restores all
+completed clips and quizzes.
+
+10.9 Troubleshooting Video Issues
+
+In order: refresh the page; inspect the browser console for errors; log out and
+log in again; try a different browser; clear browsing data and cache and re-
+login. If the issue persists, record the issue and contact Yaksha using the tag
+"#escalate-ViBe."
+
+10.10 Recommended Study Environment
+
+Optimal ViBe session setup:
+- Light source in front of the face, not behind (a window behind causes
+  silhouetting and triggers presence check failures).
+- Only the registered student in the camera frame.
+- Quiet environment — no television, music with words, or other people on calls.
+- Stay on the ViBe browser tab during lessons; switching tabs or remaining idle
+  may restart the video.
+- Study in silence during lessons; discussing content aloud can trigger the
+  background-voice check.
+
+10.11 Recommended Daily Rhythm
+
+Daily consistent short sessions work better than infrequent marathon sessions.
+A practical target is approximately 3.33% course completion per day for cohorts
+with defined deadlines. Specific milestone schedules communicated by the
+programme team take precedence over this general guideline.
+
+10.12 Proctored Special Examination Path
+
+Students who strongly believe the standard ViBe workflow does not fairly reflect
+their understanding may request a formal alternative evaluation. This path is
+intentionally rigorous:
+- Watch specified YouTube content completely.
+- Sit a three-hour proctored examination under two-camera supervision (front
+  and side view) with a live online human proctor.
+- Scoring: below 60% = not qualified, must return to standard ViBe mode;
+  60–80% = one further attempt at the next scheduled exam; above 80% = passed.
+The special exam is scheduled once per fortnight. This path is typically slower
+and more demanding than completing the standard ViBe workflow.
+
+10.13 ViBe Consent
+
+Providing consent for camera and microphone access is mandatory. Students who
+decline cannot proceed with the course. ViBe's proctoring consent is a core
+participation requirement.
+
+10.14 Flag Feature
+
+The Flag feature on ViBe is intended only for course-content issues such as
+problems with video content or quiz questions. Technical issues, platform errors,
+login problems, and logistics queries must be directed to Yaksha, not the Flag
+feature.
+
+10.15 Exemptions for Returning VLED Interns
+
+Students who previously interned with VLED and completed the MERN Stack
+coursework do not need to repeat it. To claim this exemption, the student types
+"#exemption from mern stack course" in the Yaksha chat on samagama.in.
+
+The AI Fundamentals course is new in this cycle and is mandatory for all
+participants, including returning interns. The broader viva-route exemption from
+all coursework is available only to first-time interns with demonstrated
+competency in both stacks; it is not available to returning interns.
+
+10.16 Live Session Attendance
+
+Live sessions are mandatory for every intern regardless of track (coursework,
+MERN-exempt, or viva-route). The daily schedule is communicated via any of the
+three channels: the Samagama dashboard, Yaksha chat, or email.
+
+
+================================================================================
+SECTION 11 — TEAM FORMATION (PHASE 2)
+================================================================================
+
+11.1 Structure
+
+All Phase 2 and Phase 3 projects are completed in teams. Team size is fixed at
+exactly four members. Teams with fewer than four members will be expanded by
+administrative assignment. Teams cannot exceed four members.
+
+11.2 Formation Method
+
+Students who joined on May 15 and 16 formed teams through a structured activity.
+Students joining later are randomly assigned to teams by the administration.
+Students who were present on May 15/16 but could not form a team during the
+activity are also randomly assigned.
+
+11.3 Composition Rules
+
+Teams must consist of members from different institutions, to encourage
+cross-institutional networking. Students from the same institution at different
+campuses or locations may be allowed in exceptional cases.
+
+Students may not form teams with members of their existing cohort groups (for
+example, IIT MBS cohort members should not team with other IIT MBS members).
+
+11.4 Team Assignment Finality
+
+Once teams are finalized and locked, assignments cannot be changed, dissolved,
+or reformed. Requests for specific teammates after assignment are not
+entertained. Project assignments are also final; students allocated to a project
+other than their first preference cannot request reallocation.
+
+11.5 Inactivity and Departures
+
+If a team member becomes inactive or ineligible, the administration attempts to
+assign a replacement. If no replacement is available, the remaining team may
+continue as a team of three. Concerns about inactive team members must be
+reported to the mentor/scholar immediately.
+
+11.6 Team Communication
+
+Teams are expected to self-organize internal communication (for example, a
+four-person WhatsApp or email thread limited to project teammates). This in-team
+coordination is distinct from the prohibited cohort-wide unofficial channels
+described in Section 8.2.
+
+11.7 Mentor Assignment
+
+The assigned mentor is the scholar responsible for the project the team is
+working on. Team details are announced in phases via email. Students not
+included in a team announcement by the time their cohort moves to team
+activities should raise the issue through Yaksha or contact a scholar.
+
+
+================================================================================
+SECTION 12 — ROSETTA INTERNSHIP JOURNAL
+================================================================================
+
+12.1 What Rosetta Is
+
+Rosetta is a 65-day internship journal — one entry per day for the full duration
+of Summership 2026. Students write in it daily, keep it privately throughout the
+internship, and submit it as one of the required completion criteria.
+
+The name references the Rosetta Stone, discovered in 1799, which carried the
+same text in three scripts and became the key to decoding ancient Egyptian
+hieroglyphics. The journal is meant to serve a similar purpose: consistent,
+honest daily writing that becomes the key to understanding one's own learning
+experience.
+
+12.2 Purpose
+
+For the student: builds the ability to articulate what was learned, what
+changed, and what could be done differently — an articulation that intense
+experience alone rarely produces.
+
+For Vicharanashala: provides qualitative insight into the student experience
+that no survey can capture, used to improve future cohorts.
+
+12.3 Daily Thinking Routines
+
+Each day's entry has a thinking routine — a short framework providing a specific
+lens for reflection. Examples:
+- 3-2-1: Three things engaged with, two questions on the student's mind, one
+  surprise.
+- Muddy/Clear: What is sharp, what is still foggy.
+- What? So What? Now What?: Separate facts from meaning from action.
+
+Routines rotate across the 65 days to prevent mechanical repetition. No prior
+research or preparation is needed; the student reads the description at the top
+of each day's entry and writes.
+
+12.4 Obtaining and Using Rosetta
+
+The journal is shared as a Google Doc template link during orientation. Students
+make a copy to their own Google Drive and rename it:
+"Rosetta — [Student Name] — Summership 2026"
+
+Students must not write in the shared template. The daily process is: open the
+personal copy, scroll to today's entry, fill in the date, read the thinking
+routine, answer the three prompts, and close the document. Each entry should
+take 10 to 20 minutes.
+
+12.5 Entry Standards
+
+No minimum or maximum word count applies. Three to five sentences per prompt is
+typical. Honesty and specificity matter more than length. One-word answers,
+copy-pasted text, vague non-answers, and AI-generated entries are not acceptable.
+Using any AI tool (ChatGPT, Claude, or similar) to write journal entries is
+prohibited. Entries that read as AI-generated will not count toward the
+completion requirement.
+
+12.6 Missing Entries
+
+Missed entries should be filled in as soon as possible. The student should write
+the actual date of filling, note that the entry is late, and explain why. Late
+honest entries are always preferable to blank entries.
+
+12.7 Privacy
+
+Vicharanashala does not access the journal during the 65 days. The journal is
+read only after submission at the end of the internship.
+
+12.8 Submission
+
+On or before Day 65, the student shares the Rosetta Google Doc with the
+programme coordinator's email address (shared during wrap-up week) with Viewer
+permission. The document title must include the student's name, all 65 entries
+must be filled, and the cover page must include the student's name, product, and
+team. An incomplete or AI-generated journal is not accepted.
+
+
+================================================================================
+SECTION 17 — KEY DEFINITIONS AND IMPORTANT TERMS
+================================================================================
+
+VINS: Vicharanashala Internship — the online, unpaid, open-source internship
+programme run by Vicharanashala Lab for Education Design at IIT Ropar. Two
+months in duration, free of charge, open to currently-enrolled students.
+
+VISE: Vicharanashala Internship (offline/on-campus version). Identical in
+project, mentorship, and certificate to VINS, but conducted at IIT Ropar with
+a fellowship stipend.
+
+VLED: Vicharanashala Lab for Education Design — the lab at IIT Ropar that runs
+the Summership programme. Issues the internship certificate.
+
+Samagama.in: The central student portal for the internship. Used for result
+viewing, Yaksha chat, document upload, dashboard management, and offer letter
+download.
+
+Yaksha: The AI-powered chat assistant on samagama.in. Primary support channel
+for student queries. Currently operates as an informational relay with keyword
+matching; does not have access to live student state or the ability to trigger
+backend actions.
+
+NOC (No Objection Certificate): Institutional consent from the student's college
+or university authorising the student to participate in the internship. Required
+before the formal offer letter is issued.
+
+ViBe: Vicharanashala's free and open-source Learning Management System used
+during Phase 1 (Bronze) for mandatory coursework. Features real-time proctored
+learning.
+
+Bronze Phase: Phase 1 of VINS. Short training period with mandatory coursework
+on ViBe, calibrated to the student's existing knowledge.
+
+Silver Phase: Phase 2 of VINS. Main open-source project contribution phase under
+a Vicharanashala mentor. Completing Bronze and Silver earns the certificate.
+
+Gold Phase: Phase 3. Recognition awarded during Silver for meaningful standalone
+feature contributions.
+
+Platinum Phase: Phase 4. Standing invitation to visit the IIT Ropar lab during
+the year following internship completion, with a small visit stipend.
+
+Rosetta: The mandatory 65-day internship journal. One entry per day. Submitted
+at the end of the internship as a completion requirement. AI-generated entries
+are not accepted.
+
+HP (Health Points): A metric used within the ViBe platform to reflect learner
+engagement. Penalty scores from detected anomalies do not currently affect HP in
+this cycle.
+
+Spurthi Points: A programme metric referenced in admin communications; deductions
+are applied for policy violations (e.g., remaining in an unofficial WhatsApp
+group past instructions to leave).
+
+RAG (Retrieval-Augmented Generation): A technique in which a large language
+model generates responses grounded in content retrieved from an external
+knowledge base or document store, rather than relying solely on the model's
+training data. Recommended architecture for Yaksha 2.0.
+
+SLA (Service-Level Agreement): A defined commitment for response and resolution
+time for support tickets. Currently absent from the Vicharanashala support
+system; proposed in the ISSP framework with four priority tiers.
+
+Annam.AI: A Vicharanashala agriculture-technology project. One of the open-
+source project areas available for Silver phase assignment.
+
+
+================================================================================
+SECTION 18 — CRITICAL QUICK-REFERENCE: HIGHEST-IMPACT IMMEDIATE ACTIONS
+================================================================================
+
+The three highest-impact, lowest-effort immediate improvements identified from
+the WhatsApp analysis are:
+
+1. Fix the #escalate dead-end. Even a simple Google Form-to-spreadsheet pipeline
+   would be an improvement over the current state in which escalations go
+   unacknowledged. Students need visible confirmation that their issue has been
+   received and is being worked on.
+
+2. Add a "Known Issues" section to the samagama.in dashboard. When a systemic
+   bug is active (such as the "interview incomplete" sync issue), displaying it
+   prominently to affected students eliminates more than 30% of WhatsApp query
+   volume instantly, as students repeatedly ask about issues that admins already
+   know about.
+
+3. Send auto-confirmation emails when students submit documents. Specifically:
+   when a student sends a signed offer letter acceptance email, an auto-reply
+   confirming receipt eliminates the large category of "did my email arrive?"
+   anxiety queries.
+
+A cultural note: the current support model is punitive in tone — Spurthi point
+deductions for staying in the WhatsApp group, and threats of programme removal.
+This approach suppresses help-seeking behaviour and increases anxiety. Effective
+self-service tools eliminate the need for the WhatsApp group without punitive
+enforcement.
+
+
+================================================================================
+CHUNK-003 | WORKFLOW — INTERVIEW PROCESS
+Topic: How the interview works before results are announced
+Workflow Stage: Pre-Result
+================================================================================
+ 
+Workflow: Interview Process
+ 
+Step 1 — Application:
+The student completes and submits the required application form.
+ 
+Step 2 — Interview Invitation:
+After form submission, an email is sent containing the interview date, timing,
+and portal access instructions.
+ 
+Step 3 — Portal Access:
+At the scheduled time, the student visits the samagama.in portal and signs in.
+ 
+Step 4 — Queue:
+There may be a queue of candidates waiting. The student waits until their turn
+arrives. This is expected behaviour, not a technical error.
+ 
+Step 5 — Profile Form:
+Before the interview begins, Yaksha asks the student to complete a profile form
+containing projects, skills, experience, and technical details.
+ 
+Step 6 — Interview:
+Yaksha conducts the interview using the information provided in the profile form.
+The interview duration varies — it may last from several minutes to a few hours.
+ 
+Step 7 — Exit:
+After the interview ends, the student is automatically exited from the interview
+page. This is expected behaviour.
+ 
+Common Problem — Interview Marked Incomplete on Dashboard:
+If the dashboard shows "Interview Incomplete" or "Interview Interrupted" after
+the interview was completed, this is a known dashboard sync issue. It does not
+mean the interview failed. The interview records are stored separately from the
+dashboard display. This issue is resolved by the support team and does not
+require the student to repeat the interview.
+ 
+User Action Required:
+If the dashboard shows "Interview Incomplete" more than 24 hours after the
+interview was completed, escalate through Yaksha using #escalate or email
+sudarshansudarshan@gmail.com with a screenshot of the dashboard.
+ 
+Clarification Questions for "My interview is incomplete":
+- Did you complete the interview session? Or did it disconnect mid-way?
+- Does the Yaksha chat confirm that your interview was recorded?
+- How long ago did you complete the interview?
+- Have you tried logging out and logging back in to refresh the dashboard?
+ 
+ 
+================================================================================
+CHUNK-004 | WORKFLOW — RESULT ANNOUNCEMENT AND OPTING IN
+Topic: What to do after interview results are announced
+Workflow Stage: Post-Interview → Pre-Onboarding
+================================================================================
+ 
+Workflow: Result and Opt-In
+ 
+Current State:       Interview Completed
+Expected Next State: Result Announcement
+Expected Delay:      3–4 days after interview
+Escalate If:         No result update after 7 days
+ 
+Step 1 — Result Announcement:
+Results are announced on the samagama.in dashboard. If a student is selected for
+VINS (online internship), a yellow VINS result panel appears on their dashboard.
+No separate selection confirmation email is sent.
+ 
+Step 2 — Opt-In via Yaksha:
+Yaksha does not automatically know the student's decision. The student must log
+in to samagama.in and explicitly tell Yaksha: "I want to take up the online
+internship without stipend." Yaksha confirms the opt-in. No further confirmation
+email is sent after this step.
+ 
+Step 3 — Backend Processing:
+After the student opts in, the backend team processes the confirmation. This
+typically takes approximately 48 hours. In some cases it may take 2–3 days
+because confirmations are processed in rolling batches.
+ 
+Step 4 — Dashboard Update:
+After processing, the samagama.in dashboard updates to show the student's result
+and a button to download the NOC (No Objection Certificate) format.
+ 
+User Action Required:
+The student must actively opt in via Yaksha. Results do not automatically
+enrol the student into the programme.
+ 
+Common Problem — "I am selected but don't know what to do next":
+The student must log in to samagama.in, see the yellow VINS panel, and tell
+Yaksha they want to take up the online internship. This is the required opt-in
+step.
+ 
+Clarification Questions for "I got selected, what next?":
+- Can you see a yellow VINS panel on your samagama.in dashboard?
+- Have you told Yaksha that you want to take up the online internship?
+- Has your dashboard updated to show an NOC download option?
+ 
+ 
+================================================================================
+CHUNK-005 | WORKFLOW — NOC PROCESS (FULL)
+Topic: No Objection Certificate — how to obtain, complete, and submit
+Workflow Stage: Post Opt-In → Pre Offer Letter
+================================================================================
+ 
+Workflow: NOC Submission
+ 
+Current State:       Opted in via Yaksha
+Expected Next State: NOC Download Option Appears on Dashboard
+Expected Delay:      2–3 days after opt-in (rolling batch processing)
+Escalate If:         NOC download option does not appear after 5 days
+ 
+What is an NOC:
+An NOC (No Objection Certificate) is a document from the student's college or
+university confirming that the institution has no objection to the student
+participating in the Vicharanashala internship during the stated period.
+ 
+Step 1 — Download the Blank NOC:
+Once the NOC section appears on the samagama.in dashboard, the student clicks
+"Download blank NOC." The NOC format is provided; students do not need to
+design or draft their own format.
+ 
+Step 2 — Fill in Dates Carefully:
+The NOC dates must match the internship dates the student will confirm on the
+dashboard. The internship lasts two months. The end date must be on or before
+31 December 2026. Date mismatches between the NOC and the dashboard create
+processing issues and delays.
+ 
+Step 3 — Obtain Signature:
+Authorised signatories: HOD, Acting HOD (during holiday periods), Principal,
+Dean, Director, or Training and Placement Officer. For dual-degree students,
+either institution may sign.
+ 
+Required elements on the NOC (any format):
+1. Handwritten signature of the authorised signatory (most important).
+2. Official institutional email address of the signatory (used for
+   cross-verification).
+3. Student's full name.
+4. Student's signature.
+When using the Vicharanashala printable format: an institutional rubber stamp or
+seal must also be applied. Digital signatures are not accepted.
+ 
+Alternative — Email Forward Path (equivalent to signed PDF):
+If a physical printout is impractical, the HOD may use the email-forward path.
+1. Student downloads the "text NOC (email path)" from the dashboard.
+2. Student fills in student-side fields and sends the document to the HOD.
+3. The HOD forwards the email to sudarshan@iitrpr.ac.in from their official
+   institutional email address (not a personal Gmail or Outlook account).
+4. Subject line must be exactly: "NOC for my student [Student Full Name]"
+The HOD's forward from their institutional email constitutes the signature.
+ 
+Step 4 — Upload the Signed NOC:
+Once the "Upload signed NOC (PDF)" button appears on the dashboard, the student
+uploads the signed and scanned NOC. File must be a PDF of at most 1 MB.
+ 
+Step 5 — Wait for Verification:
+NOC verification typically takes one hour to one full working day.
+ 
+Current State:       NOC Uploaded
+Expected Next State: NOC Verified → Offer Letter Issued
+Expected Delay:      1 hour to 1 working day (verification) + up to 1 hour
+                     (offer letter generation)
+Escalate If:         NOC shows no verification update after 3 working days
+ 
+Alternate Path — Tentative Offer Letter:
+If the student's internship start date is approaching and NOC verification has
+not completed, the student may upload a self-declaration on their samagama.in
+profile. A tentative offer letter is issued immediately. The formal offer letter
+replaces it once NOC verification clears. Both documents are valid.
+ 
+Clarification Questions for NOC Issues:
+- Have you downloaded the blank NOC from your samagama.in dashboard?
+- Have you ensured the dates on the NOC match the internship dates you entered
+  on the dashboard?
+- Is the NOC signed with a handwritten signature (not digital)?
+- Does the NOC include the signatory's official institutional email address?
+- Have you uploaded the signed NOC using the dashboard upload button?
+- Was the uploaded file a PDF and under 1 MB?
+ 
+ 
+================================================================================
+CHUNK-006 | WORKFLOW — OFFER LETTER ISSUANCE
+Topic: When and how the offer letter is issued and received
+Workflow Stage: Post NOC Verification → Offer Letter Active
+================================================================================
+ 
+Workflow: Offer Letter
+ 
+Current State:       NOC Verified + Internship Dates Confirmed on Dashboard
+Expected Next State: Formal Offer Letter Issued
+Expected Delay:      Approximately 1 hour after both conditions are met
+Escalate If:         Offer letter not received within 3 working days after NOC
+                     verification is confirmed
+ 
+Two Paths to Offer Letter:
+ 
+Path 1 — Formal Offer Letter (default):
+Issued automatically once (a) the NOC is verified and (b) the student has
+confirmed internship dates on the dashboard. Both conditions must be met. The
+order does not matter — dates can be confirmed before or after NOC upload.
+ 
+Path 2 — Tentative Offer Letter (faster):
+Available if the start date is approaching and NOC verification has not
+completed. The student uploads a self-declaration on their samagama.in profile.
+The tentative offer letter is issued immediately. The formal offer letter follows
+after NOC verification clears.
+ 
+Where to Find the Offer Letter:
+The offer letter is available on the samagama.in dashboard, not in email. A
+notification email is sent from no-reply@vicharanashala.ai with the subject:
+"Your Vicharanashala Offer Letter is ready — please log in to download."
+This email is a notification only — the actual document must be downloaded from
+the "Offer Letter" card on the dashboard. If the notification email is not
+visible, check spam and promotions folders. The primary path is always to log in
+to samagama.in and check the dashboard.
+ 
+How to Confirm Internship Dates:
+The student logs in to samagama.in and opens the "Confirm your internship dates"
+card on the dashboard. Date pickers pre-fill with default values. The student
+adjusts if needed and saves. The end date must be on or before 31 December 2026.
+ 
+Common Problem — "I haven't received my offer letter":
+Verify: (1) Is the NOC uploaded and verified? (2) Are internship dates confirmed
+on the dashboard? Both must be true. If both are true and more than 3 working
+days have passed, escalate.
+ 
+Clarification Questions for "I haven't received my offer letter":
+- Have you uploaded your signed NOC to the samagama.in dashboard?
+- Has the NOC verification been confirmed? (Dashboard should reflect this.)
+- Have you confirmed your internship start and end dates on the dashboard?
+- Have you checked the dashboard directly at samagama.in (not only email)?
+- How many days has it been since you uploaded the NOC?
+ 
+ 
+================================================================================
+CHUNK-007 | WORKFLOW — OFFER LETTER ACCEPTANCE
+Topic: How to accept the offer letter correctly
+Workflow Stage: Offer Letter Received → Internship Confirmed
+================================================================================
+ 
+Workflow: Offer Letter Acceptance
+ 
+Current State:       Offer Letter Downloaded from Dashboard
+Required Action:     Send acceptance reply within 5 days of letter being sent
+Expected Next State: Internship Confirmed — awaiting start date
+ 
+Acceptance Format (mandatory — must be followed exactly):
+The student must Reply All on the offer-letter email thread. The thread already
+includes sudarshan@iitrpr.ac.in; do not remove this address. In the body, paste
+the following statement exactly, with the student's full name and date inserted:
+ 
+  "I, [Full Name], confirm that I have read, understood, and accepted all terms,
+  conditions, and obligations set out in this offer letter and in the program FAQ
+  at samagama.in. I formally accept the offer of Summer Internship 2026."
+ 
+Alternative Acceptance Method:
+The student may download the offer letter PDF, fill in name and date in the
+acceptance block, sign and scan as a PDF, and attach it as a reply to the offer-
+letter email thread.
+ 
+What is Tolerated (Minor Leniency):
+- Single-word slip: "the offer letter" vs. "this offer letter"
+- Single-word slip: "terms and conditions" vs. "terms, conditions, and obligations"
+- Obvious typographical errors in an otherwise complete statement
+ 
+What Causes Withdrawal (Non-Compliant Acceptance):
+- Paraphrasing the statement ("I happily accept", "I accept and agree", etc.)
+- Sending only "I accept" or "Yes, accepted" without the full statement
+- Missing the date
+- Missing the FAQ-reference clause
+- Attaching an unsigned or undated offer letter PDF
+ 
+Consequence of Non-Compliance:
+The offer is withdrawn immediately and the withdrawal is final. A separate appeal
+process is available (see CHUNK-008).
+ 
+Dashboard Behaviour After Acceptance:
+The dashboard does not update after the acceptance email is sent. No new tick or
+status change appears. This is expected and correct behaviour. The acceptance is
+processed manually.
+ 
+If No Response is Received After Several Working Days:
+Log in to samagama.in and type #escalate in the Yaksha chat to request a status
+check.
+ 
+ 
+================================================================================
+CHUNK-008 | ESCALATION — WITHDRAWN OFFER LETTER APPEAL
+Topic: How to appeal if offer letter is withdrawn for incorrect acceptance
+Workflow Stage: Post-Withdrawal
+================================================================================
+ 
+Condition: Student received a withdrawal email after sending a non-compliant
+acceptance reply.
+ 
+User Action Required:
+Do NOT reply to the withdrawal email. Replies to that thread are not read.
+ 
+Send a fresh email to:
+  Address: sudarshansudarshan@gmail.com
+  Subject (copy exactly): "Request to Reconsider: Confirmation Reply Error"
+ 
+The subject line must match exactly. The AI routing engine that processes appeals
+matches this exact string. Any deviation — a typo, a missing colon, changed
+capitalisation, or an added word — causes the appeal to be missed.
+ 
+Body: State an apology for the mistake and the reason for it.
+ 
+Expected Response: If the reason is genuine, a response is provided within
+24 hours.
+ 
+Outcome If Appeal Is Granted:
+The offer is not restored on the standard track. The student is placed on a
+separate track requiring completion of a short attention-to-detail course before
+the internship can proceed.
+ 
+Clarification Note: Only one appeal path exists. If the email is sent with a
+different subject line, it will not be processed. There is no fallback.
+ 
+ 
+================================================================================
+CHUNK-009 | WORKFLOW — INTERNSHIP DATE MANAGEMENT
+Topic: Confirming, editing, and changing internship dates
+Workflow Stage: Pre and Post Offer Letter
+================================================================================
+ 
+Confirming Dates (Before Offer Letter):
+After opting in via Yaksha, the student logs in to samagama.in and accesses the
+"Confirm your internship dates" card on the dashboard. The student sets the start
+and end dates. The end date must be on or before 31 December 2026. The student
+may edit the dates freely from this same card until the offer letter is generated.
+ 
+The dates on the dashboard must match the dates on the NOC. Mismatches create
+processing problems.
+ 
+Changing Dates Before Offer Letter Is Generated:
+The student edits the dates directly on the "Confirm Internship Dates" card on
+the dashboard. No other action is required.
+ 
+Changing Dates After Offer Letter Is Generated:
+Once the formal offer letter is issued, the dates are locked on the dashboard.
+The self-edit path is no longer available. To request a change:
+ 
+The NOC signing authority (the person who originally signed the NOC) must send
+an email from their official institutional email address:
+  To:          harshdeep.r@vicharanashala.ai
+  CC:          sudarshan@iitrpr.ac.in
+  Subject:     "Date change request — [Student Full Name] — Vicharanashala
+                Summership 2026"
+  Body:        Reason for the date change. New proposed start and end dates.
+  Attachment:  A justification letter written by the student, signed by the
+               NOC approver, explaining why the dates need to change.
+ 
+The email must originate from the NOC approver's own institutional address. An
+email forwarded by the student is not accepted. Once processed, the dashboard
+date card is unlocked and the offer letter is re-issued with corrected dates.
+The earlier offer letter becomes invalid.
+ 
+Absolute Constraint:
+The internship end date must be on or before 31 December 2026. This constraint
+applies regardless of start date and cannot be waived.
+ 
+Clarification Questions for "I need to change my dates":
+- Has your formal offer letter already been issued?
+- If yes: Has your NOC signing authority been informed? Can they send the date-
+  change email from their official institutional address?
+- If no: You can edit the dates directly on the dashboard. Have you tried that?
+ 
+ 
+================================================================================
+CHUNK-010 | WORKFLOW — DASHBOARD STATE TRANSITIONS
+Topic: What appears on the samagama.in dashboard at each stage
+Workflow Stage: Full Lifecycle
+================================================================================
+ 
+Dashboard State 1 — Not Yet Interviewed:
+Visible: Student profile. Option to take the interview.
+ 
+Dashboard State 2 — Interview Completed, Awaiting Results:
+Visible: Student profile. "Interact with Yaksha" option.
+Note: Clicking "Interact with Yaksha" does NOT restart the interview. It opens
+the Yaksha chat interface for programme-related questions.
+Delay Window: 3–4 days for results to appear.
+ 
+Dashboard State 3 — Results Announced:
+Visible: Result panel (yellow for VINS, green for VISE). NOC download option
+after the student opts in via Yaksha and backend processing completes.
+Delay Window: 2–3 days after opt-in for NOC section to appear.
+ 
+Dashboard State 4 — NOC Submitted:
+Visible: NOC upload confirmation. Internship date confirmation card.
+Delay Window: 1 hour to 1 working day for NOC verification.
+ 
+Dashboard State 5 — Offer Letter Issued:
+Visible: Offer Letter card with download button. Internship dates locked.
+Action Required: Download, review, and accept the offer letter by replying to
+the offer-letter email thread within 5 days.
+ 
+Dashboard State 6 — Active Internship:
+Visible: Programme-specific sections, announcements, and daily standup links.
+The dashboard continuously shows the student profile and Yaksha access.
+ 
+Common Problem — Dashboard Not Updating:
+If the dashboard appears unchanged after a step is completed, perform a hard
+refresh (Ctrl+Shift+R or Cmd+Shift+R) and log out then log back in. If the
+state still does not update after 3 working days, escalate.
+ 
+Escalate If: Dashboard does not reflect the expected next state after 3 working
+days following the completion of the previous step.
+ 
+ 
+================================================================================
+CHUNK-011 | WORKFLOW — PROGRAMME START DATE AND DAY 1
+Topic: What happens on the internship start date
+Workflow Stage: Offer Letter Accepted → Internship Active
+================================================================================
+ 
+Current State:       Offer Letter Accepted. Start Date Confirmed.
+Expected Action:     Log in to samagama.in on the morning of the start date.
+Expected Next State: Bronze Phase (Phase 1) begins.
+ 
+Day 1 Behaviour:
+The internship begins on the confirmed start date printed on the offer letter.
+No separate "your internship has started" email, chat message, or dashboard
+notification is sent on the day itself. The start date is the start date.
+ 
+On the morning of the start date, the student logs in to samagama.in. Yaksha
+guides the student through the Day 1 steps of the Bronze phase.
+ 
+If the Dashboard Appears Unchanged on Day 1:
+1. Perform a hard refresh (Ctrl+Shift+R or Cmd+Shift+R).
+2. Log out and log back in.
+3. If the dashboard still appears unchanged, type #escalate in the Yaksha chat.
+ 
+Daily Standup Links:
+Daily standup Zoom links are posted in the Announcements section of the
+samagama.in dashboard (accessible via the announcement bell at the top of the
+page). Separate emails for daily standups are not sent. Attendance at daily
+standups is mandatory.
+ 
+Kickoff Orientation for Late Starters:
+If a student starts after the main May–July cohort window, there is no separate
+kickoff orientation event. Late starters must complete a proctored catch-up path
+on ViBe (the ViBe LMS). This catch-up is fully proctored and includes quizzes.
+Completion is mandatory before the student can participate in regular daily
+standups. Orientation session recordings are not shared.
+ 
+ 
+================================================================================
+CHUNK-012 | ESCALATION KNOWLEDGE — CONDITIONS AND PROCEDURES
+Topic: When and how to escalate support issues
+Workflow Stage: Any
+================================================================================
+ 
+Primary Support Channel:
+Yaksha chat on samagama.in. Type #escalate to request human support. Every
+#escalate entry should be actioned. If no response is received within 48 hours
+of escalating through Yaksha, proceed to the next escalation level.
+ 
+Secondary Support Channel:
+Email to sudarshansudarshan@gmail.com. Include:
+- Screenshots of the Yaksha chat conversation.
+- Description of the unresolved issue.
+- Previous escalation references (dates, ticket references if any).
+- The student's registered email address.
+ 
+Tertiary Support Channel:
+The moderated WhatsApp troubleshooting group (invite-only, provided after offer
+letter issuance). When posting in the troubleshooting group, include:
+- Problem description.
+- Registered email address.
+- Previous chat logs.
+- Previous email logs.
+- Previous escalation references.
+ 
+Escalation Conditions — When to Escalate Immediately:
+1. Dashboard mismatch persists for more than 3 days.
+2. Internship start date is within 24 hours and a blocking issue exists.
+3. No Yaksha response received after 48 hours from #escalate.
+4. A document has been verified but the dashboard state has not updated.
+5. The offer letter contains incorrect information (college name, dates, name).
+6. Multiple previous escalations have failed.
+ 
+Escalation Conditions — When to Wait:
+1. NOC uploaded less than 1 working day ago — verification takes up to 1 day.
+2. Opted in via Yaksha less than 2–3 days ago — batch processing is ongoing.
+3. Offer letter not yet issued but fewer than 3 days have passed since NOC
+   verification.
+4. Dashboard not yet updated but fewer than 3 days have passed since the
+   previous workflow step.
+ 
+What to Provide When Escalating:
+- Registered email address on samagama.in.
+- Screenshot of the dashboard showing the current state.
+- Screenshot of any error or unexpected message.
+- Description of which step was completed and when.
+- Description of what the expected next state was.
+- Number of days elapsed since the step was completed.
+ 
+Escalate If Not Resolved at Any Level:
+Contact support through samagama.in and type #escalate, or email
+sudarshansudarshan@gmail.com. Do not rely on third-party channels or
+unofficial groups as primary resolution paths.
+ 
+ 
+================================================================================
+CHUNK-013 | AMBIGUITY RESOLUTION — CLARIFICATION LOGIC
+Topic: How to handle ambiguous or incomplete user queries
+Usage: Chatbot should use these clarification frameworks before answering
+================================================================================
+ 
+Ambiguous Query 1: "I did not receive anything."
+ 
+Clarification Questions (ask before answering):
+- Did you not receive the offer letter?
+- Did you not receive the onboarding email or any email from
+  no-reply@vicharanashala.ai?
+- Did you not receive the Zoom link for the kickoff or daily standup?
+- Did your dashboard not update on samagama.in?
+- Did you not receive confirmation from Yaksha after opting in?
+- Did your NOC verification not get confirmed?
+ 
+Guidance After Clarification:
+Match the clarified issue to the relevant workflow chunk (CHUNK-006 for offer
+letter, CHUNK-004 for opt-in confirmation, CHUNK-010 for dashboard state, etc.)
+ 
+---
+ 
+Ambiguous Query 2: "My dashboard is not updating."
+ 
+Clarification Questions:
+- What step did you complete most recently? (Interview / Opt-in / NOC upload /
+  Date confirmation?)
+- How many days ago did you complete that step?
+- Have you tried logging out, doing a hard refresh, and logging back in?
+- What does the dashboard currently show?
+- What were you expecting to see?
+ 
+Guidance After Clarification:
+Dashboard updates happen in rolling batches with 2–3 day delays between states.
+If more than 3 working days have passed since the last completed step without an
+update, escalate through Yaksha using #escalate.
+ 
+---
+ 
+Ambiguous Query 3: "I have a problem with my NOC."
+ 
+Clarification Questions:
+- Have you downloaded the blank NOC from samagama.in?
+- Is the problem with getting it signed, or with uploading it?
+- Does the NOC include the signatory's official institutional email address and
+  handwritten signature?
+- Do the dates on the NOC match the internship dates confirmed on the dashboard?
+- Did the dashboard show an error when uploading?
+ 
+---
+ 
+Ambiguous Query 4: "I can't use Yaksha."
+ 
+Clarification Questions:
+- Are you unable to access the Yaksha interface at all?
+- Or can you see Yaksha but cannot type in the chat box?
+- If you cannot type: Have you scrolled to the top of the page and clicked the
+  "Chat with Yaksha" button to activate the chat?
+ 
+Known Issue — Yaksha Locked State:
+If the Yaksha chat box is visible but the student cannot type, scrolling to the
+top of the page and clicking "Chat with Yaksha" reactivates the interface. This
+is a known UI behaviour, not a system error.
+ 
+---
+ 
+Ambiguous Query 5: "I'm confused about the dates."
+ 
+Clarification Questions:
+- Are you confused about what dates to write on the NOC?
+- Are you confused about what dates to confirm on the samagama.in dashboard?
+- Are you asking about the programme deadline (31 December 2026)?
+- Do the dates on your NOC not match the dates on your dashboard?
+ 
+Guidance:
+The NOC dates and the dashboard dates must match exactly. The internship lasts
+two months from the chosen start date. The end date must be on or before
+31 December 2026. If dates are mismatched, the NOC must be corrected and
+re-uploaded before the offer letter is processed.
+ 
+---
+ 
+Ambiguous Query 6: "My interview shows incomplete."
+ 
+Clarification Questions:
+- Did you complete the interview session, or did it disconnect mid-way?
+- Has the Yaksha chat confirmed that your interview was recorded successfully?
+- How long ago did you complete the interview?
+- Have you tried logging out and back in to refresh the dashboard?
+ 
+Known Issue:
+A known sync issue causes the dashboard to display "Interview Incomplete" or
+"Interview Interrupted" even after a successful interview completion. Yaksha's
+confirmation that the interview was recorded takes precedence over the dashboard
+display. If this state persists more than 24 hours after interview completion,
+escalate using #escalate in the Yaksha chat.
+ 
+ 
+================================================================================
+CHUNK-014 | COMMUNICATION CHANNELS — OFFICIAL AND PROHIBITED
+Topic: Which channels are official and which are prohibited
+================================================================================
+ 
+Official Channels (the only permitted support paths):
+ 
+1. Yaksha Chat on samagama.in
+   - Primary channel for all queries.
+   - Type #escalate to reach human support.
+   - Type #escalate-ViBe for ViBe platform-specific technical issues.
+ 
+2. Email from Vicharanashala
+   - Notifications are sent FROM no-reply@vicharanashala.ai.
+   - This address is outbound-only. Replies to this address are not read.
+   - For direct support email: sudarshansudarshan@gmail.com (only when Yaksha
+     genuinely cannot resolve the issue).
+ 
+3. Moderated WhatsApp Troubleshooting Group
+   - Invite-only. Access is granted after the offer letter is issued.
+   - This is the only WhatsApp group operated by Vicharanashala.
+   - It is for troubleshooting only, not long-term participation.
+ 
+Prohibited Channels:
+Any unofficial group — parallel WhatsApp groups, Telegram channels, Discord
+servers, or any peer-coordinated space representing Vicharanashala, Samagama,
+Yaksha, or the internship cohort — is strictly prohibited.
+ 
+Vicharanashala does not operate a Discord server. Any Discord server claiming
+to represent the programme is unofficial.
+ 
+There is no general broadcast WhatsApp group for all candidates. Any such group
+is unofficial.
+ 
+Consequences of Using Prohibited Channels:
+Candidates found running or actively participating in unofficial channels may
+face: withdrawal of the offer letter, removal from the internship, blacklisting
+from future Vicharanashala programmes, and formal communication to the student's
+college or placement office.
+ 
+Team Coordination Exception:
+A four-person WhatsApp or email thread limited to project teammates for internal
+project coordination is acceptable. This must not be used to represent
+Vicharanashala or share programme-wide information.
+ 
+If Unsure Whether a Group is Official:
+Type #escalate in the Yaksha chat to confirm. Do not assume a group is official
+based on its name, description, or the stated affiliation of its admins.
+ 
+ 
+================================================================================
+CHUNK-015 | VIBE LMS — ACCESS AND COMMON ISSUES
+Topic: Registering, accessing, and troubleshooting the ViBe learning platform
+================================================================================
+ 
+What ViBe Is:
+ViBe (https://vibe.vicharanashala.ai/auth) is the Learning Management System
+used during Phase 1 (Bronze) for mandatory coursework. It is built and maintained
+by interns and students as a free, open-source platform.
+ 
+Registration Steps:
+1. Click the AI Fundamentals registration link sent in the Phase 1 launch email.
+2. Go to the ViBe sign-in page and create an account, or log in if already
+   registered.
+3. ViBe requires a Gmail address. If the registered samagama.in email is not
+   Gmail, use any personal Gmail and notify Yaksha with the tag:
+   "#vibe-email [gmail-address]"
+4. After logging in, open the registration link again in the same browser.
+   The second click after login is what enrols the student.
+5. Complete the registration form and submit. The course appears on the dashboard.
+ 
+Email Mismatch:
+If the student registered on ViBe with a different email than the samagama.in
+registered email, the student must notify Yaksha using "#vibe-email [email]" so
+the records can be linked manually.
+ 
+Common Issue — "No course enrolled" after accepting invite:
+1. Confirm you are logged in with the correct registered email.
+2. Check for multiple email aliases; use the exact registered email.
+3. Log out and log in again.
+4. Use personal Wi-Fi instead of college Wi-Fi (college networks may restrict
+   access).
+5. Enable third-party cookies in the browser: go to browser cookie settings and
+   allow cookies from vicharanashala.ai.
+6. Change laptop DNS to Google DNS (8.8.8.8 preferred, 8.8.4.4 alternate).
+7. Flush DNS cache (run ipconfig /flushdns in Command Prompt as administrator).
+8. Restart Wi-Fi and retry.
+ 
+Common Issue — Videos stuck, looping, or restarting:
+- Stay on the ViBe browser tab throughout. Switching tabs may restart the video.
+- Keep the camera and microphone permissions enabled at all times.
+- Ensure sufficient lighting — the face should be clearly visible, not silhouetted.
+- Reduce background noise — voices in the room may trigger a restart.
+- Do not skip ahead; videos must be watched in full sequence.
+ 
+Common Issue — "Access Restricted" red banner:
+This is not a bug. It appears when the student attempts to open a video or quiz
+without completing all earlier items. ViBe returns the student to the last
+legitimately completed item. To resolve: scroll through the left panel from the
+beginning, find the first item without a completion tick, complete it, and refresh.
+ 
+Progress Saving:
+Progress is saved on the server. Clearing browser cache, refreshing, or switching
+browsers does not erase progress. Log back in with the registered email to
+restore all progress.
+ 
+Escalation for ViBe Issues:
+If all troubleshooting steps fail, contact Yaksha with the tag "#escalate-ViBe"
+and include a description of the issue and any error messages visible in the
+browser console.
+ 
+Consent Requirement:
+Camera and microphone consent is mandatory. Students who decline cannot proceed
+with the ViBe course. ViBe does not continuously record video; the camera is used
+for real-time presence checks only.
+ 
+ 
+================================================================================
+CHUNK-016 | CERTIFICATE AND COMPLETION
+Topic: What the certificate covers, how it is issued, and what it does not cover
+================================================================================
+ 
+Certificate Issuer: Vicharanashala Lab for Education Design, IIT Ropar.
+Certificate Format: E-certificate (downloaded from the samagama.in dashboard).
+Physical Copies: Not available. Vicharanashala does not print or mail
+physical certificates.
+ 
+Eligibility for Certificate:
+Students who complete both Bronze (Phase 1) and Silver (Phase 2) receive the
+certificate. Dropouts do not receive a certificate.
+ 
+What the Certificate States:
+The certificate records completion of the internship. It does not state whether
+the internship was completed online (VINS) or on-campus (VISE). The certificate
+is the same for both tracks.
+ 
+Verification:
+The certificate is digitally signed. It can be verified using the certificate
+number in the Vicharanashala database.
+ 
+Grade Reports:
+Vicharanashala does not send formal grade reports or evaluation documents to
+universities. The certificate is the document for college or placement office
+submission. If a college requires a structured evaluation form, the student must
+raise this with their college directly. Vicharanashala can provide the certificate
+and, where earned, a letter of recommendation. Vicharanashala does not have a
+process for sending grade reports.
+ 
+Rosetta Journal as Completion Requirement:
+Submission of the 65-day Rosetta journal is one of the required completion
+criteria. An incomplete or AI-generated journal will not be accepted. Students
+must share the journal Google Doc with the programme coordinator's email (shared
+during wrap-up week) with Viewer access on or before Day 65.
+ 
+ 
+================================================================================
+CHUNK-017 | LEAVE, ATTENDANCE, AND EXAM CONFLICTS
+Topic: Attendance rules and what to do about exam conflicts
+================================================================================
+ 
+Attendance Rule:
+Leave is not permitted during the internship. The internship requires 6 to 10
+hours of focused work per day. This is a full-time commitment.
+ 
+Exam Conflict Rule:
+If a student has upcoming exams that cannot be avoided during the internship
+window, the student must defer their start date until after the exams conclude.
+Attempting to juggle exams and the internship simultaneously is not permitted.
+ 
+If the programme discovers that a student was sitting college exams during the
+internship period, the internship may be terminated or the certificate withheld,
+including after otherwise completing the programme.
+ 
+No Exemptions:
+No leave, exemptions, relaxation periods, or exam windows are available during
+the internship. The 55-day continuous attendance requirement is non-negotiable.
+ 
+Late Start Option:
+A student with unavoidable exam conflicts may start after their exams conclude,
+provided the end date (start plus two months, or three months with grace) falls
+on or before 31 December 2026.
+ 
+Classes During Internship:
+If a student is simultaneously attending college classes or exams, the student
+will be relieved from the internship and invited to join the next batch.
+ 
+ 
+================================================================================
+CHUNK-018 | TEAM FORMATION — RULES AND PROCESS
+Topic: How teams are formed and managed in Phase 2
+================================================================================
+ 
+Team Size: Exactly four members. Fixed. Cannot be reduced below four or
+increased above four at the time of final formation.
+ 
+Formation Method:
+- Students who joined May 15–16: Teams formed through a structured activity.
+- Students joining later: Teams randomly assigned by the administration.
+- Students on May 15–16 who could not form a team during the activity: Randomly
+  assigned.
+ 
+Team Composition Rules:
+- Teams must include members from different institutions.
+- Students from the same institution at different campuses may be permitted.
+- Students may not team with members of their existing cohort groups (e.g., IIT
+  MBS cohort members should not team with other IIT MBS members).
+ 
+Finality of Assignments:
+Team assignments are final once locked. No switches, dissolutions, or team
+reformations are permitted. Requests for specific teammates are not entertained.
+Project assignments are also final; reallocation to a different project is not
+possible.
+ 
+If a Team Member Leaves:
+Report immediately to the mentor or scholar. The administration attempts to
+assign a replacement. If no replacement is found, the team may continue as
+three members.
+ 
+Inactive Team Members:
+Report inactivity to the mentor or scholar early. Prolonged inactivity may
+result in administrative intervention.
+ 
+Team Communication:
+Teams are expected to self-organise internal communication (a four-person
+WhatsApp or email thread is acceptable). Official programme updates continue
+through email and Yaksha chat on samagama.in.
+ 
+Team Name Changes:
+Team names are tentative and can be changed, but frequent changes are
+discouraged. If multiple teams share the same name, suffixes are applied
+(e.g., Team X-1, Team X-2).
+ 
+When Team Activities Begin:
+Team-based work begins in Phase 2 (Silver). During Phase 1 (Bronze, coursework),
+no team coordination is required.
+ 
+ 
+================================================================================
+CHUNK-019 | ROSETTA JOURNAL — RULES AND REQUIREMENTS
+Topic: The mandatory 65-day internship journal
+================================================================================
+ 
+What Rosetta Is:
+Rosetta is a mandatory 65-day internship journal. One entry per day for the full
+duration of Summership 2026. Students write privately, keep the document
+themselves, and submit it at the end as one of the completion requirements.
+ 
+How to Obtain It:
+The journal is shared as a Google Doc template link during orientation. The
+student makes a copy to their own Google Drive and renames it:
+"Rosetta — [Student Name] — Summership 2026"
+Students must write in their own copy, not the shared template.
+ 
+Daily Process:
+1. Open the personal Rosetta Google Doc.
+2. Scroll to today's day number.
+3. Fill in the date.
+4. Read the thinking routine name and description.
+5. Answer the three prompts.
+The process should take 10 to 20 minutes per day.
+ 
+Entry Standards:
+Entries must be honest, specific, and written in the student's own voice. Three
+to five sentences per prompt is typical. One-word answers, vague non-answers,
+copy-pasted text, and AI-generated entries are not acceptable and will not be
+counted toward the completion requirement.
+ 
+AI Tools:
+Using any AI tool (including ChatGPT, Claude, or similar) to write Rosetta
+entries is strictly prohibited. Entries that read as AI-generated will not be
+accepted.
+ 
+Missed Entries:
+Fill in missed entries as soon as possible. Write the actual date of filling,
+note that the entry is late, and explain why. Late honest entries are preferable
+to blank entries.
+ 
+Submission:
+On or before Day 65, share the Rosetta Google Doc with the programme
+coordinator's email address (provided during wrap-up week) with Viewer permission.
+Ensure: the document title includes the student's name, all 65 entries are
+filled, and the cover page shows name, product, and team.
+ 
+Rosetta submission is a required completion criterion for the certificate.
+ 
+ 
+================================================================================
+CHUNK-020 | ANTI-HALLUCINATION CONSTRAINTS FOR CHATBOT RESPONSES
+Topic: Guardrails for chatbot responses to prevent incorrect information
+================================================================================
+ 
+Timelines — Only State the Following (do not invent others):
+- NOC verification: 1 hour to 1 working day.
+- Offer letter generation after NOC verified and dates confirmed: approximately
+  1 hour.
+- Rolling batch processing (opt-in to NOC section, NOC to offer letter): 2–3
+  days per stage.
+- Result announcement after interview: 3–4 days.
+- Dashboard sync for interview completion: up to 24 hours.
+- Escalation response via Yaksha #escalate: expected within 48 hours.
+- Appeal response (withdrawn offer letter): within 24 hours if reason is genuine.
+ 
+If a Timeline Is Unknown:
+State: "The exact timeline is not confirmed. Please escalate through Yaksha at
+samagama.in using #escalate, or email sudarshansudarshan@gmail.com for a status
+update."
+ 
+If an Issue Cannot Be Resolved Through the Knowledge Base:
+State: "This issue requires direct support. Please escalate through Yaksha at
+samagama.in using #escalate, or email sudarshansudarshan@gmail.com with your
+registered email address and screenshots."
+ 
+Do Not Invent:
+- Specific processing deadlines not listed in this document.
+- Specific names of support staff or team members.
+- Specific dashboard URLs or internal paths not documented here.
+- Specific ticket IDs or case numbers.
+- Policy exceptions not documented here.
+- Alternative acceptance formats not listed in CHUNK-007.
+- Alternative NOC formats or signatories not listed in CHUNK-005.
+ 
+Do Not Assume:
+- That an issue is resolved just because the student completed a step.
+- That the dashboard reflects real-time state (batch processing applies).
+- That the student has checked all official channels before seeking help.
+- That the student's NOC is valid without confirming the required four elements.
+- That the student's acceptance email is compliant without confirming the format.
+ 
+ 
+================================================================================
+CHUNK-021 | QUICK REFERENCE — STATE-BASED TROUBLESHOOTING GUIDE
+Topic: Fast lookup for common states and next actions
+Usage: Chatbot first-pass triage
+================================================================================
+ 
+STATE: Student completed the interview but dashboard shows "Incomplete"
+Wait Window: Up to 24 hours for sync.
+Escalate If: More than 24 hours have passed.
+Escalation Path: Yaksha #escalate with screenshot of dashboard.
+ 
+STATE: Student opted in via Yaksha but NOC download option not visible
+Wait Window: 2–3 days (rolling batch processing).
+Escalate If: More than 5 days have passed.
+Escalation Path: Yaksha #escalate.
+ 
+STATE: Student uploaded NOC but offer letter not received
+Wait Window: 1 hour to 1 working day for NOC verification, then ~1 hour for
+offer letter generation. Total: up to 2 working days.
+Escalate If: More than 3 working days since NOC upload without update.
+Escalation Path: Yaksha #escalate, then email sudarshansudarshan@gmail.com.
+ 
+STATE: Student received offer letter but dashboard not confirming acceptance
+Expected: Dashboard does not update after acceptance email is sent. This is
+correct and expected. Acceptance is processed manually.
+Action: If no response after several working days, type #escalate in Yaksha.
+ 
+STATE: Student's start date is approaching and no offer letter yet
+Action: Upload a self-declaration on the samagama.in profile immediately.
+A tentative offer letter is issued right away. The formal offer letter follows
+after NOC verification.
+ 
+STATE: Student cannot type in Yaksha chat box
+Action: Scroll to the top of the page and click "Chat with Yaksha" to reactivate
+the chat interface. This is a known UI behaviour.
+ 
+STATE: Student received a withdrawal email for non-compliant acceptance
+Action: Send a fresh email (not a reply) to sudarshansudarshan@gmail.com with
+the exact subject: "Request to Reconsider: Confirmation Reply Error".
+ 
+STATE: Student on ViBe sees "Access Restricted" banner
+Action: Scroll through the left panel from the beginning. Find the item without
+a completion tick. Complete it. Refresh the page.
+ 
+STATE: Student's team has fewer than four members
+Action: Report to the mentor or scholar. Administration will attempt to assign
+an additional member.
+ 
+STATE: Student needs to change internship dates after offer letter is issued
+Action: The NOC signing authority must send the date-change email from their
+official institutional address to harshdeep.r@vicharanashala.ai with CC to
+sudarshan@iitrpr.ac.in. Student-sent requests are not accepted.
+
+
+================================================================================
+END OF DOCUMENT
+================================================================================
+Source document 1: FAQ_Queries.md (Vicharanashala Summership 2026 FAQ, v22.1.0)
+Source document 2: whatsapp_analysis_and_solution_framework.md
+                   (Analysis period: May 11–23, 2026; 5,437 chat lines)
+================================================================================
