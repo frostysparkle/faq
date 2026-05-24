@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+README.md
+samagama_portal_prototype.html
+package-lock.json
+*.tsbuildinfo
