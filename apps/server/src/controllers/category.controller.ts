@@ -1,0 +1,20 @@
+import type { Request, Response } from 'express';
+import type { CategoryCreateInput, CategoryUpdateInput } from '@samagama/shared';
+import { categoryService } from '../services/category.service.js';
+import { created, ok } from '../utils/api-response.js';
+
+export const categoryController = {
+  async list(req: Request, res: Response) {
+    const includeInactive = req.user?.role === 'admin' && req.query.all === 'true';
+    return ok(res, await categoryService.list(includeInactive));
+  },
+  async create(req: Request, res: Response) {
+    return created(res, await categoryService.create(req.body as CategoryCreateInput));
+  },
+  async update(req: Request, res: Response) {
+    return ok(res, await categoryService.update(req.params.id!, req.body as CategoryUpdateInput));
+  },
+  async archive(req: Request, res: Response) {
+    return ok(res, await categoryService.archive(req.params.id!));
+  },
+};
