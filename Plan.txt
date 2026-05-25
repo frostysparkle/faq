@@ -177,7 +177,53 @@ Amend Community Q&A interface where:
 • Inside this popup, the user can write their answer in a text box.
 • Below the text box, include a small checkbox with the statement: “I assume that the answer I provided is correct.”
 
-Making sure that the Community Q&A
+---
+Create the following Student IDs with the details below:
+
+### Students
+| Sr. No. | Name        | Password          | Initial Spurti Points |
+|---------|-------------|------------------|----------------------|
+| 1 | Abhishek   | Student@2026 | 100 |
+| 2 | Meena      | Student@2026 | 100 |
+| 3 | Harshdeep  | Student@2026 | 100 |
+| 4 | Harshitha  | Student@2026 | 100 |
+| 5 | Spandan    | Student@2026 | 100 |
+| 6 | Tejswini   | Student@2026 | 100 |
+| 7 | Ravi       | Student@2026 | 100 |
+| 8 | Gazal      | Student@2026 | 100 |
+
+Create the following Moderator IDs with the details below:
+
+### Moderators
+| Sr. No. | Name      | Password            |
+|---------|-----------|--------------------|
+| 1 | Kushagra | Moderator@2026 |
+| 2 | Jahnvi   | Moderator@2026 |
+| 3 | Joyita   | Moderator@2026 |
+
+Create the following Admin IDs with the details below:
+
+### Admins
+| Sr. No. | Name       | Password        |
+|---------|------------|----------------|
+| 1 | Divy      | Admin@2026 |
+| 2 | Anshuman  | Admin@2026 |
+
+After creating the above accounts, remove the following section completely from the Login Page:
+
+### Remove this section:
+“Dev-only · Test Accounts”
+
+- Click a role to auto-fill credentials. Visible only in development builds and removed before release.
+
+#### Admin
+admin@samagama.test · Full system access
+
+#### Moderator
+moderator@samagama.test · Reviews answers and flags
+
+#### Student
+student@samagama.test · Default student view
 
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
