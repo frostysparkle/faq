@@ -178,3 +178,52 @@ Amend Community Q&A interface where:
 • Below the text box, include a small checkbox with the statement: “I assume that the answer I provided is correct.”
 
 Making sure that the Community Q&A
+
+------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------
+
+Requirements Posted by : Jahnvi Paliwal
+
+Final Parameters :
+
+Create a modular semantic search engine that can be attached to any backend route/service.
+
+Architecture:
+
+Main backend: Node.js
+Semantic embedding service: Python FastAPI microservice
+Database: Existing MongoDB
+Cache: Redis
+Queue: BullMQ
+Requirements:
+
+No paid APIs
+No OpenAI/external AI calls
+CPU-only
+Low RAM usage
+Very fast semantic similarity search
+Production-ready
+Modular and scalable
+Multi-user support
+Core Flow:
+
+1.      Convert user question → embeddings
+2.      Compare with Knowledge Base using cosine similarity
+
+If found:
+Show flash question + answer
+Return similarity score + source type = knowledge_base
+If not found:
+Move to Community Search
+
+3.      Compare with cached community questions (last 7 days)
+·        If match found:
+o    Show already answered/community question
+o    Add current question to cached memory (count++)
+o    Return source type = cached_question
+
+·        If no match found:
+o    Upload/save as new community question
+o    Return "not found" or waiting for answer status
+
+---
