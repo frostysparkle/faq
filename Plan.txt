@@ -62,7 +62,7 @@ This way, moderators can respond collectively to similar queries.
 • “Ask a Question” checks FAQs and existing queries before posting.
 • FAQs section is searchable, organized, and feedback-driven for moderators.
 
-----------------------------------------------------------------------------------------------------------------------------------------****************************************************************************************************************************************
+<------------------------ ****** The above is already implemented! ********  ------------------------->
 
 🔧 Admin & Moderator Dashboard Updates
 FAQ Management
@@ -123,19 +123,29 @@ Additional Features:
 • On click: view student names.
 • Filter option: prioritize questions asked by multiple students (high → low order).
 
----
+<------------------------ ****** The above is already implemented! ********  ------------------------->
 
-In student dashboard : Student(dev)
-I find the card displaying the count of open commun
 
-In "Ask a Question" need to implement caching in 3. " Check Q"
-
+<------------------------ ****** The below work implementation work is pending ********  ------------------------->
 
 Moderator and Admin and students :
 Card containing the count details regarding open community question idle for a week, < 3 days last 24 hours
 Also reflect this in the filter too in the community section!
 
+Implement caching in the “Ask a Question” section under:
 
+### 3. Check Q
+- Add caching support to improve performance and reduce repeated API/database calls.
+
+For Moderators, Admins, and Students:
+- Add dashboard cards displaying the count of community questions based on the following categories:
+  - Open community questions idle for more than 1 week
+  - Open community questions idle for more than 3 days
+  - Open community questions idle from the last 24 hours
+
+Additionally:
+- Reflect these same categories and counts within the filters section of the Community page.
+- Ensure the filters are dynamic and stay in sync with the dashboard card counts.
 
 <--->
  Plan something that address a Q&A that is serious and important
@@ -143,6 +153,13 @@ Also reflect this in the filter too in the community section!
 Xxx The search functionality in "Check FAQ" it must search in an order first for the last 7 days and then in the most frequent search queries that was asked many times and the last the remaining part. Xxxx
 
 Stop the search after a time like 2 minutes.
+
+---
+<-- ******* optional ***** ---
+
+Design and implement an improved Q&A search flow for the “Check FAQ” section that prioritizes serious and important questions efficiently. 
+
+******* optional ****** -->
 
 ---
  
