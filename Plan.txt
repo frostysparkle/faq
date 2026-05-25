@@ -1,0 +1,124 @@
+
+Student Dashboard Changes
+🖥️ Side-Bar Updates
+• Yaksha Chatbot
+	◦ Remove the chatbot option from the sidebar.
+	◦ Instead, place a chatbot button at the bottom-right corner of the dashboard (like big tech companies do).
+	◦ Make sure it is always visible in every tab I switch and easy for students to access.
+• Recently Viewed
+	◦ Remove this section completely since it is not useful for students.
+• My Questions
+	◦ This section will show the questions posted by the student using the “Ask a Question” option.
+	◦ Each question will display its status (e.g., posted, seen, response provided)like WhatsApp approach.
+For Personal Questions:
+	◦ Moderator sees the query → status updates to “Seen.”
+	◦ Moderator posts a response or resolution → status updates accordingly.
+For Community Questions:
+	◦ The question appears in the Community Q&A section for all students.
+	◦ Any student can answer.
+	◦ Once a question has 10 different responses, no more answers can be added (only upvotes/downvotes allowed).
+	◦ The top answer is shown to the moderator by default.
+	◦ Moderator can click to view the next 2 answers, and click again to view all 10.
+        The current stage must provides three options: Approve, Reject, or Edit the student response and then approve.
+	◦ Before a student posts their own answer, they are asked: “Is the existing answer correct?”
+		▪︎ If they say yes, no need to post.
+		▪︎ If they say no, they can write and submit their answer.
+---
+✍️ Ask a Question
+Students can post questions in two ways:
+1. Through the Ask a Question option.
+2. Through the Chatbot.
+Process for Ask a Question:
+• Student writes their description.
+• Optionally uploads a screenshot.
+• Selects a category (or “Other”).
+• System checks:
+	1. FAQs → If an answer exists, show it. Ask: “Does this answer your question?”
+		▪︎ If no, allow posting the question.
+	2. If answer doesn't exist in faq, Show top 2 unresolved queries that are similar to the current post student has written.
+		▪︎ If student clicks “I have the same query,” their ID is tagged to the same question.
+This way, moderators can respond collectively to similar queries.
+---
+📚 Browse FAQs
+• Students can search for their query.
+• Results show questions with a dropdown to view answers (answers only appear when clicked).
+• By default, below the search bar, FAQs are displayed in this order:
+	◦ Most recent (within a week).
+	◦ Most asked → least asked.
+• Each FAQ has:
+	◦ Helpful / Unhelpful feedback option.
+	◦ Upvote/downvote count is visible only to moderators (not to students).
+• Tags/categories are shown below the search bar.
+	◦ Students can filter by category.
+	◦ Each question shows only the question, with a dropdown to reveal the answer.
+• Moderator-only view:
+	◦ How many students viewed the FAQ.
+	◦ How many found it helpful.
+---
+✅ In short:
+• Sidebar is simplified (no chatbot, no recently viewed).
+• Chatbot moves to bottom-right corner.
+• “My Questions” shows personal and community queries with clear rules.
+• “Ask a Question” checks FAQs and existing queries before posting.
+• FAQs section is searchable, organized, and feedback-driven for moderators.
+
+----------------------------------------------------------------------------------------------------------------------------------------****************************************************************************************************************************************
+
+🔧 Admin & Moderator Dashboard Updates
+FAQ Management
+• Access: Shared between Admins and Moderators. All changes sync across both dashboards.
+• Cards:
+	◦ Helpful FAQs percentage
+	◦ Flagged (formerly Unhelpful) FAQs percentage
+• FAQ List & Filters:
+	◦ Columns: Question (renamed from Title), Category, Status, Updated, Action (with eye button to view answers).
+	◦ Option to create new FAQs directly in the table.
+	◦ Filters: Helpful FAQs, Flagged FAQs.
+	◦ Display count of flagged FAQs.
+	◦ Reset Helpful/Flagged stats to zero after FAQ edits.
+• Categories & Tags: Move management into FAQ Management. Remove from sidebar.
+---
+Moderation Queue
+• Must be identical for Admins and Moderators.
+---
+Chatbot Feedback
+• Scope: Includes responses from both chat types.
+• Cards: Keep Helpful and Flagged (remove third card).
+• Chat List & Filters:
+	◦ Section to view all student chats.
+	◦ Filters: Helpful or Flagged.
+	◦ Show total chat count.
+---
+Admin Settings
+• No changes required.
+---
+🛠 Moderator Dashboard Specifics
+• Main Dashboard Cards:
+	◦ Unresolved Questions count
+	◦ Flagged FAQs count
+	◦ Remove duplicate candidates card
+	◦ Remove pending answer card
+• Sidebar:
+	◦ Rename Pending Answers → Unresolved Questions.
+	◦ Two sections:
+		▪︎ Personal Questions (to be answered)
+		▪︎ Community Questions (displayed as current application cards).
+• Remove:
+	◦ Flagged FAQs section (since FAQ Management is added).
+	◦ Duplicate candidate section.
+	◦ Other redundant Unresolved Questions section.
+	◦ Browse FAQ section.
+---
+📌 Example FAQ Answer Display
+Question: Can I use a personal laptop for remote work?
+Response: Yes, personal laptops are allowed provided you have VPN access and follow IT security guidelines shared during onboarding.
+Footer: by Kiran D. · 2h ago
+Buttons:
+• Show More Answers (click once → +2 answers, click again → all 10 answers, click again → hide all except first).
+• Approve
+• Reject
+• Edit
+Additional Features:
+• Show count of students who asked the same question.
+• On click: view student names.
+• Filter option: prioritize questions asked by multiple students (high → low order).
