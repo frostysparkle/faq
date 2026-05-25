@@ -242,6 +242,46 @@ moderator@samagama.test · Reviews answers and flags
 #### Student
 student@samagama.test · Default student view
 
+----
+
+### Student Analytics Page
+
+Create a dedicated Analytics Page for Students to help them track their participation, contributions, and performance within the Community Q&A platform.
+
+### Features to Include
+
+#### Community Q&A Performance
+Display analytics related to the student’s activity, including:
+- Total number of Community Q&A questions answered
+- Total accepted/helpful answers
+- Participation trends and engagement statistics
+
+#### Peer Ranking Section
+- Add a sidebar section that displays the student’s rank compared to other peers.
+- Rankings should be based on:
+  - Number of Community Q&A answers contributed
+  - Overall engagement and activity
+
+#### Spurti Points Leaderboard
+- Include a separate ranking module for Spurti Points.
+- Students should be able to view:
+  - Their current Spurti Points
+  - Their rank among peers
+  - A leaderboard of top-performing students based on Spurti Points
+
+### Additional Enhancements
+- Add filters such as:
+  - Weekly
+  - Monthly
+  - Overall rankings
+- Use cards, graphs, and leaderboard components for a clean and interactive UI.
+- Ensure rankings and analytics update dynamically in real time or through scheduled refreshes.
+
+### Goal
+The Analytics Page should encourage healthy competition, increase student engagement, and motivate students to actively participate in the Community Q&A ecosystem.
+
+-----
+
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
 
