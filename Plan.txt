@@ -122,3 +122,59 @@ Additional Features:
 • Show count of students who asked the same question.
 • On click: view student names.
 • Filter option: prioritize questions asked by multiple students (high → low order).
+
+---
+
+In student dashboard : Student(dev)
+I find the card displaying the count of open commun
+
+In "Ask a Question" need to implement caching in 3. " Check Q"
+
+
+Moderator and Admin and students :
+Card containing the count details regarding open community question idle for a week, < 3 days last 24 hours
+Also reflect this in the filter too in the community section!
+
+
+
+<--->
+ Plan something that address a Q&A that is serious and important
+
+Xxx The search functionality in "Check FAQ" it must search in an order first for the last 7 days and then in the most frequent search queries that was asked many times and the last the remaining part. Xxxx
+
+Stop the search after a time like 2 minutes.
+
+---
+ 
+In Student Dashboard 
+Home Section Layout
+Below Header: "Welcome back, Student (Dev) 👋 Samagama Internship Portal · Signed in as student"
+
+Display Cards (displayed below header):
+1. Open Community Q&A – shows total number of open questions(Answered and Unanswered both).
+2. Open Community Q&A Unanswered – shows total number of open questions  Unanswered both.
+2. Questions You Answered – shows count of questions answered by the student from day 1.
+3. Spourti Points Earned – shows total points earned contributing for Open Community Q&A.
+
+---
+
+Content Tabs (below cards)
+• Three buttons displayed in the same line:
+	◦ Recently Added FAQs
+	◦ Recently Updated FAQ Questions
+	◦ Recent Community Questions
+• Behavior:
+	◦ Clicking a button switches the view to that category.
+	◦ Each category displays maximum 5 items.
+	◦ Each section includes an option to “View All” for full details.
+
+
+Amend Community Q&A interface where:
+• The question title is hidden, and instead the exact question description  is shown.
+• Each question has a dropdown button that reveals the answers (only if answers exist).
+• There is also a button to answer the question.
+• When a user clicks the “Answer” button, a small inline popup appears (in the same section as the answers) asking: “Are you sure the existing answers are not up to the mark?”
+• Inside this popup, the user can write their answer in a text box.
+• Below the text box, include a small checkbox with the statement: “I assume that the answer I provided is correct.”
+
+Making sure that the Community Q&A
