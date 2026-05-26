@@ -9,13 +9,25 @@
 // Moderators / admins keep a simpler welcome card — their dashboards live elsewhere.
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, HelpCircle, MessageCircle, MessagesSquare, Sparkles } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  HelpCircle,
+  MessageCircle,
+  MessagesSquare,
+  Sparkles,
+  ThumbsDown,
+  ThumbsUp,
+} from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import type { PublicFaq } from '@samagama/shared';
 import { useAuth } from '../features/auth/AuthProvider';
 import { useStudentHomeStats } from '../features/stats/queries';
 import { IdleBucketCards } from '../features/stats/IdleBucketCards';
-import { useFaqList } from '../features/faq/queries';
+import { useFaqList, useFaqFeedback } from '../features/faq/queries';
+import { FlagFaqButton } from '../features/flag/FlagFaqDialog';
 import { useQuestions } from '../features/qna/queries';
 
 type ContentTab = 'recent-added-faqs' | 'recent-updated-faqs' | 'recent-questions';
@@ -147,6 +159,13 @@ function ContentTabs() {
   );
 }
 
+const STATUS_COLOR = {
+  draft: 'default',
+  published: 'success',
+  outdated: 'warning',
+  archived: 'default',
+} as const;
+
 function RecentFaqsList({ sort }: { sort: 'added' | 'recent' }) {
   const navigate = useNavigate();
   const { data, isLoading } = useFaqList({ sort, pageSize: 5 });
@@ -164,24 +183,102 @@ function RecentFaqsList({ sort }: { sort: 'added' | 'recent' }) {
     <>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 10 }}>
         {data.items.slice(0, 5).map((faq) => (
-          <Card key={faq.id}>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>{faq.title}</div>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-              {faq.categories.slice(0, 1).map((c) => (
-                <Badge key={c.id} color="accent">
-                  {c.name}
-                </Badge>
-              ))}
-              <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
-                Updated {timeAgo(faq.updatedAt)}
-              </span>
-            </div>
-          </Card>
+          <FaqRowCard key={faq.id} faq={faq} />
         ))}
       </div>
       <ViewAll onClick={() => navigate('/faqs')} />
     </>
   );
+}
+
+function FaqRowCard({ faq }: { faq: PublicFaq }) {
+  const [expanded, setExpanded] = useState(false);
+  const feedback = useFaqFeedback(faq.id);
+  const studentMayVote = !faq.hasUserFeedback;
+
+  return (
+    <Card>
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          style={{
+            flex: 1,
+            background: 'transparent',
+            border: 'none',
+            padding: 0,
+            textAlign: 'left',
+            cursor: 'pointer',
+            color: 'inherit',
+            font: 'inherit',
+          }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)', marginBottom: 6, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <span style={{ flex: 1 }}>{faq.title}</span>
+            {expanded ? <ChevronUp size={16} color="var(--color-text-muted)" /> : <ChevronDown size={16} color="var(--color-text-muted)" />}
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {faq.categories.slice(0, 1).map((c) => (
+              <Badge key={c.id} color="accent">{c.name}</Badge>
+            ))}
+          </div>
+        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+          <Badge color={STATUS_COLOR[faq.status as keyof typeof STATUS_COLOR] ?? 'default'}>{faq.status}</Badge>
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Updated {timeAgo(faq.updatedAt)}</div>
+        </div>
+      </div>
+
+      {expanded && (
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--color-border)', fontSize: 13, color: 'var(--color-text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+          {faq.answer}
+          <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: 'var(--color-text-muted)', flexWrap: 'wrap' }}>
+            {studentMayVote ? (
+              <>
+                <span>Was this helpful?</span>
+                <button
+                  type="button"
+                  onClick={() => feedback.mutate('helpful')}
+                  disabled={feedback.isPending}
+                  style={feedbackBtnStyle('var(--color-success)')}
+                >
+                  <ThumbsUp size={12} /> Helpful
+                </button>
+                <button
+                  type="button"
+                  onClick={() => feedback.mutate('unhelpful')}
+                  disabled={feedback.isPending}
+                  style={feedbackBtnStyle('var(--color-danger)')}
+                >
+                  <ThumbsDown size={12} /> Not Helpful
+                </button>
+              </>
+            ) : (
+              <span>Thanks for your feedback.</span>
+            )}
+            <span style={{ flex: 1 }} />
+            <FlagFaqButton faqId={faq.id} />
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function feedbackBtnStyle(color: string): React.CSSProperties {
+  return {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    padding: '4px 10px',
+    border: `1px solid ${color}`,
+    background: 'transparent',
+    borderRadius: 16,
+    color,
+    fontSize: 12,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  };
 }
 
 function RecentQuestionsList() {

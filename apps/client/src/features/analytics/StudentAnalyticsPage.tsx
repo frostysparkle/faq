@@ -10,7 +10,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useStudentHomeStats } from '../stats/queries';
 import { useLeaderboard } from '../stats/queries';
 
-type Range = 'week' | 'month' | 'all';
+type Range = 'day' | 'week' | 'month' | 'all';
 
 export function StudentAnalyticsPage() {
   const { user } = useAuth();
@@ -28,6 +28,9 @@ export function StudentAnalyticsPage() {
       />
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        <RangeChip active={range === 'day'} onClick={() => setRange('day')}>
+          Daily
+        </RangeChip>
         <RangeChip active={range === 'week'} onClick={() => setRange('week')}>
           Weekly
         </RangeChip>
@@ -343,7 +346,10 @@ function RangeChip({
 }
 
 function rangeLabel(r: Range): string {
-  return r === 'week' ? 'last 7 days' : r === 'month' ? 'last 30 days' : 'all-time';
+  if (r === 'day') return 'today';
+  if (r === 'week') return 'last 7 days';
+  if (r === 'month') return 'last 30 days';
+  return 'all-time';
 }
 
 function rankColor(rank: number): string {

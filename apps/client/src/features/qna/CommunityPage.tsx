@@ -18,7 +18,10 @@ import { useCommunityIdleBuckets } from '../stats/queries';
 import type { IdleBucket } from '../stats/api';
 import { useQuestions } from './queries';
 
-const STATUS_FILTERS: Array<'All' | QuestionStatus> = ['All', ...QUESTION_STATUSES];
+const STATUS_FILTERS: Array<'All' | QuestionStatus> = [
+  'All',
+  ...QUESTION_STATUSES.filter((s) => s !== 'duplicate' && s !== 'archived'),
+];
 
 export function CommunityPage() {
   const [searchParams, setSearchParams] = useSearchParams();

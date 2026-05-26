@@ -9,12 +9,12 @@
 //
 // The signed `existingAnswerCheckToken` returned from step 2 is required for both
 // `tagMe` (step 3) and `createQuestion` (step 4) — proving the user saw suggestions.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, ChevronRight } from 'lucide-react';
+import { AlertTriangle, ChevronRight, ImagePlus, X } from 'lucide-react';
 import { z } from 'zod';
 import type { ExistingAnswerCheckResult, QuestionType } from '@samagama/shared';
 import { Card } from '../../components/ui/Card';
@@ -26,14 +26,8 @@ import { qnaApi } from './api';
 
 // Step 1 form. Local schema (not in shared) because this is a UI-only intermediate state.
 const draftSchema = z.object({
-  title: z.string().trim().min(8, 'Title must be at least 8 characters').max(280),
-  description: z.string().trim().min(1, 'Description is required').max(4000),
+  description: z.string().trim().min(8, 'Description must be at least 8 characters').max(4000),
   category: z.string().min(1, 'Pick a category'),
-  screenshotUrl: z
-    .string()
-    .url('Must be a valid URL')
-    .optional()
-    .or(z.literal('').transform(() => undefined)),
 });
 
 type Draft = z.infer<typeof draftSchema>;
@@ -45,6 +39,9 @@ export function AskQuestionPage() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [check, setCheck] = useState<ExistingAnswerCheckResult | null>(null);
   const [type, setType] = useState<QuestionType>('community');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories } = useCategories();
 
@@ -57,7 +54,7 @@ export function AskQuestionPage() {
   const checkMutation = useMutation({
     mutationFn: (input: Draft) =>
       qnaApi.checkExisting({
-        title: input.title,
+        title: deriveTitle(input.description),
         description: input.description,
         category: input.category,
       }),
@@ -78,15 +75,19 @@ export function AskQuestionPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!draft || !check) throw new Error('Draft missing');
+      let screenshotUrl: string | undefined;
+      if (photoFile) {
+        screenshotUrl = await readFileAsDataUrl(photoFile);
+      }
       return qnaApi.createQuestion({
-        title: draft.title,
+        title: deriveTitle(draft.description),
         description: draft.description,
         category: draft.category,
         tags: [],
         type,
-        screenshotUrl: draft.screenshotUrl,
+        screenshotUrl,
         existingAnswerCheckToken: check.token,
       });
     },
@@ -112,14 +113,6 @@ export function AskQuestionPage() {
       {step === 'write' && (
         <Card>
           <form onSubmit={onWrite}>
-            <FormField label="Question title *" error={errors.title?.message}>
-              <input
-                {...register('title')}
-                placeholder="e.g. How do I mark attendance for work from home?"
-                style={inputStyle}
-              />
-            </FormField>
-
             <FormField label="Description *" error={errors.description?.message}>
               <textarea
                 rows={5}
@@ -142,12 +135,72 @@ export function AskQuestionPage() {
               </select>
             </FormField>
 
-            <FormField
-              label="Screenshot URL (optional)"
-              error={errors.screenshotUrl?.message}
-              hint="Paste a link to an uploaded screenshot. Inline upload comes in a later phase."
-            >
-              <input {...register('screenshotUrl')} placeholder="https://…" style={inputStyle} />
+            <FormField label="Screenshot (optional)">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  setPhotoFile(file);
+                  setPhotoPreview(file ? URL.createObjectURL(file) : null);
+                }}
+              />
+              {photoPreview ? (
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <img
+                    src={photoPreview}
+                    alt="Screenshot preview"
+                    style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, display: 'block' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPhotoFile(null);
+                      setPhotoPreview(null);
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 6,
+                      right: 6,
+                      background: 'rgba(0,0,0,0.6)',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: 24,
+                      height: 24,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      color: 'white',
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '10px 16px',
+                    border: '1px dashed var(--color-border)',
+                    borderRadius: 8,
+                    background: 'var(--color-input)',
+                    color: 'var(--color-text-muted)',
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <ImagePlus size={16} /> Upload photo
+                </button>
+              )}
             </FormField>
 
             {checkMutation.isError && (
@@ -489,6 +542,20 @@ function ErrorBanner({ children }: { children: React.ReactNode }) {
       {children}
     </div>
   );
+}
+
+function deriveTitle(description: string): string {
+  const first = description.trim().split('\n')[0].trim();
+  return first.length > 140 ? first.slice(0, 137) + '…' : first;
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 const inputStyle: React.CSSProperties = {
