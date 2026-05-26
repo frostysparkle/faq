@@ -931,7 +931,246 @@ These are additive improvements intended to make moderation faster, safer, and m
 - Keep long lists virtualized or paginated to avoid heavy rendering when queues grow.
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
+Current Concern by Meena 
 
+Students may:
+Forget to include important details.
+Notice mistakes in wording after posting.
+Realize the question is unclear after submission.
+
+Proposed Change
+
+Allow students to edit their Community Q&A question after posting, but only until the first answer is submitted.
+
+Rules
+Student can edit:
+Question title (if applicable).
+Question description.
+Attached screenshots/files.
+Category.
+
+Editing remains enabled while:
+No community answer exists.
+Moderator has not responded.
+Automatically disable editing when:
+First answer is submitted.
+Moderator response is posted.
+
+Reason
+
+This prevents answer context from changing after students have already started responding.
+
+
+
+
+
+
+ Question Deletion Before Answers Arrive
+
+Current Concern
+A student's doubt may already be resolved through Daily meetings.
+Keeping such questions in the moderation queue wastes reviewer time.
+
+Proposed Change
+Allow students to delete their own Community Q&A question while it has no answers.
+
+Rules
+Delete option remains visible only when:
+No answers exist.
+No moderator action has occurred.
+
+Delete option automatically disappears when:
+First answer is submitted.
+Moderator interacts with the question.
+
+Alternative:
+Instead of permanent deletion, provide 'Mark as Resolved'
+This keeps analytics intact while removing the question from active review queues.
+
+ 
+
+
+
+ Personal Questions vs Community Questions
+
+Current Concern
+Students may prefer "Personal Question" for every query because:
+
+More Accurate response.
+Less public visibility.
+
+This could overload moderators.
+
+Proposed Change
+Make Community Q&A the default path.
+
+Suggested Workflow
+	Student submits question.
+	System checks:
+	FAQ.
+	Similar Community Questions.
+	If no answer exists:
+	Question automatically enters Community Q&A.
+
+Personal Questions Should Be Restricted To:
+Account issues.
+Attendance issues.
+Personal evaluation concerns.
+Sensitive personal information.
+Internship-specific private concerns.
+Recommendation
+
+Add a warning:
+
+"Personal Questions should only be used for private or sensitive matters."
+If not followed, there could be a deduction of spurti points
+
+Everything else should flow through Community Q&A.
+
+Spurti Points Distribution Improvements
+Current Concern
+
+If only Top 3 answers receive points Students may stop answering because:
+
+Chances of earning points become very low.
+New contributors lose motivation.
+
+Proposed System
+Award points based on contribution quality rather than ranking position.
+
+Example
+Action	Points
+
+Moderator Approved	+2
+Selected as Best Answer	+5
+Converted into FAQ	+10
+
+Benefits
+Encourages participation.
+Rewards quality.
+New students still earn points.
+Prevents "winner takes all" behaviour.
+
+Negative points for:
+
+Rejected answers.
+Spam.
+Duplicate responses.
+
+
+
+
+
+ 
+Anonymous Community Answers
+
+Current Concern
+Some students may hesitate to answer because:
+Their name is publicly visible.
+Fear of giving an incorrect answer.
+Fear of judgment from peers.
+
+Proposed Change
+Allow anonymous display for students.
+
+Moderator/Admin View Still shows
+
+Student Name
+Student ID
+Contribution history
+
+Benefits
+Increases participation.
+Reduces hesitation.
+Encourages first-time contributors.
+
+Maintains accountability internally.
+
+
+
+
+
+Ranking Visibility Privacy Controls
+
+Current Concern
+Displaying all rankings publicly can discourage lower-ranked students.
+
+Example:
+A student ranked #450 may feel embarrassed.
+
+Proposed Change
+
+Public leader board displays only Top 100 Students
+
+Students Beyond Top 100 Can only see:
+Their own rank.
+Their own statistics.
+
+Example
+Student ranked #450 sees:
+Your Rank: #450
+But other students cannot see who holds rank #450.
+
+Benefits
+Maintains motivation.
+Prevents public comparison pressure.
+Keeps competition healthy.
+
+
+
+
+
+FAQ Feedback Enhancement – Introduce "Outdated" Status
+
+Current Concern
+The current FAQ feedback system only provides:
+
+Helpful
+Unhelpful (or Downvote)
+
+However, an FAQ may become incorrect due to age rather than misinformation.
+
+Students may click Unhelpful even though the answer was historically correct.
+This creates misleading quality metrics and makes it difficult for moderators to identify the real issue.
+
+Proposed Change
+Replace the current  model with:
+
+Helpful
+Unhelpful
+Outdated
+
+When an FAQ receives Outdated reports:
+
+Add an "Outdated Reports" counter to FAQ Management.
+5+ outdated reports- System automatically flags FAQ as: Needs Review
+10+ outdated reports-High Priority Review Alert for Moderators and Admins.
+
+Dashboard Additions
+FAQ Management
+
+Add columns:
+
+Helpful Count
+Unhelpful Count
+Outdated Count
+
+Add filters:
+
+Helpful FAQs
+Flagged FAQs
+Outdated FAQs
+FAQ Quality Monitoring
+
+Add a new dashboard card:
+Outdated FAQs
+
+Displays:
+
+Number of FAQs marked outdated.
+FAQs awaiting review.
+FAQs updated after outdated reports.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Requirements Posted by : Jahnvi Paliwal
 
 Final Parameters :
