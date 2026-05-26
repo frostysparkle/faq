@@ -18,6 +18,7 @@ import {
   MessageSquarePlus,
   Settings,
   Shield,
+  BarChart3,
   Bot,
   Users,
   type LucideIcon,
@@ -41,6 +42,7 @@ export const navByRole: Record<UserRole, NavItem[]> = {
     { label: 'Community Q&A', path: '/community', icon: MessageCircle },
     { section: 'My Activity', label: 'Ask a Question', path: '/ask', icon: MessageSquarePlus },
     { label: 'My Questions', path: '/my-questions', icon: Bookmark },
+    { label: 'Analytics', path: '/analytics', icon: BarChart3 },
     // Recently Viewed and Yaksha Chatbot intentionally removed — see Change Spec §3.
   ],
   moderator: [

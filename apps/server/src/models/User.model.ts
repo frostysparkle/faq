@@ -26,6 +26,8 @@ const userSchema = new Schema(
     status: { type: String, enum: USER_STATUSES, default: 'active', required: true },
     /** Bumped on password change to invalidate outstanding refresh tokens. */
     tokenVersion: { type: Number, default: 0 },
+    /** Spurti Points — earned by contributing to Community Q&A. Default 100 for new students. */
+    spurtiPoints: { type: Number, default: 0, index: true },
     recentlyViewedFaqs: { type: [recentlyViewedSchema], default: [] },
   },
   { timestamps: true },

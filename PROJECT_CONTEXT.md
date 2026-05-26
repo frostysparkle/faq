@@ -134,6 +134,20 @@ Implements Change Spec §6:
 - Approving an answer flips question status to `resolved`.
 - Once a community question has `COMMUNITY_ANSWER_CAP` (10) answers, no more answers accepted (server guard) — only upvote/downvote.
 
+### Spurti Points (built ✅)
+
+Gamification layer encouraging Community Q&A participation. Reward rules live in `packages/shared/src/constants.ts` (`SPURTI_POINTS`):
+
+- **Initial balance**: every new student starts at **100** points (set in `auth.service.register` and the seed script).
+- **Answer approved**: **+10** points (awarded in `moderation.service.approveAnswer`, idempotent — only on first approval transition).
+- **Answer upvoted**: **+5** points per _new_ upvote (awarded in `qna.service.voteAnswer`; cancelling an upvote does NOT subtract — prevents toggle-gaming).
+
+Surfaces:
+
+- `GET /api/stats/student` — 4 home cards (open community Q&A, unanswered, your approved answers, points balance).
+- `GET /api/stats/leaderboard?range=week|month|all` — top 20 students by points balance, with `approvedAnswers` count over the time window. Returns `myRank` if the requester is outside the top 20.
+- `PublicUser.spurtiPoints` is emitted only for student accounts (moderators / admins don't accumulate).
+
 ### RAG Chatbot (planned — Phase 6)
 
 1. Student query -> embed via `EmbeddingProvider`.
@@ -147,32 +161,38 @@ Implements Change Spec §6:
 
 ## Data Model Summaries
 
-| Collection   | Key Fields                                                                                                                   | Notes                                                |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| User         | name, email, passwordHash, role, status, tokenVersion, recentlyViewedFaqs[]                                                  | `email` unique index.                                |
-| Faq          | title, answer, summary, categories[], tags[], status, embedding[], helpfulCount, viewCount                                   | Status: draft/published/outdated/archived.           |
-| Category     | name, slug, keywords[], isActive                                                                                             |                                                      |
-| Tag          | name, slug, keywords[], isActive                                                                                             |                                                      |
-| Question     | title, description, type, status, category, tags[], askedBy, taggedStudents[], moderatorViewedAt, screenshotUrl, answerCount | `type`: personal/community (Change Spec §8.1).       |
-| Answer       | questionId, body, answeredBy, status, upvotes[], downvotes[], embedding[], moderationNote                                    | Status: pending/approved/rejected/needs_changes.     |
-| Flag         | entityType, entityId, reason, status, reportedBy                                                                             | Reasons: incorrect/outdated/duplicate/unclear/other. |
-| ChatSession  | userId, messages[]                                                                                                           | Each message records sources + confidence.           |
-| ChatFeedback | chatSessionId, messageIndex, rating, comment                                                                                 |                                                      |
+| Collection   | Key Fields                                                                                                                   | Notes                                                              |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| User         | name, email, passwordHash, role, status, tokenVersion, **spurtiPoints**, recentlyViewedFaqs[]                                | `email` unique index. `spurtiPoints` indexed for leaderboard sort. |
+| Faq          | title, answer, summary, categories[], tags[], status, embedding[], helpfulCount, viewCount                                   | Status: draft/published/outdated/archived.                         |
+| Category     | name, slug, keywords[], isActive                                                                                             |                                                                    |
+| Tag          | name, slug, keywords[], isActive                                                                                             |                                                                    |
+| Question     | title, description, type, status, category, tags[], askedBy, taggedStudents[], moderatorViewedAt, screenshotUrl, answerCount | `type`: personal/community (Change Spec §8.1).                     |
+| Answer       | questionId, body, answeredBy, status, upvotes[], downvotes[], embedding[], moderationNote                                    | Status: pending/approved/rejected/needs_changes.                   |
+| Flag         | entityType, entityId, reason, status, reportedBy                                                                             | Reasons: incorrect/outdated/duplicate/unclear/other.               |
+| ChatSession  | userId, messages[]                                                                                                           | Each message records sources + confidence.                         |
+| ChatFeedback | chatSessionId, messageIndex, rating, comment                                                                                 |                                                                    |
 
 ---
 
 ## Implementation Status
 
-| Phase                                                                    | Status                                                               |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| 0. Foundation (monorepo, tooling, shared, docs)                          | ✅ Done                                                              |
-| 1. Backend core (Express, Mongo, error handling, auth, RBAC)             | ✅ Done (auth slice)                                                 |
-| 2. Frontend core (Vite, routing, layout, theme, auth flow, query client) | ✅ Done                                                              |
-| 3. FAQ system                                                            | ✅ Done (text search; vector search deferred to Phase 6)             |
-| 4. Community Q&A (incl. Change Spec §5–§6)                               | ✅ Done (multi-step Ask, My Questions tabs, moderation approve flow) |
-| 5. Moderation + Admin                                                    | ⏳ Planned                                                           |
-| 6. RAG chatbot                                                           | ⏳ Planned                                                           |
-| 7. Hardening (tests, security review, perf, a11y)                        | ⏳ Planned                                                           |
+| Phase                                                                    | Status                                                                 |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| 0. Foundation (monorepo, tooling, shared, docs)                          | ✅ Done                                                                |
+| 1. Backend core (Express, Mongo, error handling, auth, RBAC)             | ✅ Done                                                                |
+| 2. Frontend core (Vite, routing, layout, theme, auth flow, query client) | ✅ Done                                                                |
+| 3. FAQ system                                                            | ✅ Done (text search; vector search deferred to Phase 6)               |
+| 4. Community Q&A (Change Spec §5–§6)                                     | ✅ Done (multi-step Ask, My Questions, moderation approve flow)        |
+| 5. Admin + Moderator dashboards (Dashboard Spec)                         | ✅ Done (FAQ Management, Unresolved Questions, Chatbot Feedback shell) |
+| 5b. Student Home + Analytics + Spurti Points                             | ✅ Done (4 home cards, content tabs, leaderboard, range filters)       |
+| 6. RAG chatbot                                                           | ⏳ Planned (only this blocks the remaining checklist gaps)             |
+| 7. Hardening (security review, perf, a11y, full test coverage)           | ⏳ Planned                                                             |
+
+### Spec coverage at a glance
+
+- Student Dashboard Spec: 33 / 36 (~92%) — remaining 3 blocked on Phase 6
+- Admin & Moderator Dashboard Spec: 43 / 44 (~98%) — remaining 1 blocked on Phase 6
 
 ---
 
@@ -192,7 +212,12 @@ cp apps/server/.env.example apps/server/.env
 cp apps/client/.env.example apps/client/.env
 # Then edit apps/server/.env and set JWT_ACCESS_SECRET and JWT_REFRESH_SECRET (≥32 chars each).
 
-# 4. Run dev servers (in two terminals)
+# 4. Seed accounts and content (idempotent — safe to re-run)
+npm --workspace @samagama/server run seed:accounts        # 8 students + 3 moderators + 2 admins
+npm --workspace @samagama/server run seed:faqs            # 10 categories, 18 tags, 8 published FAQs
+npm --workspace @samagama/server run seed:chat-feedback   # demo chatbot feedback rows
+
+# 5. Run dev servers (in two terminals)
 npm run dev:server   # http://localhost:4000
 npm run dev:client   # http://localhost:5173
 ```
@@ -202,6 +227,18 @@ Generate a secure JWT secret:
 ```bash
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
+
+### Seeded Accounts
+
+> Local-development credentials only. The seed script refuses to run with `NODE_ENV=production`. The full table also lives in [`README.md` — Appendix A](./README.md#appendix-a--implementation-notes-non-prd).
+
+| Role      | Example login                                       | Password         |
+| --------- | --------------------------------------------------- | ---------------- |
+| Student   | abhishek@samagama.test (and 7 others, see appendix) | `Student@2026`   |
+| Moderator | kushagra@samagama.test (and 2 others)               | `Moderator@2026` |
+| Admin     | divy@samagama.test (and 1 other)                    | `Admin@2026`     |
+
+Each student starts with **100 Spurti Points**. Re-running `seed:accounts` preserves existing balances and Q&A activity — only `name`, `role`, and `passwordHash` are refreshed.
 
 ---
 

@@ -11,6 +11,7 @@ import { Types, type FilterQuery } from 'mongoose';
 import jwt from 'jsonwebtoken';
 import {
   COMMUNITY_ANSWER_CAP,
+  SPURTI_POINTS,
   type AnswerCreateInput,
   type CheckExistingInput,
   type ExistingAnswerCheckResult,
@@ -24,11 +25,29 @@ import {
 import { FaqModel } from '../models/Faq.model.js';
 import { QuestionModel, type QuestionDocument } from '../models/Question.model.js';
 import { AnswerModel, type AnswerDocument } from '../models/Answer.model.js';
+import { UserModel } from '../models/User.model.js';
 import { ApiError } from '../utils/api-error.js';
+import { createTtlCache } from '../utils/ttl-cache.js';
 import { env } from '../config/env.js';
 
 /** Signed token TTL for the existing-answer check (15 minutes). Long enough to read suggestions, short enough to limit replay. */
 const EXISTING_CHECK_TTL = 15 * 60;
+
+/**
+ * In-memory cache for the FAQ + community-question similarity lookup.
+ * TTL of 60 seconds covers the common pattern of a student clicking "Check Existing Answers"
+ * twice in quick succession (e.g. after editing the description) without hitting the text
+ * indexes again. Cache key includes userId so each user gets a freshly-signed token.
+ */
+const checkExistingCache = createTtlCache<{
+  faqMatches: PublicFaqMatch[];
+  questionMatches: PublicQuestionMatch[];
+}>({ ttlMs: 60_000, maxEntries: 1000 });
+
+/** Normalize free text so trivial differences (case, extra whitespace) hit the same cache row. */
+function normalizeForCache(text: string): string {
+  return text.trim().toLowerCase().replace(/\s+/g, ' ');
+}
 
 interface CheckTokenPayload {
   uid: string;
@@ -142,47 +161,64 @@ export const qnaService = {
     input: CheckExistingInput,
     userId: string,
   ): Promise<ExistingAnswerCheckResult> {
-    const queryText = `${input.title} ${input.description ?? ''}`.trim();
+    const normalizedTitle = normalizeForCache(input.title);
+    const normalizedDescription = normalizeForCache(input.description ?? '');
+    const cacheKey = `${userId}|${normalizedTitle}|${normalizedDescription}`;
 
-    const [faqMatches, questionMatches] = await Promise.all([
-      FaqModel.find(
-        { status: 'published', $text: { $search: queryText } },
-        { score: { $meta: 'textScore' } },
-      )
-        .sort({ score: { $meta: 'textScore' } })
-        .limit(5)
-        .lean(),
-      // Change Spec §6.4: only OPEN/answered community questions, excluding the requester's own.
-      QuestionModel.find(
-        {
-          type: 'community',
-          status: { $in: ['open', 'answered'] },
-          askedBy: { $ne: new Types.ObjectId(userId) },
-          $text: { $search: queryText },
-        },
-        { score: { $meta: 'textScore' } },
-      )
-        .sort({ score: { $meta: 'textScore' } })
-        .limit(2)
-        .lean(),
-    ]);
+    let matchedFaqs: PublicFaqMatch[];
+    let matchedQuestions: PublicQuestionMatch[];
 
-    const matchedFaqs: PublicFaqMatch[] = faqMatches.map((f) => ({
-      id: f._id.toString(),
-      title: f.title,
-      summary: f.summary ?? undefined,
-      answer: f.answer,
-      score: (f as { score?: number }).score ?? 0,
-    }));
+    const cached = checkExistingCache.get(cacheKey);
+    if (cached) {
+      matchedFaqs = cached.faqMatches;
+      matchedQuestions = cached.questionMatches;
+    } else {
+      const queryText = `${input.title} ${input.description ?? ''}`.trim();
 
-    const matchedQuestions: PublicQuestionMatch[] = questionMatches.map((q) => ({
-      id: q._id.toString(),
-      title: q.title,
-      description: q.description,
-      answerCount: q.answerCount,
-      score: (q as { score?: number }).score ?? 0,
-    }));
+      const [faqRows, questionRows] = await Promise.all([
+        FaqModel.find(
+          { status: 'published', $text: { $search: queryText } },
+          { score: { $meta: 'textScore' } },
+        )
+          .sort({ score: { $meta: 'textScore' } })
+          .limit(5)
+          .lean(),
+        // Change Spec §6.4: only OPEN/answered community questions, excluding the requester's own.
+        QuestionModel.find(
+          {
+            type: 'community',
+            status: { $in: ['open', 'answered'] },
+            askedBy: { $ne: new Types.ObjectId(userId) },
+            $text: { $search: queryText },
+          },
+          { score: { $meta: 'textScore' } },
+        )
+          .sort({ score: { $meta: 'textScore' } })
+          .limit(2)
+          .lean(),
+      ]);
 
+      matchedFaqs = faqRows.map((f) => ({
+        id: f._id.toString(),
+        title: f.title,
+        summary: f.summary ?? undefined,
+        answer: f.answer,
+        score: (f as { score?: number }).score ?? 0,
+      }));
+
+      matchedQuestions = questionRows.map((q) => ({
+        id: q._id.toString(),
+        title: q.title,
+        description: q.description,
+        answerCount: q.answerCount,
+        score: (q as { score?: number }).score ?? 0,
+      }));
+
+      checkExistingCache.set(cacheKey, { faqMatches: matchedFaqs, questionMatches: matchedQuestions });
+    }
+
+    // Token is freshly signed every call — never cached. The cached payload is only the
+    // (deterministic, user-scoped) similarity result.
     return {
       token: signCheckToken(userId, input.title),
       matchedFaqs,
@@ -224,6 +260,12 @@ export const qnaService = {
       askedBy: userId,
       existingAnswerCheck: { checkedAt: new Date() },
     });
+
+    // Cache invalidation: a new community question changes what `checkExisting` would
+    // return for similar drafts. The cheapest correct fix is to drop the whole map; the
+    // cache will warm again within seconds and stay correct.
+    if (input.type === 'community') checkExistingCache.clear();
+
     return this.getQuestionById(created.id, userId, 'student');
   },
 
@@ -233,11 +275,31 @@ export const qnaService = {
     type?: 'personal' | 'community';
     status?: string;
     mineOnly?: boolean;
+    /** Idle bucket filter; only applies to community questions still in `open`/`answered`. */
+    idle?: 'last24h' | 'over3days' | 'over1week';
   }): Promise<PublicQuestion[]> {
     const filter: FilterQuery<QuestionDocument> = {};
 
     if (opts.type) filter.type = opts.type;
     if (opts.status) filter.status = opts.status;
+
+    // Idle-bucket filter — same mutually-exclusive math as the stats aggregation so
+    // the dashboard card and the filter chip always agree on what's in each bucket.
+    if (opts.idle) {
+      const now = Date.now();
+      const day = 24 * 60 * 60 * 1000;
+      // Idle filtering only makes sense for the open queue.
+      filter.type = 'community';
+      filter.status = filter.status ?? { $in: ['open', 'answered'] };
+      if (opts.idle === 'last24h') {
+        filter.updatedAt = { $gte: new Date(now - day) };
+      } else if (opts.idle === 'over3days') {
+        // Middle bucket: 24h–7d window so cards + chips always sum to totalOpen.
+        filter.updatedAt = { $lt: new Date(now - day), $gte: new Date(now - 7 * day) };
+      } else {
+        filter.updatedAt = { $lt: new Date(now - 7 * day) };
+      }
+    }
 
     // Visibility:
     // - Students see community questions + their own personal questions.
@@ -246,7 +308,8 @@ export const qnaService = {
       const ownObjectId = new Types.ObjectId(opts.userId);
       if (opts.mineOnly) {
         filter.askedBy = ownObjectId;
-      } else {
+      } else if (!opts.idle) {
+        // Don't OR back to non-community when idle is set — idle implies community-only.
         filter.$or = [{ type: 'community' }, { askedBy: ownObjectId }];
       }
     } else if (opts.mineOnly) {
@@ -410,6 +473,17 @@ export const qnaService = {
     }
 
     await AnswerModel.updateOne({ _id: answerId }, update);
+
+    // Spurti Points: a *new* upvote on an approved answer rewards the answer's author.
+    // Pulling an upvote (cancelling) does NOT subtract points — the answer was helpful at
+    // some point in its life, and we don't want gaming the score by toggling.
+    if (direction === 'up' && !had.up) {
+      await UserModel.updateOne(
+        { _id: answer.answeredBy },
+        { $inc: { spurtiPoints: SPURTI_POINTS.ANSWER_UPVOTED } },
+      );
+    }
+
     const fresh = await AnswerModel.findById(answerId).lean();
     return {
       upvoteCount: fresh?.upvoteCount ?? 0,

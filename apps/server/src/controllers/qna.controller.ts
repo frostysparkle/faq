@@ -34,12 +34,18 @@ export const qnaController = {
     const type = req.query.type as 'personal' | 'community' | undefined;
     const status = req.query.status as string | undefined;
     const mineOnly = req.query.mine === 'true';
+    const idleParam = req.query.idle as string | undefined;
+    const idle =
+      idleParam === 'last24h' || idleParam === 'over3days' || idleParam === 'over1week'
+        ? idleParam
+        : undefined;
     const items = await qnaService.listQuestions({
       role: req.user.role,
       userId: req.user.id,
       type,
       status,
       mineOnly,
+      idle,
     });
     return ok(res, items);
   },

@@ -1498,3 +1498,69 @@ The MVP is complete when:
 Build the MVP from scratch unless an existing GitHub repository already has at least 60% of the required modules. A generic FAQ repository may save time on UI but will likely not include semantic duplicate detection, moderated Q&A, role-specific dashboards, and MongoDB Vector Search. Starting from scratch with a clean MERN architecture may be faster and safer than heavily modifying an unsuitable repo.
 
 Use the single technology stack defined in the Product Summary section. Avoid adding additional databases, backend frameworks, Python services, or separate vector stores during MVP development.
+
+---
+
+# Appendix A — Implementation Notes (Non-PRD)
+
+> The sections above are the original Product Requirements Document. Everything below this line is engineering documentation added during implementation. Edit freely without touching the PRD body above.
+
+## Local Development Accounts
+
+Seed all accounts in one command:
+
+```bash
+npm --workspace @samagama/server run seed:accounts
+```
+
+The script is idempotent — re-running upserts user rows and preserves existing Spurti Points balances.
+
+### Students
+
+Each student starts with **100 Spurti Points** (configurable via `SPURTI_POINTS.INITIAL_BALANCE` in `packages/shared/src/constants.ts`).
+
+| #   | Name      | Email                   | Password     |
+| --- | --------- | ----------------------- | ------------ |
+| 1   | Abhishek  | abhishek@samagama.test  | Student@2026 |
+| 2   | Meena     | meena@samagama.test     | Student@2026 |
+| 3   | Harshdeep | harshdeep@samagama.test | Student@2026 |
+| 4   | Harshitha | harshitha@samagama.test | Student@2026 |
+| 5   | Spandan   | spandan@samagama.test   | Student@2026 |
+| 6   | Tejswini  | tejswini@samagama.test  | Student@2026 |
+| 7   | Ravi      | ravi@samagama.test      | Student@2026 |
+| 8   | Gazal     | gazal@samagama.test     | Student@2026 |
+
+### Moderators
+
+| #   | Name     | Email                  | Password       |
+| --- | -------- | ---------------------- | -------------- |
+| 1   | Kushagra | kushagra@samagama.test | Moderator@2026 |
+| 2   | Jahnvi   | jahnvi@samagama.test   | Moderator@2026 |
+| 3   | Joyita   | joyita@samagama.test   | Moderator@2026 |
+
+### Admins
+
+| #   | Name     | Email                  | Password   |
+| --- | -------- | ---------------------- | ---------- |
+| 1   | Divy     | divy@samagama.test     | Admin@2026 |
+| 2   | Anshuman | anshuman@samagama.test | Admin@2026 |
+
+> **Note:** These are development-only credentials seeded against a local MongoDB. The seed script refuses to run with `NODE_ENV=production`. Rotate the passwords before any deployment.
+
+## Spurti Points Rules
+
+Defined in [`packages/shared/src/constants.ts`](packages/shared/src/constants.ts):
+
+| Event                                         | Points awarded |
+| --------------------------------------------- | -------------- |
+| Initial balance for a new student             | +100           |
+| Your peer answer is approved by a moderator   | +10            |
+| A new upvote is added to your approved answer | +5             |
+
+Cancelling an upvote does **not** subtract points (prevents gaming the score by toggling). Moderators and admins do not accumulate points.
+
+## Engineering Documentation
+
+- [`PROJECT_CONTEXT.md`](./PROJECT_CONTEXT.md) — architecture map, conventions, current implementation status.
+- [`samagama.md`](./samagama.md) — append-only engineering log (every meaningful change documents what / why / tradeoffs).
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — setup, verification gates, commit style.

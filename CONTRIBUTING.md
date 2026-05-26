@@ -14,11 +14,20 @@ This is a monorepo built from a fixed PRD (see [`README.md`](./README.md)) and a
 ```bash
 npm install
 npm run build:shared
-cp apps/server/.env.example apps/server/.env   # then fill secrets
+
+cp apps/server/.env.example apps/server/.env   # then fill JWT secrets (≥32 chars each)
 cp apps/client/.env.example apps/client/.env
+
+# Seed (idempotent — safe to re-run)
+npm --workspace @samagama/server run seed:accounts
+npm --workspace @samagama/server run seed:faqs
+npm --workspace @samagama/server run seed:chat-feedback
+
 npm run dev:server
 npm run dev:client   # in another terminal
 ```
+
+Local accounts are listed in [`README.md` — Appendix A](./README.md#appendix-a--implementation-notes-non-prd). Re-running `seed:accounts` preserves Spurti Points balances and Q&A activity; it only refreshes name / role / password hash.
 
 ## Verify before opening a PR
 

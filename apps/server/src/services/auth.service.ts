@@ -7,6 +7,7 @@ import type {
   RegisterInput,
   UserRole,
 } from '@samagama/shared';
+import { SPURTI_POINTS } from '@samagama/shared';
 import { UserModel, type UserDocument } from '../models/User.model.js';
 import { ApiError } from '../utils/api-error.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
@@ -20,6 +21,8 @@ function toPublicUser(user: UserDocument): PublicUser {
     email: user.email,
     role: user.role,
     status: user.status,
+    // Surface Spurti Points only on student accounts — moderators/admins don't earn them.
+    ...(user.role === 'student' ? { spurtiPoints: user.spurtiPoints ?? 0 } : {}),
     createdAt: user.createdAt.toISOString(),
   };
 }
@@ -46,6 +49,8 @@ export const authService = {
       email: input.email,
       passwordHash,
       role,
+      // Students start with the seed balance; moderators/admins remain at 0.
+      spurtiPoints: role === 'student' ? SPURTI_POINTS.INITIAL_BALANCE : 0,
     });
 
     return buildAuthPayload(user);

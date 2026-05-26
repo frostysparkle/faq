@@ -9,10 +9,8 @@
 //  - Upvote/downvote on approved answers (own answers can't be voted on; server enforces).
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronLeft, ThumbsDown, ThumbsUp } from 'lucide-react';
-import { answerCreateSchema, COMMUNITY_ANSWER_CAP, type AnswerCreateInput } from '@samagama/shared';
+import { ChevronDown, ChevronLeft, ChevronUp, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { COMMUNITY_ANSWER_CAP } from '@samagama/shared';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -31,7 +29,6 @@ export function QuestionDetailPage() {
   const [reveal, setReveal] = useState<'top' | 'three' | 'all'>('top');
 
   // Pre-answer prompt state.
-  const [askedPrompt, setAskedPrompt] = useState(false);
   const [showAnswerForm, setShowAnswerForm] = useState(false);
 
   const visibleAnswers = useMemo(() => {
@@ -76,20 +73,21 @@ export function QuestionDetailPage() {
       </button>
 
       <Card style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
           {question.category && <Badge color="accent">{question.category.name}</Badge>}
           <Badge color={question.type === 'personal' ? 'warning' : 'default'}>
             {question.type}
           </Badge>
           <Badge color={statusColor(question.status)}>{question.status}</Badge>
         </div>
-        <h1 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 700 }}>{question.title}</h1>
+        {/* Spec: hide the title; show the description verbatim. */}
         <div
           style={{
-            fontSize: 13,
+            fontSize: 15,
             color: 'var(--color-text)',
             lineHeight: 1.6,
             whiteSpace: 'pre-wrap',
+            fontWeight: 500,
           }}
         >
           {question.description}
@@ -108,15 +106,8 @@ export function QuestionDetailPage() {
         </Card>
       ) : (
         <>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
-            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
-              Answers ({allApprovedCount}/{COMMUNITY_ANSWER_CAP})
-            </h2>
-          </div>
-
-          {aLoading && <Card>Loading answers…</Card>}
-
-          {!aLoading && allApprovedCount === 0 && (
+          {/* Answers — only visible when answers exist; behind a dropdown toggle (Spec). */}
+          {!aLoading && allApprovedCount === 0 ? (
             <Card style={{ textAlign: 'center', padding: 28 }}>
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
                 No approved answers yet
@@ -125,62 +116,42 @@ export function QuestionDetailPage() {
                 Be the first to share what worked for you.
               </div>
             </Card>
-          )}
-
-          {visibleAnswers.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
-              {visibleAnswers.map((a) => (
-                <AnswerCard
-                  key={a.id}
-                  answer={a}
-                  questionId={question.id}
-                  canVote={!!user && user.id !== a.author.id}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Progressive reveal controls */}
-          {allApprovedCount > visibleAnswers.length && (
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              {reveal === 'top' && allApprovedCount > 1 && (
-                <Button variant="ghost" size="sm" onClick={() => setReveal('three')}>
-                  Show top 3
-                </Button>
-              )}
-              {(reveal === 'top' || reveal === 'three') && allApprovedCount > 3 && (
-                <Button variant="ghost" size="sm" onClick={() => setReveal('all')}>
-                  Show all ({allApprovedCount})
-                </Button>
-              )}
-            </div>
+          ) : (
+            <AnswerDropdown
+              count={allApprovedCount}
+              cap={COMMUNITY_ANSWER_CAP}
+              isLoading={aLoading}
+              answers={visibleAnswers}
+              questionId={question.id}
+              userId={user?.id}
+              hiddenCount={allApprovedCount - visibleAnswers.length}
+              reveal={reveal}
+              setReveal={setReveal}
+            />
           )}
 
           {/* Answer authoring */}
           {!isOwnQuestion && question.status !== 'resolved' && question.status !== 'archived' && (
-            <Card style={{ marginTop: 16 }}>
+            <div style={{ marginTop: 16 }}>
               {capReached ? (
-                <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
-                  This question has reached the maximum number of answers ({COMMUNITY_ANSWER_CAP}).
-                  You can still upvote or downvote existing answers.
-                </div>
-              ) : !askedPrompt && allApprovedCount > 0 ? (
-                <PreAnswerPrompt
-                  onYes={() => {
-                    setAskedPrompt(true);
+                <Card>
+                  <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
+                    This question has reached the maximum number of answers ({COMMUNITY_ANSWER_CAP}
+                    ). You can still upvote or downvote existing answers.
+                  </div>
+                </Card>
+              ) : !showAnswerForm ? (
+                <Button onClick={() => setShowAnswerForm(true)}>Answer</Button>
+              ) : (
+                <AnswerPopup
+                  questionId={question.id}
+                  showConfirmation={allApprovedCount > 0}
+                  onClose={() => {
                     setShowAnswerForm(false);
                   }}
-                  onNo={() => {
-                    setAskedPrompt(true);
-                    setShowAnswerForm(true);
-                  }}
                 />
-              ) : showAnswerForm || allApprovedCount === 0 ? (
-                <AnswerForm questionId={question.id} />
-              ) : (
-                <Button onClick={() => setShowAnswerForm(true)}>Add an answer</Button>
               )}
-            </Card>
+            </div>
           )}
         </>
       )}
@@ -188,21 +159,229 @@ export function QuestionDetailPage() {
   );
 }
 
-function PreAnswerPrompt({ onYes, onNo }: { onYes: () => void; onNo: () => void }) {
+function AnswerDropdown({
+  count,
+  cap,
+  isLoading,
+  answers,
+  questionId,
+  userId,
+  hiddenCount,
+  reveal,
+  setReveal,
+}: {
+  count: number;
+  cap: number;
+  isLoading: boolean;
+  answers: import('@samagama/shared').PublicAnswer[];
+  questionId: string;
+  userId: string | undefined;
+  hiddenCount: number;
+  reveal: 'top' | 'three' | 'all';
+  setReveal: (r: 'top' | 'three' | 'all') => void;
+}) {
+  const [open, setOpen] = useState(true);
+
   return (
     <div>
-      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>
-        Is the top-voted answer correct?
-      </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <Button variant="success" size="sm" onClick={onYes}>
-          Yes, it answered my question
-        </Button>
-        <Button variant="ghost" size="sm" onClick={onNo}>
-          No, I have a different answer
-        </Button>
-      </div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '10px 14px',
+          background: 'var(--color-card)',
+          border: '1px solid var(--color-border)',
+          borderRadius: 12,
+          fontSize: 14,
+          fontWeight: 600,
+          color: 'var(--color-text)',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          marginBottom: open ? 12 : 16,
+        }}
+      >
+        <span>
+          {count}/{cap} approved answer{count === 1 ? '' : 's'}
+        </span>
+        {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+      </button>
+
+      {open && (
+        <>
+          {isLoading && <Card>Loading answers…</Card>}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+            {answers.map((a) => (
+              <AnswerCard
+                key={a.id}
+                answer={a}
+                questionId={questionId}
+                canVote={!!userId && userId !== a.author.id}
+              />
+            ))}
+          </div>
+          {hiddenCount > 0 && (
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              {reveal === 'top' && count > 1 && (
+                <Button variant="ghost" size="sm" onClick={() => setReveal('three')}>
+                  Show top 3
+                </Button>
+              )}
+              {(reveal === 'top' || reveal === 'three') && count > 3 && (
+                <Button variant="ghost" size="sm" onClick={() => setReveal('all')}>
+                  Show all ({count})
+                </Button>
+              )}
+            </div>
+          )}
+        </>
+      )}
     </div>
+  );
+}
+
+function AnswerPopup({
+  questionId,
+  showConfirmation,
+  onClose,
+}: {
+  questionId: string;
+  showConfirmation: boolean;
+  onClose: () => void;
+}) {
+  const [confirmedAnswersInadequate, setConfirmedAnswersInadequate] = useState(!showConfirmation);
+  const [assumeCorrect, setAssumeCorrect] = useState(false);
+  const submit = useSubmitAnswer(questionId);
+  const [body, setBody] = useState('');
+  const [bodyError, setBodyError] = useState<string | null>(null);
+
+  const handleSubmit = async () => {
+    if (body.trim().length < 10) {
+      setBodyError('Please write at least 10 characters.');
+      return;
+    }
+    if (!assumeCorrect) {
+      setBodyError('Please confirm that you believe your answer is correct.');
+      return;
+    }
+    setBodyError(null);
+    await submit.mutateAsync({ body });
+    setBody('');
+    onClose();
+  };
+
+  return (
+    <Card
+      style={{
+        borderColor: 'var(--color-primary)',
+        background: 'var(--color-card)',
+      }}
+    >
+      {/* Spec: confirmation popup before allowing the answer form. */}
+      {showConfirmation && !confirmedAnswersInadequate && (
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>
+            Are you sure the existing answers are not up to the mark?
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              No, the existing answers are fine
+            </Button>
+            <Button size="sm" onClick={() => setConfirmedAnswersInadequate(true)}>
+              Yes, I'll add a new answer
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {confirmedAnswersInadequate && (
+        <div>
+          <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>
+            Your answer
+          </label>
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={5}
+            placeholder="Share what worked for you. Be specific and link to official sources where possible."
+            style={{
+              width: '100%',
+              background: 'var(--color-input)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 8,
+              padding: '10px 12px',
+              color: 'var(--color-text)',
+              fontSize: 13,
+              fontFamily: 'inherit',
+              outline: 'none',
+              resize: 'vertical',
+              boxSizing: 'border-box',
+            }}
+          />
+
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginTop: 10,
+              fontSize: 12,
+              color: 'var(--color-text-muted)',
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={assumeCorrect}
+              onChange={(e) => setAssumeCorrect(e.target.checked)}
+              style={{ accentColor: 'var(--color-primary)' }}
+            />
+            I assume that the answer I provided is correct.
+          </label>
+
+          {bodyError && (
+            <div role="alert" style={{ marginTop: 8, fontSize: 12, color: 'var(--color-danger)' }}>
+              {bodyError}
+            </div>
+          )}
+          {submit.isError && (
+            <div
+              role="alert"
+              style={{
+                marginTop: 8,
+                background: 'var(--color-danger-bg)',
+                color: 'var(--color-danger)',
+                borderRadius: 8,
+                padding: '6px 10px',
+                fontSize: 12,
+              }}
+            >
+              {submit.error instanceof Error ? submit.error.message : 'Could not submit answer'}
+            </div>
+          )}
+
+          <div style={{ marginTop: 10, fontSize: 12, color: 'var(--color-text-muted)' }}>
+            Your answer will be reviewed by a moderator before it appears publicly.
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 10, justifyContent: 'flex-end' }}>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={submit.isPending || !assumeCorrect || body.trim().length < 10}
+            >
+              {submit.isPending ? 'Submitting…' : 'Submit answer'}
+            </Button>
+          </div>
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -293,73 +472,6 @@ function VoteButton({
     >
       {children}
     </button>
-  );
-}
-
-function AnswerForm({ questionId }: { questionId: string }) {
-  const submit = useSubmitAnswer(questionId);
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<AnswerCreateInput>({ resolver: zodResolver(answerCreateSchema) });
-
-  return (
-    <form
-      onSubmit={handleSubmit(async (values) => {
-        await submit.mutateAsync(values);
-        reset();
-      })}
-    >
-      <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>
-        Your answer
-      </label>
-      <textarea
-        rows={4}
-        {...register('body')}
-        placeholder="Share what worked for you. Be specific and link to official sources where possible."
-        style={{
-          width: '100%',
-          background: 'var(--color-input)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 8,
-          padding: '10px 12px',
-          color: 'var(--color-text)',
-          fontSize: 13,
-          fontFamily: 'inherit',
-          outline: 'none',
-          resize: 'vertical',
-          boxSizing: 'border-box',
-        }}
-      />
-      {errors.body && (
-        <div style={{ fontSize: 12, color: 'var(--color-danger)', marginTop: 4 }}>
-          {errors.body.message}
-        </div>
-      )}
-      {submit.isError && (
-        <div
-          role="alert"
-          style={{
-            background: 'var(--color-danger-bg)',
-            color: 'var(--color-danger)',
-            borderRadius: 8,
-            padding: '8px 12px',
-            marginTop: 8,
-            fontSize: 13,
-          }}
-        >
-          {submit.error instanceof Error ? submit.error.message : 'Could not submit answer'}
-        </div>
-      )}
-      <div style={{ marginTop: 10, fontSize: 12, color: 'var(--color-text-muted)' }}>
-        Your answer will be reviewed by a moderator before it appears publicly.
-      </div>
-      <Button type="submit" disabled={isSubmitting || submit.isPending} style={{ marginTop: 10 }}>
-        {submit.isPending ? 'Submitting…' : 'Submit answer'}
-      </Button>
-    </form>
   );
 }
 

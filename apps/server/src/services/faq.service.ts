@@ -124,6 +124,10 @@ export const faqService = {
         case 'helpful':
           sort = { helpfulCount: -1, updatedAt: -1 };
           break;
+        case 'added':
+          // "Recently added" — use publishedAt for true creation order, fall back to createdAt.
+          sort = { publishedAt: -1, createdAt: -1 };
+          break;
         case 'relevance':
         case 'recent':
         default:

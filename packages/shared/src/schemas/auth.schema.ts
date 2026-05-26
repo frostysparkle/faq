@@ -32,6 +32,8 @@ export const publicUserSchema = z.object({
   email: z.string().email(),
   role: z.enum(USER_ROLES),
   status: z.enum(USER_STATUSES),
+  /** Spurti Points balance — only emitted for students; undefined for moderators/admins. */
+  spurtiPoints: z.number().int().optional(),
   createdAt: z.string(),
 });
 

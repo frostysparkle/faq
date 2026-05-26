@@ -1,42 +1,56 @@
-// Moderation dashboard. Dashboard Spec: TWO main cards (Unresolved Questions, Flagged FAQs)
-// plus the shared idle-bucket row added by the Cache + Idle spec.
+// Admin overview. Surfaces the same idle-bucket counts the moderators see, plus the
+// FAQ-management quick-stats so an admin gets a single-screen system view.
 import { useNavigate } from 'react-router-dom';
-import { Flag, MessageSquare, ChevronRight } from 'lucide-react';
+import { Flag, MessageSquare, ChevronRight, BookOpen } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { SectionHeader } from '../../components/ui/SectionHeader';
-import { useModeratorStats } from '../faq/queries';
+import { useFaqStats, useModeratorStats } from '../faq/queries';
 import { IdleBucketCards } from '../stats/IdleBucketCards';
 
-export function ModerationOverviewPage() {
+export function AdminOverviewPage() {
   const navigate = useNavigate();
-  const { data, isLoading } = useModeratorStats();
+  const { data: modStats } = useModeratorStats();
+  const { data: faqStats } = useFaqStats();
 
   return (
     <div>
-      <SectionHeader title="Moderation Dashboard" sub="Items requiring your attention." />
+      <SectionHeader title="Admin Overview" sub="Portal health at a glance." />
 
       <IdleBucketCards />
 
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
+          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
           gap: 14,
+          marginBottom: 24,
         }}
       >
-        <DashboardCard
+        <OverviewCard
           label="Unresolved Questions"
-          value={data?.unresolvedQuestions ?? (isLoading ? '…' : 0)}
+          value={modStats?.unresolvedQuestions ?? '…'}
           icon={MessageSquare}
           color="var(--color-warning)"
           onClick={() => navigate('/moderation/unresolved')}
         />
-        <DashboardCard
+        <OverviewCard
           label="Flagged FAQs"
-          value={data?.flaggedFaqs ?? (isLoading ? '…' : 0)}
+          value={modStats?.flaggedFaqs ?? '…'}
+          sub={
+            modStats ? `${modStats.flaggedFaqPercentage.toFixed(1)}% of published` : undefined
+          }
           icon={Flag}
           color="var(--color-danger)"
-          sub={data ? `${data.flaggedFaqPercentage.toFixed(1)}% of published` : undefined}
+          onClick={() => navigate('/admin/faqs')}
+        />
+        <OverviewCard
+          label="Published FAQs"
+          value={faqStats?.publishedFaqs ?? '…'}
+          sub={
+            faqStats ? `${faqStats.helpfulPercentage.toFixed(1)}% helpful overall` : undefined
+          }
+          icon={BookOpen}
+          color="var(--color-primary)"
           onClick={() => navigate('/admin/faqs')}
         />
       </div>
@@ -44,19 +58,19 @@ export function ModerationOverviewPage() {
   );
 }
 
-function DashboardCard({
+function OverviewCard({
   label,
   value,
+  sub,
   icon: Icon,
   color,
-  sub,
   onClick,
 }: {
   label: string;
   value: number | string;
-  icon: typeof MessageSquare;
-  color: string;
   sub?: string;
+  icon: typeof Flag;
+  color: string;
   onClick: () => void;
 }) {
   return (

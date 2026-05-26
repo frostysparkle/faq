@@ -5,8 +5,6 @@ import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import { loginSchema, type LoginInput } from '@samagama/shared';
 import { useAuth } from './AuthProvider';
-// DEV-ONLY: see DevCredentials.tsx for removal instructions.
-import { DevCredentials } from './DevCredentials';
 
 export function LoginPage() {
   const { user, login } = useAuth();
@@ -17,7 +15,6 @@ export function LoginPage() {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
 
@@ -34,14 +31,6 @@ export function LoginPage() {
     } catch (err) {
       setServerError(err instanceof Error ? err.message : 'Login failed');
     }
-  };
-
-  // DEV-ONLY: fills the form with a preset and submits in one click.
-  // Guarded by `import.meta.env.DEV` at render time so this code is dead in production.
-  const handleDevPreset = (creds: LoginInput) => {
-    setValue('email', creds.email, { shouldValidate: true });
-    setValue('password', creds.password, { shouldValidate: true });
-    void onSubmit(creds);
   };
 
   return (
@@ -133,9 +122,6 @@ export function LoginPage() {
         >
           {isSubmitting ? 'Signing in…' : 'Sign in'}
         </button>
-
-        {/* DEV-ONLY: tree-shaken from production builds via import.meta.env.DEV. */}
-        {import.meta.env.DEV && <DevCredentials onSelect={handleDevPreset} />}
       </form>
     </div>
   );

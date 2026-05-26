@@ -15,6 +15,7 @@
     "lint": "eslint src --ext .ts",
     "seed": "tsx src/scripts/seed.ts",
     "seed:dev-users": "tsx src/scripts/seed-dev-users.ts",
+    "seed:accounts": "tsx src/scripts/seed-real-accounts.ts",
     "seed:faqs": "tsx src/scripts/seed-faqs.ts",
     "seed:chat-feedback": "tsx src/scripts/seed-chat-feedback.ts"
   },

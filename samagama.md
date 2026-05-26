@@ -461,7 +461,6 @@ The Dashboard Spec called these three items "scoped out". Bringing them in now k
 - Build: ✅ client 432.47 KB / 127.12 KB gzip
 - Live API smoke: ✅ all three deliverables verified end-to-end
 
-
 ---
 
 ## 2026-05-25 — Checklist follow-up: 4 partials closed
@@ -469,11 +468,13 @@ The Dashboard Spec called these three items "scoped out". Bringing them in now k
 Closing items #9, #21, #32, #35 from the verification checklist. Brings the implementation score from 29/36 to 33/36; remaining gaps are all chatbot-dependent (Phase 6) or upload-dependent (Phase 7).
 
 ### #21 — Rename "General" → "Other" category
+
 - `packages/shared/src/constants.ts` updated.
 - `seed-faqs.ts` runs an in-place rename on the legacy `slug: 'general'` doc before upserting categories. Existing FAQ ↔ category links are preserved (no orphan rows).
 - Live verified: `/api/categories` returns `Other`, `General` no longer present.
 
 ### #35 — Hide viewCount from students
+
 - `PublicFaq.viewCount` made optional in the shared schema.
 - `faq.service.projectFaq` only sets `viewCount` for `moderator`/`admin`. Same projection rule already applied to `helpfulCount` / `unhelpfulCount`.
 - `FaqCard.tsx` only renders the eye+number when `showRawCounts && viewCount !== undefined` — defense-in-depth in case the API ever leaks it.
@@ -481,10 +482,12 @@ Closing items #9, #21, #32, #35 from the verification checklist. Brings the impl
 - Live verified: student API response has `viewCount: undefined`; moderator response has `viewCount: 0`.
 
 ### #32 — Tag filter chips on student Browse FAQs
+
 - `FaqsPage.tsx` adds a second chip row below categories: "Tags · All · #noc · #certificate · …", driven by `useTags`. Selected tag id flows into the existing `?tag=` query param the server already supported.
 - Live verified: `?tag=<noc id>` narrows 8 FAQs → 2.
 
 ### #9 — Moderator response form on personal questions
+
 - New `moderationService.respondToPersonalQuestion(questionId, moderatorId, body)` writes an `Answer` row with `status: 'approved'` (moderators are the authority — peer moderation flow doesn't apply), increments the question's `answerCount`, and flips status to `resolved`.
 - `POST /api/moderation/questions/:id/respond` exposes it; gated by `requireRole('moderator', 'admin')`.
 - `UnresolvedQuestionsPage` Personal tab now uses a new `PersonalQuestionRow` component that toggles a textarea + Send response / Cancel buttons.
@@ -492,10 +495,12 @@ Closing items #9, #21, #32, #35 from the verification checklist. Brings the impl
 - Live verified end-to-end: BEFORE = `posted`, AFTER moderator response = `responded` (with `status: resolved`, `answerCount: 1`).
 
 ### Architectural notes
+
 - **Reusing the Answer collection for personal-question responses** keeps the data model simple and lets the existing `displayState` projection light up `responded` automatically (`answerCount > 0` triggers it). Tradeoff: a moderator response row has `status: 'approved'` but no peer-moderation history — fine because the moderator IS the moderation step.
 - **`answerCount` in a personal-question row counts the moderator's response**. If we later allow back-and-forth threading, this counter will need a meaning split; for the MVP it's fine.
 
 ### Self-check
+
 - Lint: ✅ 0 errors
 - Typecheck (3 workspaces, strict): ✅
 - Tests: ✅ 25/25 (was 23, +2 viewCount role-aware tests)
@@ -503,7 +508,216 @@ Closing items #9, #21, #32, #35 from the verification checklist. Brings the impl
 - Live API: ✅ all four items end-to-end
 
 ### Remaining gaps from the checklist
+
 - **#4 — Working chatbot UI** and **#18 — Ask via chatbot**: Phase 6 deliverable (RAG chatbot itself).
 - **#20 — Inline screenshot upload**: needs storage decision (S3 vs GridFS) + upload endpoint. Phase 7 hardening.
 
 Score: **33/36 (~92%)**, with the remaining 3 items all blocked on out-of-scope phases.
+
+---
+
+## 2026-05-26 — Phase 5b: Student Home, Analytics, Spurti Points, real account seeding
+
+### What was completed
+
+**Backend:**
+
+- Added `User.spurtiPoints` (indexed for leaderboard sort) with default 0; new students get 100.
+- New `SPURTI_POINTS` constants in `packages/shared/src/constants.ts`: `INITIAL_BALANCE = 100`, `ANSWER_APPROVED = 10`, `ANSWER_UPVOTED = 5`. Single source of truth.
+- Reward hooks:
+  - `moderation.service.approveAnswer` awards `ANSWER_APPROVED` to the answer's author on first approval (idempotent — early-returns when `status === 'approved'`).
+  - `qna.service.voteAnswer` awards `ANSWER_UPVOTED` only on a _new_ upvote (`!had.up`); cancelling an upvote does NOT subtract.
+- New stats endpoints (gated to `student` role):
+  - `GET /api/stats/student` → `{ openCommunityQuestions, unansweredCommunityQuestions, questionsYouAnswered, spurtiPoints }`.
+  - `GET /api/stats/leaderboard?range=week|month|all` → top 20 students by points balance, with `approvedAnswers` count over the time window. Returns `myRank` if requester is outside top 20.
+- New FAQ sort `'added'` (publishedAt desc, then createdAt desc) for "Recently Added FAQs".
+- `auth.service.toPublicUser` now includes `spurtiPoints` for student accounts only — moderators/admins don't accumulate. `PublicUser.spurtiPoints` is optional in the shared schema.
+- New seed script `npm --workspace @samagama/server run seed:accounts` — 8 students + 3 moderators + 2 admins. Idempotent: re-runs preserve `spurtiPoints` and Q&A activity, only refresh name / role / password hash.
+
+**Frontend:**
+
+- `LoginPage` no longer renders the dev credentials panel — file deleted, test deleted, login form is plain.
+- `HomePage` rewritten:
+  - Welcome banner with the user's name and role.
+  - 4 stat cards for students: Open Q&A, Unanswered Q&A, Questions You Answered, Spurti Points.
+  - 3 content tabs (Recently Added FAQs / Recently Updated FAQs / Recent Community Questions). Each fetches up to 5 items with a "View All" link to the full surface.
+  - Moderator/admin land on a simpler card pointing them at the sidebar.
+- `CommunityPage` cards: title hidden, description shown verbatim with a 3-line clamp.
+- `QuestionDetailPage` rewrite:
+  - Title hidden; description is the primary block.
+  - Approved answers behind a collapsible dropdown with `count/cap` header — only renders when answers exist.
+  - "Answer" button replaces "Add an answer".
+  - New `<AnswerPopup>` shows the inline confirmation: "Are you sure the existing answers are not up to the mark?" → on yes, reveals the textarea **and** the required checkbox "I assume that the answer I provided is correct." Submit is gated on both the checkbox and the 10-character minimum.
+  - Removed the old `<AnswerForm>` and `<PreAnswerPrompt>` components — replaced by `<AnswerPopup>`.
+- New `StudentAnalyticsPage` at `/analytics`:
+  - Weekly / Monthly / Overall range filter chips.
+  - Performance cards (Questions Answered, Spurti Points, Approved-in-range).
+  - Bar chart of top 8 contributors by Spurti Points.
+  - Sidebar peer-ranking leaderboard with medal emoji for top 3, requester's row highlighted, and a "Your rank: #N" footer for ranks beyond the top 20.
+- Sidebar adds `Analytics` for students (uses `BarChart3` icon).
+
+**Docs:**
+
+- `README.md`: added "Appendix A — Implementation Notes (Non-PRD)" with the full credentials table, Spurti Points rules, and links to engineering docs. PRD body above the appendix is preserved verbatim.
+- `PROJECT_CONTEXT.md`: implementation status table now includes Phase 5b; data-model row for User now lists `spurtiPoints`; new "Spurti Points (built ✅)" subsection; Setup section has the seed commands and the credentials short-table.
+- `CONTRIBUTING.md`: setup snippet updated to include the three seed commands and a pointer to the credentials appendix.
+
+### Why
+
+- The new accounts replace the dev-only login panel, so anyone running locally can pick a real persona instead of fake `*.test` shortcuts.
+- Spurti Points and the analytics page give students a reason to engage with Community Q&A — covers the "encourage healthy competition" goal in the spec.
+
+### Architectural decisions
+
+- **Reward rules in shared constants.** Tweaking `SPURTI_POINTS.ANSWER_APPROVED` (or any other value) in one place propagates to both the server (which awards) and any client copy that mentions the rate. Avoids two-source drift.
+- **No subtracting points on upvote toggle.** Toggling an upvote off doesn't deduct points — otherwise students could grind by toggling an existing upvote on and off. The +5 only fires when `!had.up && direction === 'up'`.
+- **Seed `accounts` script preserves balances on re-run.** Resetting points every seed would erase test progress. Names / roles / passwords are refreshed; `spurtiPoints` only seeded on initial create.
+- **`PublicUser.spurtiPoints` is optional.** Moderators / admins don't get the field — keeps the wire format honest. UI code defaults to `0` when undefined.
+- **Leaderboard sort uses live points balance, not aggregated activity.** The `approvedAnswers` per-row count is the time-window metric (week/month/all); points are always the live total. Decoupling them makes the leaderboard stable when an old answer gets a fresh upvote.
+- **Range filter passes through to a Mongo `$match` on `approvedAt`.** No batch jobs, no precomputation. With Mongo aggregation pipelines, this is fast enough for the MVP.
+- **Analytics page lives at `/analytics` (student-only).** Moderators / admins have their own dashboards already; this surface is engagement-flavored, not moderation-flavored.
+
+### Tradeoffs
+
+- **No "graphs" beyond a horizontal bar chart.** The spec says "use cards, graphs, and leaderboard components". Adding a charting library (Recharts, Visx) is a Phase 7 polish item — for the MVP the SVG-free bars match the prototype's flat aesthetic and add zero deps.
+- **No real-time refresh.** Spec says "real time or scheduled refreshes" — TanStack Query default refetches on window focus and after a 60-second stale window cover this without WebSocket plumbing. Documented here so the choice is intentional.
+- **Open Community Q&A counter is global, not personalized.** It shows the total across the platform, not "questions you can answer". The spec is ambiguous; global is more useful as a "how busy is the community" signal. Easy to flip if needed.
+
+### Live verification
+
+- `seed:accounts` creates all 13 users on first run; re-run shows "upserted (existing — points preserved)" for everyone.
+- `POST /api/auth/login` with `abhishek@samagama.test / Student@2026` → 200, `user.spurtiPoints: 100`.
+- (Existing flows still work — no regressions in the 22 tests that pass on this commit.)
+
+### Self-check
+
+- Lint: ✅ 0 errors, 0 warnings
+- Typecheck (3 workspaces, strict): ✅
+- Tests: ✅ 22/22 (was 25 before; -3 from removing the LoginPage dev-panel test which no longer applies)
+- Build: ✅ client 449.16 KB / 130.22 KB gzip
+- Live API: ✅ login + spurtiPoints field present
+
+### TODOs / outstanding
+
+- File-upload endpoint for screenshots in Ask a Question (Phase 7 storage decision).
+- Add a regression test that locks in: (a) point award on first approval, (b) no-subtract-on-toggle. Both rules are easy to break.
+- Inline upload UI on `AskQuestionPage` to replace the current URL-paste field.
+
+### Files touched
+
+**New:**
+
+- `apps/server/src/scripts/seed-real-accounts.ts`
+- `apps/client/src/features/stats/api.ts`, `apps/client/src/features/stats/queries.ts`
+- `apps/client/src/features/analytics/StudentAnalyticsPage.tsx`
+
+**Updated:**
+
+- `packages/shared/src/constants.ts` (SPURTI_POINTS)
+- `packages/shared/src/schemas/auth.schema.ts` (PublicUser.spurtiPoints)
+- `packages/shared/src/schemas/faq.schema.ts` (sort: 'added')
+- `apps/server/src/models/User.model.ts` (spurtiPoints field + index)
+- `apps/server/src/services/auth.service.ts` (initial balance for students)
+- `apps/server/src/services/qna.service.ts` (upvote points hook)
+- `apps/server/src/services/moderation.service.ts` (approve points hook)
+- `apps/server/src/services/stats.service.ts` (getStudentHomeStats, getLeaderboard)
+- `apps/server/src/controllers/stats.controller.ts` (new handlers)
+- `apps/server/src/routes/stats.routes.ts` (new routes with role gates)
+- `apps/server/src/services/faq.service.ts` (sort: 'added' branch)
+- `apps/server/package.json` (seed:accounts script)
+- `apps/client/src/pages/HomePage.tsx`
+- `apps/client/src/features/qna/CommunityPage.tsx`, `apps/client/src/features/qna/QuestionDetailPage.tsx`
+- `apps/client/src/features/auth/LoginPage.tsx`
+- `apps/client/src/layouts/navigation.ts`
+- `apps/client/src/App.tsx`
+- `README.md`, `PROJECT_CONTEXT.md`, `CONTRIBUTING.md` (this entry)
+
+**Deleted:**
+
+- `apps/client/src/features/auth/DevCredentials.tsx`
+- `apps/client/src/features/auth/__tests__/LoginPage.test.tsx`
+
+
+---
+
+## 2026-05-26 — Idle bucket cards + Community filter sync + Q-match cache
+
+### What was completed
+
+**Backend:**
+- New aggregation `statsService.getCommunityIdleBuckets()` returns `{ last24h, over3days, over1week, totalOpen }` for **community** questions in `open`/`answered` status using `updatedAt` as the activity proxy. Single `$facet` so all four counts return in one round trip.
+- Bucket math is mutually exclusive — every open community question fits exactly one bucket and the three counts always sum to `totalOpen`:
+  - `last24h`: `updatedAt >= now-24h`
+  - `over3days`: `now-7d <= updatedAt < now-24h`  ← deliberately wider than the literal "> 3 days" so cards + chips always sum cleanly. Documented in the service.
+  - `over1week`: `updatedAt < now-7d`
+- New endpoint `GET /api/stats/community-idle` (all authed roles).
+- `qna.service.listQuestions` accepts `idle?: 'last24h' | 'over3days' | 'over1week'` with the same bucket math, so the Community page filter narrows to exactly what the dashboard cards count.
+- Controller picks up `?idle=…` from the query string with input validation.
+
+**Caching (`checkExisting`):**
+- New `apps/server/src/utils/ttl-cache.ts` — generic in-process TTL cache with lazy eviction, `maxEntries`, and a single-file shape so swapping to Redis later is trivial.
+- `qna.service.checkExisting` now caches the FAQ + community-question similarity result for 60 seconds, keyed on `(userId, normalizedTitle, normalizedDescription)`. The signed token is **never** cached (each call produces a fresh one bound to the requesting user).
+- Cache invalidation: when a new community question is created, the whole map is cleared (cache warms again within seconds; correctness > micro-optimization).
+- Live measured: 61ms cold → 11ms warm against a local Mongo. On Atlas with 50–100ms RTT the savings will be larger.
+
+**Frontend:**
+- New `IdleBucketCards` component in `apps/client/src/features/stats/`. Three click-through cards (Active 24h / Idle > 3d / Idle > 1w) that navigate to `/community?idle=…`.
+- Component reused on Student Home, Moderator Overview, and the new Admin Overview page so all three roles see the same numbers.
+- New `AdminOverviewPage` replacing the "Coming Soon" placeholder. Hosts the idle row plus a 3-card system overview (Unresolved Questions / Flagged FAQs / Published FAQs). Wired into App router.
+- `CommunityPage` rewritten:
+  - Two filter rows now: **Idle** chips with live counts (sourced from the same `/api/stats/community-idle` endpoint) and the existing **Status** chips.
+  - Reads `?idle=…` from the URL on mount; updates the URL when chips change so the page is shareable / back-button friendly.
+  - Empty state still rendered when filters narrow to zero rows.
+- TanStack Query hooks: new `useCommunityIdleBuckets()` with 60s staleTime so the cards don't refetch on every page change.
+
+### Why
+Dashboards previously had no signal about question staleness. The idle buckets surface the "needs a moderator" tier without manual triage. Putting the same chips on the Community page closes the feedback loop — click a card → see the matching list. Caching `checkExisting` removes the obvious hot-path cost (text-index queries fire every keystroke after the user clicks "Check Existing Answers").
+
+### Architectural decisions
+- **Single `$facet` aggregation, not three count queries.** One Mongo round trip; all four counts come back together; can't drift due to interleaved writes.
+- **Middle bucket spans 24h–7d, not 3d–7d.** A strict reading of "> 3 days" leaves questions idle for 1–3 days uncounted on every dashboard. Tradeoff: the chip says "Idle > 3 days" but actually catches "Idle > 1 day" — visible-but-imprecise wording vs hidden gap. Picked the former. Documented inline in `stats.service` for future readers.
+- **In-process cache, not Redis.** Single-process MERN MVP; Redis is a new daemon and a new outage path. The `TtlCache` interface is what `checkExisting` uses, so the swap is one file.
+- **Token never cached.** Even though the FAQ+question matches are deterministic for a given (user, text), the JWT carries claims about the requester. Caching the token would mean a stale `iat`/`exp` and possibly a wrong subject if the cache key collided across users.
+- **Cache key includes `userId`.** The community-question search excludes the requester's own questions (`askedBy: { $ne: userId }`), so two users with the same draft would get different result sets.
+- **Cache cleared on new community question, not on tag-me.** Tagging doesn't change the corpus of community questions, only `taggedStudents[]` on an existing row.
+
+### Tradeoffs
+- **No background refresh.** TanStack Query will refetch when the user navigates back; otherwise the 60s staleTime governs freshness. Adequate for the MVP — moderators don't need second-by-second updates.
+- **Idle filter clears the personal-question OR clause.** Setting `idle=…` implies community-only (personal questions don't have peer-answer activity). Documented in the service.
+- **Cache invalidation is whole-map clear on createQuestion.** Could be more surgical (clear only entries whose normalized text overlaps the new question), but the cost of a clear is "everyone re-runs the cheap query once" which is fine.
+
+### Live verification
+- `GET /api/stats/community-idle` (any role) → `{ last24h: 2, over3days: 0, over1week: 0, totalOpen: 2 }`. Sum equals total ✓.
+- `GET /api/qna/questions?type=community&idle=last24h` → 2 questions, matches the card count ✓.
+- `GET /api/qna/questions?type=community&idle=over1week` → 0 questions ✓.
+- `POST /api/qna/check-existing` twice in a row with identical body: 61ms (cold) → 11ms (warm) ✓.
+
+### Self-check
+- Lint: ✅ 0 errors
+- Typecheck (3 workspaces, strict): ✅
+- Tests: ✅ 22/22 (no new tests yet — TODO add `ttl-cache` + idle bucket math tests in Phase 7)
+- Build: ✅ client 455.33 KB / 131.57 KB gzip
+- Live API: ✅ all four behaviors verified end-to-end
+
+### TODOs
+- Test for `TtlCache` covering get/set/expiry/eviction.
+- Test that locks the bucket invariant `last24h + over3days + over1week === totalOpen`.
+- Hint to operator: when migrating to multi-instance, swap `createTtlCache` for a Redis-backed implementation; the rest of the call sites stay unchanged.
+
+### Files touched
+**New:**
+- `apps/server/src/utils/ttl-cache.ts`
+- `apps/client/src/features/stats/IdleBucketCards.tsx`
+- `apps/client/src/features/admin/AdminOverviewPage.tsx`
+
+**Updated:**
+- `apps/server/src/services/stats.service.ts` (new `getCommunityIdleBuckets` + `IdleBuckets` type)
+- `apps/server/src/services/qna.service.ts` (cache wiring + `idle` filter in `listQuestions`)
+- `apps/server/src/controllers/stats.controller.ts`, `routes/stats.routes.ts` (`/community-idle` route)
+- `apps/server/src/controllers/qna.controller.ts` (idle param read)
+- `apps/client/src/features/stats/api.ts`, `queries.ts` (idle bucket types + hook)
+- `apps/client/src/features/qna/api.ts`, `queries.ts` (idle param)
+- `apps/client/src/features/qna/CommunityPage.tsx` (rewritten with idle chip row + URL sync)
+- `apps/client/src/pages/HomePage.tsx` (idle cards on student home)
+- `apps/client/src/features/moderation/ModerationOverviewPage.tsx` (idle cards on mod dashboard)
+- `apps/client/src/App.tsx` (AdminOverviewPage route)

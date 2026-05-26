@@ -21,7 +21,7 @@ export const faqListQuerySchema = z.object({
   status: z.enum(FAQ_STATUSES).optional(),
   /** Dashboard Spec: 'helpful' = FAQs with helpfulCount > 0; 'flagged' = FAQs with flagCount > 0. */
   filter: z.enum(['helpful', 'flagged']).optional(),
-  sort: z.enum(['relevance', 'recent', 'popular', 'helpful']).default('recent'),
+  sort: z.enum(['relevance', 'recent', 'added', 'popular', 'helpful']).default('recent'),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

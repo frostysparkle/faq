@@ -15,6 +15,8 @@ import { UnresolvedQuestionsPage } from './features/moderation/UnresolvedQuestio
 import { ModerationOverviewPage } from './features/moderation/ModerationOverviewPage';
 import { FaqManagementPage } from './features/admin/FaqManagementPage';
 import { ChatbotFeedbackPage } from './features/admin/ChatbotFeedbackPage';
+import { AdminOverviewPage } from './features/admin/AdminOverviewPage';
+import { StudentAnalyticsPage } from './features/analytics/StudentAnalyticsPage';
 
 export function App() {
   return (
@@ -34,6 +36,7 @@ export function App() {
         <Route path="/community/:id" element={<QuestionDetailPage />} />
         <Route path="/ask" element={<AskQuestionPage />} />
         <Route path="/my-questions" element={<MyQuestionsPage />} />
+        <Route path="/analytics" element={<StudentAnalyticsPage />} />
         <Route path="/chatbot" element={<ComingSoonPage title="Yaksha Chatbot" />} />
 
         {/* Moderation (shared between moderator and admin per Dashboard Spec) */}
@@ -46,7 +49,7 @@ export function App() {
         />
 
         {/* Admin / shared FAQ Management — moderator and admin share the same page. */}
-        <Route path="/admin" element={<ComingSoonPage title="Admin Overview" />} />
+        <Route path="/admin" element={<AdminOverviewPage />} />
         <Route path="/admin/faqs" element={<FaqManagementPage />} />
         {/* Categories/Tags admin pages are now tabs inside FaqManagementPage. Keep redirects
             for any bookmarks pointing to the old paths. */}
