@@ -31,6 +31,7 @@ export const qnaApi = {
     type?: 'personal' | 'community';
     status?: string;
     mine?: boolean;
+    idle?: 'last24h' | 'over3days' | 'over1week';
   }): Promise<PublicQuestion[]> {
     const res = await apiClient.get<ApiSuccess<PublicQuestion[]>>('/api/qna/questions', {
       params,
@@ -97,7 +98,7 @@ export const moderationApi = {
   },
   async approveAnswer(
     id: string,
-    input: { editedBody?: string; note?: string } = {},
+    input: { editedBody?: string; note?: string; spurtiPoints?: number } = {},
   ): Promise<void> {
     await apiClient.patch(`/api/moderation/answers/${id}/approve`, input);
   },

@@ -14,6 +14,7 @@ export function useQuestions(params: {
   type?: 'personal' | 'community';
   status?: string;
   mine?: boolean;
+  idle?: 'last24h' | 'over3days' | 'over1week';
 }) {
   return useQuery({
     queryKey: qnaKeys.questions(params),
@@ -78,8 +79,17 @@ export function usePendingAnswersForQuestion(questionId: string, limit: number, 
 export function useApproveAnswer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, editedBody, note }: { id: string; editedBody?: string; note?: string }) =>
-      moderationApi.approveAnswer(id, { editedBody, note }),
+    mutationFn: ({
+      id,
+      editedBody,
+      note,
+      spurtiPoints,
+    }: {
+      id: string;
+      editedBody?: string;
+      note?: string;
+      spurtiPoints?: number;
+    }) => moderationApi.approveAnswer(id, { editedBody, note, spurtiPoints }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qnaKeys.pendingAnswers });
       void qc.invalidateQueries({ queryKey: qnaKeys.all });

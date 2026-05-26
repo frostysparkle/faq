@@ -39,6 +39,8 @@ export const moderateAnswerSchema = z.object({
   note: z.string().trim().max(1000).optional(),
   /** If provided, replaces answer body before approving (Change Spec §5.5 edit-and-approve). */
   editedBody: z.string().trim().min(10).max(4000).optional(),
+  /** Spurti Points to award on approval. Range -1 to 5; defaults to 5. */
+  spurtiPoints: z.number().int().min(-1).max(5).optional(),
 });
 
 export type CheckExistingInput = z.infer<typeof checkExistingSchema>;

@@ -255,6 +255,7 @@ function ReviewCard({ answer }: { answer: PendingAnswerSummary }) {
   const [editing, setEditing] = useState(false);
   const [editedBody, setEditedBody] = useState(answer.body);
   const [note, setNote] = useState('');
+  const [spurtiPoints, setSpurtiPoints] = useState(5);
   const [showStudents, setShowStudents] = useState(false);
 
   const multiAsker = answer.taggedStudents.length > 0;
@@ -439,6 +440,42 @@ function ReviewCard({ answer }: { answer: PendingAnswerSummary }) {
       <div
         style={{
           display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          marginBottom: 10,
+        }}
+      >
+        <label
+          style={{ fontSize: 12, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}
+        >
+          Spurti Points on approval:
+        </label>
+        <input
+          type="number"
+          min={-1}
+          max={5}
+          step={1}
+          value={spurtiPoints}
+          onChange={(e) => setSpurtiPoints(Math.max(-1, Math.min(5, parseInt(e.target.value, 10) || 0)))}
+          style={{
+            width: 64,
+            background: 'var(--color-input)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 8,
+            padding: '6px 10px',
+            fontSize: 13,
+            color: 'var(--color-text)',
+            fontFamily: 'inherit',
+            outline: 'none',
+            textAlign: 'center',
+          }}
+        />
+        <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>(-1 to 5)</span>
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
           gap: 8,
           flexWrap: 'wrap',
           justifyContent: 'space-between',
@@ -455,8 +492,8 @@ function ReviewCard({ answer }: { answer: PendingAnswerSummary }) {
             onClick={() =>
               approve.mutate(
                 editing
-                  ? { id: answer.id, editedBody, note: note || undefined }
-                  : { id: answer.id, note: note || undefined },
+                  ? { id: answer.id, editedBody, note: note || undefined, spurtiPoints }
+                  : { id: answer.id, note: note || undefined, spurtiPoints },
               )
             }
           >

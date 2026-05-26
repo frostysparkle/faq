@@ -2,8 +2,10 @@
 // Implements PRD §8.7 + Change Spec §5.5 (edit-and-approve).
 import { Types } from 'mongoose';
 import type { ModerateAnswerInput } from '@samagama/shared';
+import { SPURTI_POINTS } from '@samagama/shared';
 import { AnswerModel } from '../models/Answer.model.js';
 import { QuestionModel } from '../models/Question.model.js';
+import { UserModel } from '../models/User.model.js';
 import { ApiError } from '../utils/api-error.js';
 export interface PendingAnswerRow {
   id: string;
@@ -62,6 +64,15 @@ export const moderationService = {
     if (input.note) answer.moderationNote = input.note;
     answer.approvedAt = new Date();
     await answer.save();
+
+    // Spurti Points: award the answer's author once on first approval.
+    // Moderator chooses a value in [-1, 5]; falls back to the configured default.
+    // Award is idempotent because we early-return above when already approved.
+    const pts = input.spurtiPoints ?? SPURTI_POINTS.ANSWER_APPROVED_DEFAULT;
+    await UserModel.updateOne(
+      { _id: answer.answeredBy },
+      { $inc: { spurtiPoints: pts } },
+    );
 
     // Flip the question to resolved on the first approval.
     const question = await QuestionModel.findById(answer.questionId);

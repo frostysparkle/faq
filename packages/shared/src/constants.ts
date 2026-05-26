@@ -26,6 +26,19 @@ export const DEFAULT_CHATBOT_MAX_SOURCES = 6;
 /** Community Q&A: cap on number of student answers per question (Change Spec §5.5). */
 export const COMMUNITY_ANSWER_CAP = 10;
 
+/**
+ * Spurti Points reward rules. Single source of truth for the leaderboard math.
+ * Tweak here and both client and server pick up the new values.
+ */
+export const SPURTI_POINTS = {
+  /** Default points awarded when a moderator approves an answer (range -1 to 5). */
+  ANSWER_APPROVED_DEFAULT: 5,
+  /** Awarded each time an upvote is added on the student's approved answer. */
+  ANSWER_UPVOTED: 5,
+  /** Initial balance every newly created student starts with. */
+  INITIAL_BALANCE: 100,
+} as const;
+
 /** Pagination defaults applied across list endpoints. */
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
