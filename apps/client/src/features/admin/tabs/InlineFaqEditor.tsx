@@ -7,6 +7,7 @@ import {
   faqCreateSchema,
   faqUpdateSchema,
   type FaqCreateInput,
+  type FaqUpdateInput,
   type FaqStatus,
 } from '@samagama/shared';
 import { Card } from '../../../components/ui/Card';
@@ -21,6 +22,9 @@ interface ExistingFaq {
   status: FaqStatus;
   categories: string[];
   tags: string[];
+  helpfulCount?: number;
+  unhelpfulCount?: number;
+  flagCount?: number;
 }
 
 interface Props {
@@ -35,6 +39,9 @@ export function InlineFaqEditor({ categories, tags, existing, onClose }: Props) 
   const createMutation = useCreateFaq();
   const updateMutation = useUpdateFaq();
   const [statsResetNote, setStatsResetNote] = useState(false);
+  const [resetHelpful, setResetHelpful] = useState(false);
+  const [resetUnhelpful, setResetUnhelpful] = useState(false);
+  const [resetFlags, setResetFlags] = useState(false);
 
   const {
     register,
@@ -77,7 +84,13 @@ export function InlineFaqEditor({ categories, tags, existing, onClose }: Props) 
 
   const onSubmit = handleSubmit(async (values) => {
     if (isEdit && existing) {
-      const result = await updateMutation.mutateAsync({ id: existing.id, input: values });
+      const updateInput: FaqUpdateInput = {
+        ...values,
+        ...(resetHelpful ? { resetHelpful: true } : {}),
+        ...(resetUnhelpful ? { resetUnhelpful: true } : {}),
+        ...(resetFlags ? { resetFlags: true } : {}),
+      };
+      const result = await updateMutation.mutateAsync({ id: existing.id, input: updateInput });
       if (result.statsReset) setStatsResetNote(true);
       else onClose();
     } else {
@@ -158,6 +171,52 @@ export function InlineFaqEditor({ categories, tags, existing, onClose }: Props) 
             <option value="archived">Archived</option>
           </select>
         </Field>
+
+        {/* Manual stat resets — edit mode only */}
+        {isEdit && (
+          <div
+            style={{
+              marginBottom: 14,
+              padding: '12px 14px',
+              background: 'var(--color-input)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 8,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--color-text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '.5px',
+                marginBottom: 10,
+              }}
+            >
+              Reset counters
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <ResetCheckbox
+                checked={resetHelpful}
+                onChange={setResetHelpful}
+                label={`Reset helpful count (currently ${existing?.helpfulCount ?? 0})`}
+                color="var(--color-success)"
+              />
+              <ResetCheckbox
+                checked={resetUnhelpful}
+                onChange={setResetUnhelpful}
+                label={`Reset not-helpful count (currently ${existing?.unhelpfulCount ?? 0})`}
+                color="var(--color-danger)"
+              />
+              <ResetCheckbox
+                checked={resetFlags}
+                onChange={setResetFlags}
+                label={`Reset flag count (currently ${existing?.flagCount ?? 0})`}
+                color="var(--color-warning)"
+              />
+            </div>
+          </div>
+        )}
 
         {statsResetNote && (
           <div
@@ -269,6 +328,40 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
   boxSizing: 'border-box',
 };
+
+function ResetCheckbox({
+  checked,
+  onChange,
+  label,
+  color,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  color: string;
+}) {
+  return (
+    <label
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        cursor: 'pointer',
+        fontSize: 12,
+        color: checked ? color : 'var(--color-text-muted)',
+        fontWeight: checked ? 600 : 400,
+      }}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        style={{ accentColor: color, width: 14, height: 14 }}
+      />
+      {label}
+    </label>
+  );
+}
 
 const chipWrapStyle: React.CSSProperties = {
   display: 'flex',

@@ -68,6 +68,7 @@ function projectFaq(faq: PopulatedFaq, role: UserRole, hasUserFeedback?: boolean
     base.viewCount = faq.viewCount;
     base.helpfulCount = faq.helpfulCount;
     base.unhelpfulCount = faq.unhelpfulCount;
+    base.flagCount = faq.flagCount;
   }
   if (hasUserFeedback !== undefined) base.hasUserFeedback = hasUserFeedback;
   return base;
@@ -213,6 +214,13 @@ export const faqService = {
       // Outstanding flags become 'resolved' — implicitly addressed by the edit.
       // We do this in a fire-and-forget update against the Flag collection inside the controller
       // so this service stays focused on the FAQ document.
+    }
+
+    // Moderator-triggered manual resets (independent of answer change).
+    if (!answerChanged) {
+      if (input.resetHelpful) { current.helpfulCount = 0; current.helpfulVotes = []; }
+      if (input.resetUnhelpful) { current.unhelpfulCount = 0; current.unhelpfulVotes = []; }
+      if (input.resetFlags) { current.flagCount = 0; }
     }
 
     await current.save();

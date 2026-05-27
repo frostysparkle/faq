@@ -18,6 +18,7 @@ import type {
 import { FlagModel, type FlagDocument } from '../models/Flag.model.js';
 import { FaqModel } from '../models/Faq.model.js';
 import { QuestionModel } from '../models/Question.model.js';
+import { UserModel } from '../models/User.model.js';
 import { ApiError } from '../utils/api-error.js';
 
 interface PopulatedFlag extends Omit<FlagDocument, 'reportedBy' | 'reviewedBy'> {
@@ -163,6 +164,14 @@ export const flagService = {
       await FaqModel.updateOne(
         { _id: flag.entityId, flagCount: { $gt: 0 } },
         { $inc: { flagCount: -1 } },
+      );
+    }
+
+    // Award/deduct Spurti points to the reporter if the moderator specified a reward.
+    if (typeof input.spurtiPoints === 'number' && input.spurtiPoints !== 0) {
+      await UserModel.updateOne(
+        { _id: flag.reportedBy },
+        { $inc: { spurtiPoints: input.spurtiPoints } },
       );
     }
 

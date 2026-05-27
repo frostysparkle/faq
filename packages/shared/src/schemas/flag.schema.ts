@@ -13,6 +13,8 @@ export const flagCreateSchema = z.object({
 export const flagUpdateStatusSchema = z.object({
   status: z.enum(FLAG_STATUSES),
   resolutionNote: z.string().trim().max(1000).optional(),
+  /** Spurti points to award/deduct to the reporter for the quality of the flag (-1 to +2). */
+  spurtiPoints: z.number().int().min(-1).max(2).optional(),
 });
 
 export const flagListQuerySchema = z.object({

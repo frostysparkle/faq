@@ -8,7 +8,7 @@
 //
 // Moderators / admins keep a simpler welcome card — their dashboards live elsewhere.
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import {
   ChevronDown,
   ChevronRight,
@@ -56,7 +56,13 @@ export function HomePage() {
         </div>
       </div>
 
-      {user.role === 'student' ? <StudentHome /> : <NonStudentHome role={user.role} />}
+      {user.role === 'student' ? (
+        <StudentHome />
+      ) : user.role === 'moderator' ? (
+        <Navigate to="/moderation" replace />
+      ) : (
+        <Navigate to="/admin" replace />
+      )}
     </div>
   );
 }
@@ -112,17 +118,6 @@ function StudentHome() {
   );
 }
 
-function NonStudentHome({ role }: { role: 'moderator' | 'admin' }) {
-  return (
-    <Card>
-      <h2 style={{ marginTop: 0, fontSize: 16 }}>You're signed in as {role}.</h2>
-      <p style={{ color: 'var(--color-text-muted)', fontSize: 13, lineHeight: 1.6 }}>
-        Use the sidebar to access the {role === 'admin' ? 'Admin Overview' : 'Moderation Dashboard'}
-        , FAQ Management, and Chatbot Feedback.
-      </p>
-    </Card>
-  );
-}
 
 function ContentTabs() {
   const [tab, setTab] = useState<ContentTab>('recent-added-faqs');

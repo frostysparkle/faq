@@ -12,7 +12,12 @@ export const faqCreateSchema = z.object({
   status: z.enum(FAQ_STATUSES).default('draft'),
 });
 
-export const faqUpdateSchema = faqCreateSchema.partial();
+export const faqUpdateSchema = faqCreateSchema.partial().extend({
+  /** Moderator-only: manually reset individual stat counters without changing the answer. */
+  resetHelpful: z.boolean().optional(),
+  resetUnhelpful: z.boolean().optional(),
+  resetFlags: z.boolean().optional(),
+});
 
 export const faqListQuerySchema = z.object({
   q: z.string().trim().optional(),
@@ -53,6 +58,8 @@ export interface PublicFaq {
   unhelpfulCount?: number;
   /** True when the requesting student already left feedback. */
   hasUserFeedback?: boolean;
+  /** Present for moderator/admin only — live open flag count. */
+  flagCount?: number;
   updatedAt: string;
   createdAt: string;
 }
