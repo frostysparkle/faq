@@ -38,6 +38,14 @@ export interface FaqStatsResponse {
   archivedCount: number;
 }
 
+export interface ModeratorDashboardStats {
+  personal: { total: number; unanswered: number; today: number };
+  community: { total: number; answered: number; unanswered: number };
+  communityToday: { total: number; answered: number; unanswered: number };
+  faqs: { total: number; today: number; thisWeek: number };
+  flaggedFaqs: { total: number; today: number; thisWeek: number };
+}
+
 export const faqApi = {
   async list(query: Partial<FaqListQuery> = {}): Promise<{ items: PublicFaq[]; meta: ApiMeta }> {
     const res = await apiClient.get<ApiSuccess<PublicFaq[]>>('/api/faqs', { params: query });
@@ -104,18 +112,8 @@ export const faqApi = {
     const res = await apiClient.get<ApiSuccess<FaqStatsResponse>>('/api/stats/faqs');
     return res.data.data;
   },
-  async getModeratorStats(): Promise<{
-    unresolvedQuestions: number;
-    flaggedFaqs: number;
-    flaggedFaqPercentage: number;
-  }> {
-    const res = await apiClient.get<
-      ApiSuccess<{
-        unresolvedQuestions: number;
-        flaggedFaqs: number;
-        flaggedFaqPercentage: number;
-      }>
-    >('/api/stats/moderator');
+  async getModeratorStats(): Promise<ModeratorDashboardStats> {
+    const res = await apiClient.get<ApiSuccess<ModeratorDashboardStats>>('/api/stats/moderator');
     return res.data.data;
   },
 };

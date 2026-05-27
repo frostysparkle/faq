@@ -2,7 +2,7 @@
 // Three buckets are stacked vertically with dividers, each row is clickable.
 // Reused on Student Home (inline with stat cards), Moderator Overview, and Admin Overview.
 import { useNavigate } from 'react-router-dom';
-import { Clock, AlertTriangle, Flame } from 'lucide-react';
+import { Clock, AlertTriangle, Flame, Activity } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { useCommunityIdleBuckets } from './queries';
 import type { IdleBucket } from './api';
@@ -42,6 +42,37 @@ export function IdleBucketCards({ style }: { style?: React.CSSProperties }) {
 
   return (
     <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 24, ...style }}>
+      {/* Header — matches StatCard header style */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '14px 18px',
+          background: 'var(--color-primary)14',
+          borderBottom: '1px solid var(--color-border)',
+        }}
+      >
+        <div
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 8,
+            background: 'var(--color-primary)22',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <Activity size={17} color="var(--color-primary)" />
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)' }}>
+          Open Community Q&A
+        </div>
+      </div>
+
+      {/* Bucket rows — unchanged layout from original */}
       {buckets.map(({ label, sub, value, icon: Icon, color, bucket }, i) => (
         <button
           key={bucket}

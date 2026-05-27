@@ -561,6 +561,84 @@ async getCommunityIdleBuckets(): Promise<IdleBuckets> {
     if (filter === 'archive') return rows.filter((r) => r.classification === 'archive');
     return rows;
   },
+
+  /** All counts needed by the moderator dashboard — 5 cards. */
+  async getModeratorDashboardStats(): Promise<ModeratorDashboardStats> {
+    const now = Date.now();
+    const todayStart = new Date(now - (now % (24 * 60 * 60 * 1000)));
+    const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+
+    const [
+      // Personal questions
+      personalTotal,
+      personalUnanswered,
+      personalToday,
+      // Community questions (all-time)
+      communityTotal,
+      communityAnswered,
+      communityUnanswered,
+      // Community questions today
+      communityTodayTotal,
+      communityTodayAnswered,
+      communityTodayUnanswered,
+      // FAQs
+      faqTotal,
+      faqToday,
+      faqThisWeek,
+      // Flagged FAQs
+      flaggedTotal,
+      flaggedToday,
+      flaggedThisWeek,
+    ] = await Promise.all([
+      // --- Personal questions ---
+      QuestionModel.countDocuments({ type: 'personal' }),
+      QuestionModel.countDocuments({ type: 'personal', answerCount: 0 }),
+      QuestionModel.countDocuments({ type: 'personal', createdAt: { $gte: todayStart } }),
+      // --- Community questions all-time ---
+      QuestionModel.countDocuments({ type: 'community' }),
+      QuestionModel.countDocuments({ type: 'community', answerCount: { $gt: 0 } }),
+      QuestionModel.countDocuments({ type: 'community', answerCount: 0 }),
+      // --- Community questions today ---
+      QuestionModel.countDocuments({ type: 'community', createdAt: { $gte: todayStart } }),
+      QuestionModel.countDocuments({
+        type: 'community',
+        createdAt: { $gte: todayStart },
+        answerCount: { $gt: 0 },
+      }),
+      QuestionModel.countDocuments({
+        type: 'community',
+        createdAt: { $gte: todayStart },
+        answerCount: 0,
+      }),
+      // --- FAQs ---
+      FaqModel.countDocuments({}),
+      FaqModel.countDocuments({ createdAt: { $gte: todayStart } }),
+      FaqModel.countDocuments({ createdAt: { $gte: weekAgo } }),
+      // --- Flagged FAQs (distinct FAQs with an open/under_review flag) ---
+      FlagModel.distinct('entityId', {
+        entityType: 'faq',
+        status: { $in: ['open', 'under_review'] },
+      }).then((ids) => ids.length),
+      FlagModel.distinct('entityId', {
+        entityType: 'faq',
+        status: { $in: ['open', 'under_review'] },
+        createdAt: { $gte: todayStart },
+      }).then((ids) => ids.length),
+      FlagModel.distinct('entityId', {
+        entityType: 'faq',
+        status: { $in: ['open', 'under_review'] },
+        createdAt: { $gte: weekAgo },
+      }).then((ids) => ids.length),
+    ]);
+
+    return {
+      personal: { total: personalTotal, unanswered: personalUnanswered, today: personalToday },
+      community: { total: communityTotal, answered: communityAnswered, unanswered: communityUnanswered },
+      communityToday: { total: communityTodayTotal, answered: communityTodayAnswered, unanswered: communityTodayUnanswered },
+      faqs: { total: faqTotal, today: faqToday, thisWeek: faqThisWeek },
+      flaggedFaqs: { total: flaggedTotal, today: flaggedToday, thisWeek: flaggedThisWeek },
+    };
+  },
 };
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
@@ -632,5 +710,13 @@ export interface FaqQualityRow {
   classification: 'good' | 'rewrite' | 'archive';
   category: string;
   updatedAt: string;
+}
+
+export interface ModeratorDashboardStats {
+  personal: { total: number; unanswered: number; today: number };
+  community: { total: number; answered: number; unanswered: number };
+  communityToday: { total: number; answered: number; unanswered: number };
+  faqs: { total: number; today: number; thisWeek: number };
+  flaggedFaqs: { total: number; today: number; thisWeek: number };
 }
 
