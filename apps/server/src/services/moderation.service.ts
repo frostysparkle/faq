@@ -167,4 +167,147 @@ export const moderationService = {
     question.status = 'resolved';
     await question.save();
   },
+
+  /** List approved answers eligible for FAQ conversion. */
+  async listFaqCandidates(): Promise<FaqCandidateRow[]> {
+    const candidates = await AnswerModel.find({
+      status: 'approved',
+      eligibleForFaqConversion: true,
+      convertedFaqId: { $exists: false },
+    })
+      .sort({ approvedAt: -1 })
+      .populate('answeredBy', 'name')
+      .populate('moderatorId', 'name')
+      .populate({
+        path: 'questionId',
+        select: 'title description category',
+        populate: { path: 'category', select: 'name' },
+      })
+      .lean();
+
+    return (candidates as unknown as PopulatedCandidate[]).map((c) => ({
+      id: c._id.toString(),
+      questionTitle: c.questionId?.title ?? 'Deleted question',
+      questionDescription: c.questionId?.description ?? '',
+      answerBody: c.body,
+      category: c.questionId?.category?.name ?? '—',
+      author: { id: c.answeredBy._id.toString(), name: c.answeredBy.name },
+      moderator: c.moderatorId
+        ? { id: c.moderatorId._id.toString(), name: c.moderatorId.name }
+        : undefined,
+      approvedAt: c.approvedAt?.toISOString() ?? c.createdAt.toISOString(),
+    }));
+  },
+
+  /** Convert an approved answer to a new FAQ draft. Admin only. */
+  async convertToFaq(
+    answerId: string,
+    actorId: string,
+  ): Promise<{ faqId: string }> {
+    const answer = await AnswerModel.findById(answerId).populate('questionId', 'title description category tags');
+    if (!answer) throw ApiError.notFound('Answer not found');
+    if (answer.status !== 'approved') throw ApiError.badRequest('Only approved answers can be converted');
+    if (answer.convertedFaqId) throw ApiError.conflict('This answer has already been converted to a FAQ');
+
+    const question = answer.questionId as unknown as {
+      _id: Types.ObjectId;
+      title: string;
+      description: string;
+      category: Types.ObjectId;
+      tags: Types.ObjectId[];
+    };
+
+    // Import dynamically to avoid circular deps
+    const { FaqModel } = await import('../models/Faq.model.js');
+
+    const faq = await FaqModel.create({
+      title: question.title,
+      answer: answer.body,
+      summary: question.description.substring(0, 280),
+      categories: question.category ? [question.category] : [],
+      tags: question.tags ?? [],
+      status: 'draft',
+      sourceType: 'community_conversion',
+      sourceQuestionId: question._id,
+      createdBy: actorId,
+      updatedBy: actorId,
+    });
+
+    answer.convertedFaqId = faq._id as Types.ObjectId;
+    await answer.save();
+
+    return { faqId: faq._id.toString() };
+  },
+
+  /** Bulk approve multiple pending answers. */
+  async bulkApprove(
+    answerIds: string[],
+    moderatorId: string,
+  ): Promise<{ approved: number }> {
+    let approved = 0;
+    for (const id of answerIds) {
+      try {
+        await this.approveAnswer(id, moderatorId);
+        approved++;
+      } catch {
+        // Skip invalid or already-processed answers
+      }
+    }
+    return { approved };
+  },
+
+  /** Bulk reject multiple pending answers. */
+  async bulkReject(
+    answerIds: string[],
+    moderatorId: string,
+    note?: string,
+  ): Promise<{ rejected: number }> {
+    let rejected = 0;
+    for (const id of answerIds) {
+      try {
+        await this.rejectAnswer(id, moderatorId, { note });
+        rejected++;
+      } catch {
+        // Skip invalid or already-processed answers
+      }
+    }
+    return { rejected };
+  },
+
+  /** Mark an approved answer as eligible for FAQ conversion. */
+  async markForFaq(answerId: string): Promise<void> {
+    const answer = await AnswerModel.findById(answerId);
+    if (!answer) throw ApiError.notFound('Answer not found');
+    if (answer.status !== 'approved') throw ApiError.badRequest('Only approved answers can be marked for FAQ');
+    answer.eligibleForFaqConversion = true;
+    await answer.save();
+  },
 };
+
+// Internal types for populated candidates
+interface PopulatedCandidate {
+  _id: Types.ObjectId;
+  body: string;
+  questionId: {
+    _id: Types.ObjectId;
+    title: string;
+    description: string;
+    category?: { name: string };
+  } | null;
+  answeredBy: { _id: Types.ObjectId; name: string };
+  moderatorId?: { _id: Types.ObjectId; name: string };
+  approvedAt?: Date;
+  createdAt: Date;
+}
+
+export interface FaqCandidateRow {
+  id: string;
+  questionTitle: string;
+  questionDescription: string;
+  answerBody: string;
+  category: string;
+  author: { id: string; name: string };
+  moderator?: { id: string; name: string };
+  approvedAt: string;
+}
+

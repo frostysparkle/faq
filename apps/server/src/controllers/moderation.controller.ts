@@ -42,4 +42,45 @@ export const moderationController = {
     );
     return noContent(res);
   },
+
+  /** List approved answers eligible for FAQ conversion. */
+  async listFaqCandidates(_req: Request, res: Response) {
+    return ok(res, await moderationService.listFaqCandidates());
+  },
+
+  /** Convert an approved answer to a new FAQ draft. Admin only. */
+  async convertToFaq(req: Request, res: Response) {
+    if (!req.user) throw ApiError.unauthorized();
+    const result = await moderationService.convertToFaq(req.params.id!, req.user.id);
+    return ok(res, result);
+  },
+
+  /** Bulk approve multiple pending answers. */
+  async bulkApprove(req: Request, res: Response) {
+    if (!req.user) throw ApiError.unauthorized();
+    const { ids } = req.body as { ids: string[] };
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw ApiError.badRequest('ids must be a non-empty array');
+    }
+    const result = await moderationService.bulkApprove(ids, req.user.id);
+    return ok(res, result);
+  },
+
+  /** Bulk reject multiple pending answers. */
+  async bulkReject(req: Request, res: Response) {
+    if (!req.user) throw ApiError.unauthorized();
+    const { ids, note } = req.body as { ids: string[]; note?: string };
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw ApiError.badRequest('ids must be a non-empty array');
+    }
+    const result = await moderationService.bulkReject(ids, req.user.id, note);
+    return ok(res, result);
+  },
+
+  /** Mark an approved answer as eligible for FAQ conversion. */
+  async markForFaq(req: Request, res: Response) {
+    await moderationService.markForFaq(req.params.id!);
+    return noContent(res);
+  },
 };
+

@@ -46,4 +46,27 @@ export const statsController = {
   async getCommunityIdle(_req: Request, res: Response) {
     return ok(res, await statsService.getCommunityIdleBuckets());
   },
+
+  /** Admin intelligence — system-wide health overview for the admin dashboard. */
+  async getAdminIntelligence(_req: Request, res: Response) {
+    return ok(res, await statsService.getAdminIntelligenceStats());
+  },
+
+  /** Per-moderator performance metrics for the admin moderation-load page. */
+  async getModerationLoad(_req: Request, res: Response) {
+    return ok(res, await statsService.getModerationLoadStats());
+  },
+
+  /** Personal performance stats for the logged-in moderator. */
+  async getModeratorPersonal(req: Request, res: Response) {
+    if (!req.user) throw ApiError.unauthorized();
+    return ok(res, await statsService.getModeratorPersonalStats(req.user.id));
+  },
+
+  /** FAQ quality scores for the admin FAQ Quality page. */
+  async getFaqQuality(req: Request, res: Response) {
+    const filter = (req.query.filter as 'all' | 'rewrite' | 'archive') ?? 'all';
+    return ok(res, await statsService.listFaqsForQuality(filter));
+  },
 };
+

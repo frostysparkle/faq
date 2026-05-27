@@ -17,6 +17,13 @@ import { FaqManagementPage } from './features/admin/FaqManagementPage';
 import { ChatbotFeedbackPage } from './features/admin/ChatbotFeedbackPage';
 import { AdminOverviewPage } from './features/admin/AdminOverviewPage';
 import { StudentAnalyticsPage } from './features/analytics/StudentAnalyticsPage';
+import { UserManagementPage } from './features/admin/UserManagementPage';
+import { FaqQualityPage } from './features/admin/FaqQualityPage';
+import { AuditLogsPage } from './features/admin/AuditLogsPage';
+import { ModerationLoadPage } from './features/admin/ModerationLoadPage';
+import { SettingsPage } from './features/admin/SettingsPage';
+import { ModeratorAnalyticsPage } from './features/moderation/ModeratorAnalyticsPage';
+import { FaqCandidatesPage } from './features/moderation/FaqCandidatesPage';
 
 export function App() {
   return (
@@ -47,6 +54,8 @@ export function App() {
           path="/moderation/pending"
           element={<Navigate to="/moderation/unresolved" replace />}
         />
+        <Route path="/moderation/analytics" element={<ModeratorAnalyticsPage />} />
+        <Route path="/moderation/faq-candidates" element={<FaqCandidatesPage />} />
 
         {/* Admin / shared FAQ Management — moderator and admin share the same page. */}
         <Route path="/admin" element={<AdminOverviewPage />} />
@@ -55,9 +64,12 @@ export function App() {
             for any bookmarks pointing to the old paths. */}
         <Route path="/admin/categories" element={<Navigate to="/admin/faqs" replace />} />
         <Route path="/admin/tags" element={<Navigate to="/admin/faqs" replace />} />
-        <Route path="/admin/users" element={<ComingSoonPage title="User Management" />} />
+        <Route path="/admin/users" element={<UserManagementPage />} />
         <Route path="/admin/bot-feedback" element={<ChatbotFeedbackPage />} />
-        <Route path="/admin/settings" element={<ComingSoonPage title="Settings" />} />
+        <Route path="/admin/faq-quality" element={<FaqQualityPage />} />
+        <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
+        <Route path="/admin/moderation-load" element={<ModerationLoadPage />} />
+        <Route path="/admin/settings" element={<SettingsPage />} />
 
         <Route path="/404" element={<NotFoundPage />} />
         <Route path="*" element={<Navigate to="/404" replace />} />

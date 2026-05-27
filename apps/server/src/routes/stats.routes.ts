@@ -25,4 +25,33 @@ router.get('/leaderboard', requireRole('student'), asyncHandler(statsController.
 // Idle-bucket counts for the community queue. Available to all authenticated roles.
 router.get('/community-idle', asyncHandler(statsController.getCommunityIdle));
 
+// Admin intelligence overview — admin only.
+router.get(
+  '/admin-intelligence',
+  requireRole('admin'),
+  asyncHandler(statsController.getAdminIntelligence),
+);
+
+// Per-moderator performance — admin only.
+router.get(
+  '/moderation-load',
+  requireRole('admin'),
+  asyncHandler(statsController.getModerationLoad),
+);
+
+// Personal moderator stats — moderator/admin only.
+router.get(
+  '/moderator-personal',
+  requireRole('moderator', 'admin'),
+  asyncHandler(statsController.getModeratorPersonal),
+);
+
+// FAQ quality scores — admin/moderator only.
+router.get(
+  '/faq-quality',
+  requireRole('moderator', 'admin'),
+  asyncHandler(statsController.getFaqQuality),
+);
+
 export const statsRouter = router;
+

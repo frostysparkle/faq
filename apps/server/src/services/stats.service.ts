@@ -232,4 +232,405 @@ async getCommunityIdleBuckets(): Promise<IdleBuckets> {
 
   return row ?? { last24h: 0, over3days: 0, over1week: 0, totalOpen: 0 };
 },
+
+  /**
+   * Admin intelligence metrics — single-screen system-health overview.
+   */
+  async getAdminIntelligenceStats(): Promise<AdminIntelligenceStats> {
+    const [
+      unresolvedQuestions,
+      pendingModerationItems,
+      faqsNeedingReview,
+      faqStats,
+      avgResolutionTime,
+      qualityAlerts,
+    ] = await Promise.all([
+      QuestionModel.countDocuments({ status: { $in: ['open', 'answered'] } }),
+      AnswerModel.countDocuments({ status: 'pending' }),
+      FaqModel.countDocuments({ status: { $in: ['draft', 'outdated'] } }),
+      this.getFaqStats(),
+      this._computeAvgResolutionTime(),
+      this._computeQualityAlerts(5),
+    ]);
+
+    return {
+      unresolvedQuestions,
+      pendingModerationItems,
+      faqsNeedingReview,
+      avgResolutionTimeHours: avgResolutionTime,
+      publishedFaqs: faqStats.publishedFaqs,
+      totalFaqs: faqStats.totalFaqs,
+      helpfulPercentage: faqStats.helpfulPercentage,
+      flaggedCount: faqStats.flaggedCount,
+      qualityAlerts,
+    };
+  },
+
+  /**
+   * Average time (in hours) from question creation to resolved status.
+   * Only considers community questions resolved in the last 30 days.
+   */
+  async _computeAvgResolutionTime(): Promise<number> {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const [result] = await QuestionModel.aggregate<{ avgHours: number }>([
+      { $match: { status: 'resolved', updatedAt: { $gte: thirtyDaysAgo } } },
+      {
+        $project: {
+          resolutionMs: { $subtract: ['$updatedAt', '$createdAt'] },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          avgMs: { $avg: '$resolutionMs' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          avgHours: { $round: [{ $divide: ['$avgMs', 3600000] }, 1] },
+        },
+      },
+    ]);
+    return result?.avgHours ?? 0;
+  },
+
+  /**
+   * Top N FAQs that are at quality risk — high flag ratio or low helpful ratio.
+   */
+  async _computeQualityAlerts(limit: number): Promise<QualityAlert[]> {
+    const faqs = await FaqModel.find({ status: 'published' })
+      .select('title helpfulCount unhelpfulCount flagCount viewCount updatedAt')
+      .lean();
+
+    const scored = faqs.map((faq) => {
+      const total = (faq.helpfulCount ?? 0) + (faq.unhelpfulCount ?? 0);
+      const helpfulRatio = total > 0 ? (faq.helpfulCount ?? 0) / total : 0.5;
+      const flagRatio = (faq.viewCount ?? 0) > 0
+        ? (faq.flagCount ?? 0) / (faq.viewCount ?? 1)
+        : 0;
+      // Lower score = higher risk
+      const qualityScore = Math.round(
+        (0.4 * helpfulRatio +
+          0.35 * (1 - Math.min(flagRatio * 10, 1)) +
+          0.25 * computeFreshnessScore(faq.updatedAt)) * 100,
+      );
+      return {
+        id: faq._id.toString(),
+        title: faq.title,
+        qualityScore,
+        helpfulRatio: Math.round(helpfulRatio * 100),
+        flagCount: faq.flagCount ?? 0,
+        viewCount: faq.viewCount ?? 0,
+        updatedAt: faq.updatedAt.toISOString(),
+      };
+    });
+
+    // Sort by quality score ascending (worst first), take top N.
+    scored.sort((a, b) => a.qualityScore - b.qualityScore);
+    return scored.slice(0, limit);
+  },
+
+  /**
+   * Per-moderator performance stats — approvals, rejections, avg response time.
+   */
+  async getModerationLoadStats(): Promise<ModerationLoadStats> {
+    const now = Date.now();
+    const todayStart = new Date(now - (now % (24 * 60 * 60 * 1000)));
+    const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+
+    // Per-moderator aggregation from Answer.moderatorId
+    const modPerformance = await AnswerModel.aggregate<{
+      _id: mongoose.Types.ObjectId;
+      totalApprovals: number;
+      totalRejections: number;
+      approvalsThisWeek: number;
+      avgResponseTimeMs: number;
+    }>([
+      { $match: { moderatorId: { $exists: true, $ne: null } } },
+      {
+        $facet: {
+          byMod: [
+            {
+              $group: {
+                _id: '$moderatorId',
+                totalApprovals: {
+                  $sum: { $cond: [{ $eq: ['$status', 'approved'] }, 1, 0] },
+                },
+                totalRejections: {
+                  $sum: { $cond: [{ $eq: ['$status', 'rejected'] }, 1, 0] },
+                },
+                approvalsThisWeek: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$status', 'approved'] },
+                          { $gte: ['$approvedAt', weekAgo] },
+                        ],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                avgResponseTimeMs: {
+                  $avg: { $subtract: ['$updatedAt', '$createdAt'] },
+                },
+              },
+            },
+          ],
+        },
+      },
+      { $unwind: '$byMod' },
+      { $replaceRoot: { newRoot: '$byMod' } },
+    ]);
+
+    // Look up moderator names
+    const modIds = modPerformance.map((m) => m._id);
+    const moderators = await UserModel.find({ _id: { $in: modIds } })
+      .select('name email')
+      .lean();
+    const modMap = new Map(
+      moderators.map((m) => [m._id.toString(), { name: m.name, email: m.email }]),
+    );
+
+    const moderatorMetrics: ModeratorMetric[] = modPerformance.map((m) => ({
+      moderatorId: m._id.toString(),
+      name: modMap.get(m._id.toString())?.name ?? 'Unknown',
+      email: modMap.get(m._id.toString())?.email ?? '',
+      totalApprovals: m.totalApprovals,
+      totalRejections: m.totalRejections,
+      approvalsThisWeek: m.approvalsThisWeek,
+      avgResponseTimeHours: Math.round((m.avgResponseTimeMs / 3600000) * 10) / 10,
+    }));
+
+    // Category backlog
+    const categoryBacklog = await AnswerModel.aggregate<{
+      category: string;
+      count: number;
+    }>([
+      { $match: { status: 'pending' } },
+      {
+        $lookup: {
+          from: 'questions',
+          localField: 'questionId',
+          foreignField: '_id',
+          as: 'question',
+        },
+      },
+      { $unwind: '$question' },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'question.category',
+          foreignField: '_id',
+          as: 'cat',
+        },
+      },
+      { $unwind: { path: '$cat', preserveNullAndEmptyArrays: true } },
+      { $group: { _id: '$cat.name', count: { $sum: 1 } } },
+      { $project: { _id: 0, category: { $ifNull: ['$_id', 'Uncategorized'] }, count: 1 } },
+      { $sort: { count: -1 } },
+    ]);
+
+    const pendingTotal = await AnswerModel.countDocuments({ status: 'pending' });
+
+    return {
+      pendingQueueDepth: pendingTotal,
+      moderators: moderatorMetrics,
+      categoryBacklog,
+    };
+  },
+
+  /**
+   * Personal stats for a specific moderator (their own analytics page).
+   */
+  async getModeratorPersonalStats(moderatorId: string): Promise<ModeratorPersonalStats> {
+    const now = Date.now();
+    const todayStart = new Date(now - (now % (24 * 60 * 60 * 1000)));
+    const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+    const modObjectId = new mongoose.Types.ObjectId(moderatorId);
+
+    const [approvalsToday, approvalsThisWeek, totalApprovals, totalRejections, avgTime] =
+      await Promise.all([
+        AnswerModel.countDocuments({
+          moderatorId: modObjectId,
+          status: 'approved',
+          approvedAt: { $gte: todayStart },
+        }),
+        AnswerModel.countDocuments({
+          moderatorId: modObjectId,
+          status: 'approved',
+          approvedAt: { $gte: weekAgo },
+        }),
+        AnswerModel.countDocuments({ moderatorId: modObjectId, status: 'approved' }),
+        AnswerModel.countDocuments({ moderatorId: modObjectId, status: 'rejected' }),
+        AnswerModel.aggregate<{ avgMs: number }>([
+          { $match: { moderatorId: modObjectId, status: { $in: ['approved', 'rejected'] } } },
+          { $group: { _id: null, avgMs: { $avg: { $subtract: ['$updatedAt', '$createdAt'] } } } },
+        ]),
+      ]);
+
+    // Category breakdown for this moderator
+    const categoryBreakdown = await AnswerModel.aggregate<{
+      category: string;
+      count: number;
+    }>([
+      { $match: { moderatorId: modObjectId, status: { $in: ['approved', 'rejected'] } } },
+      {
+        $lookup: {
+          from: 'questions',
+          localField: 'questionId',
+          foreignField: '_id',
+          as: 'question',
+        },
+      },
+      { $unwind: '$question' },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'question.category',
+          foreignField: '_id',
+          as: 'cat',
+        },
+      },
+      { $unwind: { path: '$cat', preserveNullAndEmptyArrays: true } },
+      { $group: { _id: '$cat.name', count: { $sum: 1 } } },
+      { $project: { _id: 0, category: { $ifNull: ['$_id', 'Uncategorized'] }, count: 1 } },
+      { $sort: { count: -1 } },
+    ]);
+
+    return {
+      approvalsToday,
+      approvalsThisWeek,
+      totalApprovals,
+      totalRejections,
+      avgResponseTimeHours: Math.round(((avgTime[0]?.avgMs ?? 0) / 3600000) * 10) / 10,
+      categoryBreakdown,
+    };
+  },
+
+  /**
+   * FAQs with computed quality scores for the admin FAQ Quality page.
+   */
+  async listFaqsForQuality(
+    filter: 'all' | 'rewrite' | 'archive',
+  ): Promise<FaqQualityRow[]> {
+    const faqs = await FaqModel.find({ status: { $in: ['published', 'outdated'] } })
+      .select('title helpfulCount unhelpfulCount flagCount viewCount status updatedAt categories')
+      .populate('categories', 'name')
+      .lean();
+
+    const rows: FaqQualityRow[] = faqs.map((faq) => {
+      const total = (faq.helpfulCount ?? 0) + (faq.unhelpfulCount ?? 0);
+      const helpfulRatio = total > 0 ? (faq.helpfulCount ?? 0) / total : 0.5;
+      const flagRatio = (faq.viewCount ?? 0) > 0
+        ? (faq.flagCount ?? 0) / (faq.viewCount ?? 1)
+        : 0;
+      const freshness = computeFreshnessScore(faq.updatedAt);
+      const qualityScore = Math.round(
+        (0.4 * helpfulRatio +
+          0.35 * (1 - Math.min(flagRatio * 10, 1)) +
+          0.25 * freshness) * 100,
+      );
+
+      let classification: 'good' | 'rewrite' | 'archive' = 'good';
+      if (qualityScore < 30) classification = 'archive';
+      else if (qualityScore < 60) classification = 'rewrite';
+
+      const cats = (faq.categories as unknown as { name: string }[]) ?? [];
+
+      return {
+        id: faq._id.toString(),
+        title: faq.title,
+        qualityScore,
+        helpfulRatio: Math.round(helpfulRatio * 100),
+        flagCount: faq.flagCount ?? 0,
+        viewCount: faq.viewCount ?? 0,
+        status: faq.status as string,
+        classification,
+        category: cats[0]?.name ?? '—',
+        updatedAt: faq.updatedAt.toISOString(),
+      };
+    });
+
+    rows.sort((a, b) => a.qualityScore - b.qualityScore);
+
+    if (filter === 'rewrite') return rows.filter((r) => r.classification === 'rewrite');
+    if (filter === 'archive') return rows.filter((r) => r.classification === 'archive');
+    return rows;
+  },
 };
+
+// ─── Helper ──────────────────────────────────────────────────────────────────
+function computeFreshnessScore(updatedAt: Date): number {
+  const daysOld = (Date.now() - updatedAt.getTime()) / (24 * 60 * 60 * 1000);
+  if (daysOld <= 7) return 1;
+  if (daysOld <= 30) return 0.7;
+  if (daysOld <= 90) return 0.4;
+  return 0.1;
+}
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+export interface AdminIntelligenceStats {
+  unresolvedQuestions: number;
+  pendingModerationItems: number;
+  faqsNeedingReview: number;
+  avgResolutionTimeHours: number;
+  publishedFaqs: number;
+  totalFaqs: number;
+  helpfulPercentage: number;
+  flaggedCount: number;
+  qualityAlerts: QualityAlert[];
+}
+
+export interface QualityAlert {
+  id: string;
+  title: string;
+  qualityScore: number;
+  helpfulRatio: number;
+  flagCount: number;
+  viewCount: number;
+  updatedAt: string;
+}
+
+export interface ModerationLoadStats {
+  pendingQueueDepth: number;
+  moderators: ModeratorMetric[];
+  categoryBacklog: { category: string; count: number }[];
+}
+
+export interface ModeratorMetric {
+  moderatorId: string;
+  name: string;
+  email: string;
+  totalApprovals: number;
+  totalRejections: number;
+  approvalsThisWeek: number;
+  avgResponseTimeHours: number;
+}
+
+export interface ModeratorPersonalStats {
+  approvalsToday: number;
+  approvalsThisWeek: number;
+  totalApprovals: number;
+  totalRejections: number;
+  avgResponseTimeHours: number;
+  categoryBreakdown: { category: string; count: number }[];
+}
+
+export interface FaqQualityRow {
+  id: string;
+  title: string;
+  qualityScore: number;
+  helpfulRatio: number;
+  flagCount: number;
+  viewCount: number;
+  status: string;
+  classification: 'good' | 'rewrite' | 'archive';
+  category: string;
+  updatedAt: string;
+}
+

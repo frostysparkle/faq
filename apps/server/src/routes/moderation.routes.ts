@@ -26,4 +26,18 @@ router.patch(
   asyncHandler(moderationController.rejectAnswer),
 );
 
+// FAQ candidates (approved answers eligible for conversion)
+router.get('/faq-candidates', asyncHandler(moderationController.listFaqCandidates));
+router.post(
+  '/faq-candidates/:id/convert',
+  requireRole('admin'),
+  asyncHandler(moderationController.convertToFaq),
+);
+router.patch('/answers/:id/mark-for-faq', asyncHandler(moderationController.markForFaq));
+
+// Bulk operations
+router.post('/bulk-approve', asyncHandler(moderationController.bulkApprove));
+router.post('/bulk-reject', asyncHandler(moderationController.bulkReject));
+
 export const moderationRouter = router;
+

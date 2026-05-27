@@ -9,6 +9,9 @@ import { moderationRouter } from './moderation.routes.js';
 import { statsRouter } from './stats.routes.js';
 import { flagRouter } from './flag.routes.js';
 import { chatbotRouter } from './chatbot.routes.js';
+import { userRouter } from './user.routes.js';
+import { auditRouter } from './audit.routes.js';
+import { settingsRouter } from './settings.routes.js';
 
 const router = Router();
 
@@ -25,8 +28,9 @@ router.use('/moderation', moderationRouter);
 router.use('/stats', statsRouter);
 router.use('/flags', flagRouter);
 router.use('/chat', chatbotRouter);
-// Future mounts:
-// router.use('/chat', chatRouter);
-// router.use('/admin', adminRouter);
+router.use('/users', userRouter);
+router.use('/audit-logs', auditRouter);
+router.use('/settings', settingsRouter);
 
 export const apiRouter = router;
+
