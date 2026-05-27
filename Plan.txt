@@ -1203,6 +1203,24 @@ Displays:
 Number of FAQs marked outdated.
 FAQs awaiting review.
 FAQs updated after outdated reports.
+
+----------------------------------------------------
+----------------------------------------------------
+Requirements posted by Joyita Bhawal : 
+Suggestive changes/features 
+Student
+Add a collapse all button on top when multiple faqs are opened so that all closes at once.
+Moderator/ Admin
+Let user add category/tags while creating an faq too alongwith the designated place to do so. Makes it more accessible just in case user realises they dont have a certain category then they dont need to leave the creation.
+Since all faqs are getting listed in faq management page, let users filter out status/categories as they are unordered. Like showing only the Draft ones. Maybe add a filter icon right next to the headers and let users choose from a dropdown.
+
+Double verify before deleting a faq. It directly deletes as of now.
+General
+On collapsing the sidebar, the profile icon is vanishing from bottom of sidebar. Better to keep the icon and a logout symbol as a stack form. 
+On hovering any icon, make a bubble appear denoting what’s the icon for. Like hovering over the pencil icon would say Edit. 
+
+
+
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Requirements Posted by : Jahnvi Paliwal
 
