@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Eye,
   Plus,
@@ -12,16 +12,40 @@ import {
   ChevronLeft,
   ChevronRight,
   Info,
+  Columns3,
+  Check,
+  Search,
+  X,
 } from 'lucide-react';
 import type { PublicFaq, FaqCreateInput, FaqStatus } from '@samagama/shared';
-import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
+import { Card } from '../../../components/ui/Card';
 import { useArchiveFaq, useCategories, useFaqList, useTags } from '../../faq/queries';
 import { InlineFaqEditor } from './InlineFaqEditor';
 import { FlagInbox } from './FlagInbox';
 
 type Filter = 'all' | 'helpful' | 'flagged';
+type ColKey = 'details' | 'engagement' | 'flag' | 'actions';
 const PAGE_SIZES = [5, 10, 20, 50];
+
+const COL_LABELS: Record<ColKey, string> = {
+  details:    'Details',
+  engagement: 'Engagement',
+  flag:       'Flag',
+  actions:    'Actions',
+};
+const DEFAULT_VISIBLE: Record<ColKey, boolean> = {
+  details: true, engagement: true, flag: true, actions: true,
+};
+
+function buildGrid(vis: Record<ColKey, boolean>): string {
+  const cols = ['52px', 'minmax(0,1fr)'];
+  if (vis.details)    cols.push('minmax(0,1.4fr)');
+  if (vis.engagement) cols.push('160px');
+  if (vis.flag)       cols.push('140px');
+  if (vis.actions)    cols.push('130px');
+  return cols.join(' ');
+}
 
 // ─── Colours (hardcoded so they work in both themes) ──────────────────────
 const C = {
@@ -58,13 +82,51 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [visibleCols, setVisibleCols] = useState<Record<ColKey, boolean>>(DEFAULT_VISIBLE);
+  const [colMenuOpen, setColMenuOpen] = useState(false);
+  const colMenuRef = useRef<HTMLDivElement>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const toggleCol = (col: ColKey) =>
+    setVisibleCols((v) => ({ ...v, [col]: !v[col] }));
+
+  const grid = buildGrid(visibleCols);
+
+  // Close column menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (colMenuRef.current && !colMenuRef.current.contains(e.target as Node)) {
+        setColMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    searchDebounce.current = setTimeout(() => {
+      setSearchQuery(value.trim());
+      setPage(1);
+    }, 350);
+  };
+
+  const clearSearch = () => {
+    setSearchInput('');
+    setSearchQuery('');
+    setPage(1);
+  };
 
   const queryParams = useMemo(() => {
-    const q: { filter?: 'helpful' | 'flagged'; page: number; pageSize: number } = { page, pageSize };
+    const q: { filter?: 'helpful' | 'flagged'; page: number; pageSize: number; q?: string; sort?: string } = { page, pageSize };
     if (filter === 'helpful') q.filter = 'helpful';
     if (filter === 'flagged') q.filter = 'flagged';
+    if (searchQuery) { q.q = searchQuery; q.sort = 'relevance'; }
     return q;
-  }, [filter, page, pageSize]);
+  }, [filter, page, pageSize, searchQuery]);
 
   const { data, isLoading } = useFaqList(queryParams);
   const { data: categories } = useCategories();
@@ -81,7 +143,7 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
     <div>
       {/* ── Toolbar ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {(['all', 'helpful', 'flagged'] as Filter[]).map((f) => (
             <FilterChip key={f} active={filter === f} onClick={() => switchFilter(f)}>
               {f === 'all' ? 'All' : f === 'helpful' ? 'Helpful FAQs' : (
@@ -97,9 +159,150 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
             </FilterChip>
           ))}
         </div>
-        <Button onClick={() => setCreating((v) => !v)}>
-          <Plus size={14} /> {creating ? 'Cancel' : 'New FAQ'}
-        </Button>
+
+        {/* Search bar */}
+        <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: 340 }}>
+          <Search
+            size={15}
+            color={searchInput ? '#6366f1' : C.muted}
+            style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+          />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Search FAQs by keyword…"
+            style={{
+              width: '100%',
+              padding: '8px 36px 8px 36px',
+              fontSize: 13,
+              border: `1px solid ${searchInput ? '#6366f1' : '#e5e7eb'}`,
+              borderRadius: 8,
+              outline: 'none',
+              background: '#fff',
+              color: C.text,
+              fontFamily: 'inherit',
+              boxSizing: 'border-box',
+              transition: 'border-color .15s',
+            }}
+            onFocus={(e) => (e.target.style.borderColor = '#6366f1')}
+            onBlur={(e) => (e.target.style.borderColor = searchInput ? '#6366f1' : '#e5e7eb')}
+          />
+          {searchInput && (
+            <button
+              onClick={clearSearch}
+              style={{
+                position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                background: 'none', border: 'none', cursor: 'pointer', padding: 2,
+                display: 'flex', alignItems: 'center', color: C.muted,
+              }}
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Column visibility picker */}
+          <div ref={colMenuRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setColMenuOpen((v) => !v)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                fontSize: 13, fontWeight: 500, padding: '7px 14px', borderRadius: 8,
+                border: `1px solid ${colMenuOpen ? '#6366f1' : '#e5e7eb'}`,
+                background: colMenuOpen ? '#f0f0ff' : '#fff',
+                color: colMenuOpen ? '#6366f1' : '#374151',
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              <Columns3 size={14} /> Columns
+              {Object.values(visibleCols).some((v) => !v) && (
+                <span style={{
+                  background: '#6366f1', color: '#fff',
+                  borderRadius: 10, padding: '0 5px', fontSize: 10, fontWeight: 700,
+                }}>
+                  {Object.values(visibleCols).filter((v) => !v).length}
+                </span>
+              )}
+            </button>
+
+            {colMenuOpen && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 50,
+                background: '#fff', border: '1px solid #e5e7eb',
+                borderRadius: 10, boxShadow: '0 4px 16px rgba(0,0,0,.10)',
+                minWidth: 180, padding: '6px 0',
+              }}>
+                {/* header */}
+                <div style={{
+                  padding: '8px 14px 6px',
+                  fontSize: 10, fontWeight: 700, letterSpacing: '.5px',
+                  color: '#9ca3af', textTransform: 'uppercase',
+                  borderBottom: '1px solid #f3f4f6',
+                }}>
+                  Toggle columns
+                </div>
+                {/* Question — always locked */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '9px 14px', opacity: 0.45,
+                }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: '#111827' }}>Question</span>
+                  <div style={{
+                    width: 18, height: 18, borderRadius: 5, background: '#6366f1',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Check size={11} color="#fff" strokeWidth={3} />
+                  </div>
+                </div>
+                <div style={{ borderBottom: '1px solid #f3f4f6' }} />
+                {/* Toggleable columns */}
+                {(Object.keys(COL_LABELS) as ColKey[]).map((col) => (
+                  <button
+                    key={col}
+                    onClick={() => toggleCol(col)}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      width: '100%', padding: '9px 14px', background: 'none', border: 'none',
+                      cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f9fafb')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                  >
+                    <span style={{ fontSize: 13, fontWeight: 500, color: visibleCols[col] ? '#111827' : '#9ca3af' }}>
+                      {COL_LABELS[col]}
+                    </span>
+                    <div style={{
+                      width: 18, height: 18, borderRadius: 5,
+                      background: visibleCols[col] ? '#6366f1' : '#f3f4f6',
+                      border: visibleCols[col] ? 'none' : '1px solid #e5e7eb',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      {visibleCols[col] && <Check size={11} color="#fff" strokeWidth={3} />}
+                    </div>
+                  </button>
+                ))}
+                {/* Reset link */}
+                <div style={{ borderTop: '1px solid #f3f4f6', padding: '6px 14px' }}>
+                  <button
+                    onClick={() => setVisibleCols(DEFAULT_VISIBLE)}
+                    style={{
+                      fontSize: 12, color: '#6366f1', background: 'none', border: 'none',
+                      cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500, padding: 0,
+                    }}
+                  >
+                    Reset to default
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Button onClick={() => setCreating((v) => !v)}>
+            <Plus size={14} /> {creating ? 'Cancel' : 'New FAQ'}
+          </Button>
+        </div>
       </div>
 
       {creating && categories && tags && (
@@ -115,7 +318,7 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
         {/* Header */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '60px 200px 1fr 180px 150px 140px',
+          gridTemplateColumns: grid,
           alignItems: 'center',
           padding: '14px 20px',
           background: C.header,
@@ -124,21 +327,27 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
         }}>
           <ColHead>#</ColHead>
           <ColHead>Question</ColHead>
-          <ColHead>
-            <span>Details</span>
-            <span style={{ fontSize: 11, fontWeight: 400, color: C.muted, marginLeft: 8 }}>
-              Category · Status · Updated
-            </span>
-          </ColHead>
-          <ColHead>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              Engagement <Info size={13} color={C.muted} />
-            </span>
-          </ColHead>
-          <ColHead>
-            <Flag size={14} color={C.muted} />
-          </ColHead>
-          <ColHead>Actions</ColHead>
+          {visibleCols.details && (
+            <ColHead>
+              <span>Details</span>
+              <span style={{ fontSize: 11, fontWeight: 400, color: C.muted, marginLeft: 8 }}>
+                Category · Status · Updated
+              </span>
+            </ColHead>
+          )}
+          {visibleCols.engagement && (
+            <ColHead>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                Engagement <Info size={13} color={C.muted} />
+              </span>
+            </ColHead>
+          )}
+          {visibleCols.flag && (
+            <ColHead>
+              <Flag size={14} color={C.muted} />
+            </ColHead>
+          )}
+          {visibleCols.actions && <ColHead>Actions</ColHead>}
         </div>
 
         {/* Body */}
@@ -147,7 +356,9 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
         )}
         {!isLoading && data?.items.length === 0 && (
           <div style={{ padding: 40, textAlign: 'center', fontSize: 13, color: C.muted }}>
-            No FAQs match this filter.
+            {searchQuery
+              ? <>No FAQs matched <strong>"{searchQuery}"</strong>. Try different keywords.</>
+              : 'No FAQs match this filter.'}
           </div>
         )}
 
@@ -167,6 +378,8 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
               onCancelEdit={() => setEditingId(null)}
               categories={categories ?? []}
               tags={tags ?? []}
+              visibleCols={visibleCols}
+              grid={grid}
             />
           );
         })}
@@ -179,6 +392,15 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
           {total === 0
             ? 'No FAQs found'
             : `Showing ${startItem} to ${endItem} of ${total} FAQ${total === 1 ? '' : 's'}`}
+          {searchQuery && total > 0 && (
+            <span style={{
+              marginLeft: 8, fontSize: 12, fontWeight: 600,
+              background: '#ede9fe', color: '#6366f1',
+              borderRadius: 6, padding: '2px 8px',
+            }}>
+              "{searchQuery}"
+            </span>
+          )}
         </span>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -224,12 +446,15 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
 function FaqRow({
   faq, rowNum, isLast, expanded, onToggleExpand,
   editing, onEdit, onCancelEdit, categories, tags,
+  visibleCols, grid,
 }: {
   faq: PublicFaq; rowNum: string; isLast: boolean;
   expanded: boolean; onToggleExpand: () => void;
   editing: boolean; onEdit: () => void; onCancelEdit: () => void;
   categories: { _id: string; name: string }[];
   tags: { _id: string; name: string }[];
+  visibleCols: Record<ColKey, boolean>;
+  grid: string;
 }) {
   const archive   = useArchiveFaq();
   const flagCount = faq.flagCount ?? 0;
@@ -260,7 +485,7 @@ function FaqRow({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '60px 200px 1fr 180px 150px 140px',
+          gridTemplateColumns: grid,
           alignItems: 'center',
           padding: '20px 20px',
           borderBottom: isLast && !expanded ? 'none' : `1px solid ${C.border}`,
@@ -283,109 +508,109 @@ function FaqRow({
         </div>
 
         {/* Question */}
-        <div style={{ paddingRight: 16 }}>
+        <div style={{ paddingRight: 16, minWidth: 0 }}>
           <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: C.text, lineHeight: 1.45 }}>
             {faq.title}
           </p>
         </div>
 
-        {/* Details — Category | Status | Updated */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 0, paddingRight: 20 }}>
-          {/* Category */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingRight: 20, flexShrink: 0 }}>
-            <Folder size={15} color={C.muted} strokeWidth={1.5} />
-            <div>
-              <p style={labelStyle}>Category</p>
-              <p style={{ ...valueStyle, color: C.catText }}>{faq.categories[0]?.name ?? '—'}</p>
-            </div>
-          </div>
-
-          <div style={vDivider} />
-
-          {/* Status */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 20, paddingRight: 20, flexShrink: 0 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
-            <div>
-              <p style={labelStyle}>Status</p>
+        {/* Details — stacked: Category on top, Status + Updated below */}
+        {visibleCols.details && (
+          <div style={{ paddingRight: 20, minWidth: 0 }}>
+            {/* Row 1: Category */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, minWidth: 0 }}>
+              <Folder size={13} color={C.muted} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: 10, color: C.muted, fontWeight: 500, flexShrink: 0 }}>Category</span>
               <span style={{
-                fontSize: 12, fontWeight: 600, padding: '2px 10px', borderRadius: 20,
-                background: pill.bg, color: pill.fg,
+                fontSize: 13, fontWeight: 600, color: C.catText,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                marginLeft: 4,
+              }}>
+                {faq.categories[0]?.name ?? '—'}
+              </span>
+            </div>
+            {/* Row 2: Status + Updated */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+              <span style={{
+                fontSize: 11, fontWeight: 600, padding: '2px 9px', borderRadius: 20,
+                background: pill.bg, color: pill.fg, whiteSpace: 'nowrap',
               }}>
                 {faq.status.charAt(0).toUpperCase() + faq.status.slice(1)}
               </span>
+              <span style={{ width: 1, height: 14, background: C.divider, flexShrink: 0 }} />
+              <CalendarDays size={13} color={C.muted} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: 12, fontWeight: 500, color: C.mutedLabel, whiteSpace: 'nowrap' }}>
+                {timeAgo(faq.updatedAt)}
+              </span>
             </div>
           </div>
-
-          <div style={vDivider} />
-
-          {/* Updated */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 20, flexShrink: 0 }}>
-            <CalendarDays size={15} color={C.muted} strokeWidth={1.5} />
-            <div>
-              <p style={labelStyle}>Updated</p>
-              <p style={valueStyle}>{timeAgo(faq.updatedAt)}</p>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Engagement */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <ThumbsUp size={20} color={C.thumbUp} strokeWidth={1.8} />
-            <span style={{ fontSize: 15, fontWeight: 700, color: C.thumbUp }}>{faq.helpfulCount ?? 0}</span>
+        {visibleCols.engagement && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <ThumbsUp size={20} color={C.thumbUp} strokeWidth={1.8} />
+              <span style={{ fontSize: 15, fontWeight: 700, color: C.thumbUp }}>{faq.helpfulCount ?? 0}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <ThumbsDown size={20} color={C.thumbDown} strokeWidth={1.8} />
+              <span style={{ fontSize: 15, fontWeight: 700, color: C.thumbDown }}>{faq.unhelpfulCount ?? 0}</span>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <ThumbsDown size={20} color={C.thumbDown} strokeWidth={1.8} />
-            <span style={{ fontSize: 15, fontWeight: 700, color: C.thumbDown }}>{faq.unhelpfulCount ?? 0}</span>
-          </div>
-        </div>
+        )}
 
         {/* Flag */}
-        <div>
-          {flagCount > 0 ? (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-                <Flag size={13} color={C.flagBadge.fg} strokeWidth={2} />
-                <span style={{
-                  fontSize: 12, fontWeight: 700, padding: '2px 10px', borderRadius: 20,
-                  background: C.flagBadge.bg, color: C.flagBadge.fg,
-                }}>
-                  Flagged
-                </span>
+        {visibleCols.flag && (
+          <div>
+            {flagCount > 0 ? (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+                  <Flag size={13} color={C.flagBadge.fg} strokeWidth={2} />
+                  <span style={{
+                    fontSize: 12, fontWeight: 700, padding: '2px 10px', borderRadius: 20,
+                    background: C.flagBadge.bg, color: C.flagBadge.fg,
+                  }}>
+                    Flagged
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: 11, color: C.muted }}>
+                  by {flagCount} student{flagCount === 1 ? '' : 's'}
+                </p>
               </div>
-              <p style={{ margin: 0, fontSize: 11, color: C.muted }}>
-                by {flagCount} student{flagCount === 1 ? '' : 's'}
-              </p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Flag size={14} color={C.flagNone} strokeWidth={1.5} />
-              <span style={{ fontSize: 13, color: C.flagNone }}>—</span>
-            </div>
-          )}
-        </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Flag size={14} color={C.flagNone} strokeWidth={1.5} />
+                <span style={{ fontSize: 13, color: C.flagNone }}>—</span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ABtn
-            label={expanded ? 'Hide answer' : 'View answer'}
-            onClick={onToggleExpand}
-            bg={C.actionEye.bg} fg={C.actionEye.fg} border={C.actionEye.border}
-          >
-            <Eye size={15} strokeWidth={1.8} />
-          </ABtn>
-          <ABtn label="Edit" onClick={onEdit} bg={C.actionEdit.bg} fg={C.actionEdit.fg} border={C.actionEdit.border}>
-            <Pencil size={15} strokeWidth={1.8} />
-          </ABtn>
-          <ABtn
-            label="Archive"
-            onClick={() => archive.mutate(faq.id)}
-            disabled={archive.isPending || faq.status === 'archived'}
-            bg={C.actionDel.bg} fg={C.actionDel.fg} border={C.actionDel.border}
-          >
-            <Trash2 size={15} strokeWidth={1.8} />
-          </ABtn>
-        </div>
+        {visibleCols.actions && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ABtn
+              label={expanded ? 'Hide answer' : 'View answer'}
+              onClick={onToggleExpand}
+              bg={C.actionEye.bg} fg={C.actionEye.fg} border={C.actionEye.border}
+            >
+              <Eye size={15} strokeWidth={1.8} />
+            </ABtn>
+            <ABtn label="Edit" onClick={onEdit} bg={C.actionEdit.bg} fg={C.actionEdit.fg} border={C.actionEdit.border}>
+              <Pencil size={15} strokeWidth={1.8} />
+            </ABtn>
+            <ABtn
+              label="Archive"
+              onClick={() => archive.mutate(faq.id)}
+              disabled={archive.isPending || faq.status === 'archived'}
+              bg={C.actionDel.bg} fg={C.actionDel.fg} border={C.actionDel.border}
+            >
+              <Trash2 size={15} strokeWidth={1.8} />
+            </ABtn>
+          </div>
+        )}
       </div>
 
       {/* Expanded answer */}

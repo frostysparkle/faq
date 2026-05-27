@@ -82,7 +82,7 @@ export function FlagInbox() {
                     fontStyle: 'italic',
                   }}
                 >
-                  “{f.details}”
+                  "{f.details}"
                 </div>
               )}
             </div>
@@ -112,7 +112,7 @@ export function FlagInbox() {
               {SPURTI_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
-                  type=”button”
+                  type="button"
                   onClick={() => setSpurti(f.id, opt.value)}
                   style={{
                     fontSize: 11,
@@ -134,8 +134,8 @@ export function FlagInbox() {
             {/* Action buttons */}
             <div style={{ display: 'flex', gap: 6 }}>
               <Button
-                size=”sm”
-                variant=”success”
+                size="sm"
+                variant="success"
                 disabled={update.isPending}
                 onClick={() =>
                   update.mutate({
@@ -151,8 +151,8 @@ export function FlagInbox() {
                 <Check size={12} /> Resolve
               </Button>
               <Button
-                size=”sm”
-                variant=”ghost”
+                size="sm"
+                variant="ghost"
                 disabled={update.isPending}
                 onClick={() =>
                   update.mutate({

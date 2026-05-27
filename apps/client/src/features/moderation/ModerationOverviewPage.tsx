@@ -45,13 +45,7 @@ export function ModerationOverviewPage() {
         </div>
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 14,
-        }}
-      >
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
         <IdleBucketCards style={{ marginBottom: 0 }} />
 
         {/* Personal Questions */}
@@ -60,27 +54,9 @@ export function ModerationOverviewPage() {
           titleIcon={MessageCircle}
           titleColor="var(--color-primary)"
           rows={[
-            {
-              label: 'Total personal questions',
-              sub: 'All time, all students',
-              value: v(data?.personal.total),
-              icon: Users,
-              color: 'var(--color-primary)',
-            },
-            {
-              label: 'Unanswered',
-              sub: 'Awaiting moderator response',
-              value: v(data?.personal.unanswered),
-              icon: HelpCircle,
-              color: 'var(--color-danger)',
-            },
-            {
-              label: 'Posted today',
-              sub: 'New questions since midnight',
-              value: v(data?.personal.today),
-              icon: CalendarDays,
-              color: 'var(--color-primary)',
-            },
+            { label: 'Total personal questions', sub: 'All time, all students', value: v(data?.personal.total), icon: Users, color: 'var(--color-primary)' },
+            { label: 'Unanswered', sub: 'Awaiting moderator response', value: v(data?.personal.unanswered), icon: HelpCircle, color: 'var(--color-danger)' },
+            { label: 'Posted today', sub: 'New questions since midnight', value: v(data?.personal.today), icon: CalendarDays, color: 'var(--color-primary)' },
           ]}
         />
 
@@ -90,27 +66,9 @@ export function ModerationOverviewPage() {
           titleIcon={MessageSquare}
           titleColor="var(--color-success)"
           rows={[
-            {
-              label: 'Total (all-time)',
-              sub: 'Answered + unanswered',
-              value: v(data?.community.total),
-              icon: BarChart2,
-              color: 'var(--color-success)',
-            },
-            {
-              label: 'Answered by peers',
-              sub: 'Has at least one answer',
-              value: v(data?.community.answered),
-              icon: CheckCircle,
-              color: 'var(--color-success)',
-            },
-            {
-              label: 'Unanswered',
-              sub: 'No peer answer yet',
-              value: v(data?.community.unanswered),
-              icon: HelpCircle,
-              color: 'var(--color-danger)',
-            },
+            { label: 'Total (all-time)', sub: 'Answered + unanswered', value: v(data?.community.total), icon: BarChart2, color: 'var(--color-success)' },
+            { label: 'Answered by peers', sub: 'Has at least one answer', value: v(data?.community.answered), icon: CheckCircle, color: 'var(--color-success)' },
+            { label: 'Unanswered', sub: 'No peer answer yet', value: v(data?.community.unanswered), icon: HelpCircle, color: 'var(--color-danger)' },
           ]}
         />
 
@@ -120,27 +78,9 @@ export function ModerationOverviewPage() {
           titleIcon={CalendarCheck}
           titleColor="var(--color-warning)"
           rows={[
-            {
-              label: 'Posted today',
-              sub: 'Total since midnight',
-              value: v(data?.communityToday.total),
-              icon: CalendarDays,
-              color: 'var(--color-warning)',
-            },
-            {
-              label: 'Answered today',
-              sub: 'Received a peer answer today',
-              value: v(data?.communityToday.answered),
-              icon: CheckCircle,
-              color: 'var(--color-success)',
-            },
-            {
-              label: 'Unanswered today',
-              sub: 'Still waiting for a reply',
-              value: v(data?.communityToday.unanswered),
-              icon: Clock,
-              color: 'var(--color-danger)',
-            },
+            { label: 'Posted today', sub: 'Total since midnight', value: v(data?.communityToday.total), icon: CalendarDays, color: 'var(--color-warning)' },
+            { label: 'Answered today', sub: 'Received a peer answer today', value: v(data?.communityToday.answered), icon: CheckCircle, color: 'var(--color-success)' },
+            { label: 'Unanswered today', sub: 'Still waiting for a reply', value: v(data?.communityToday.unanswered), icon: Clock, color: 'var(--color-danger)' },
           ]}
         />
 
@@ -150,27 +90,9 @@ export function ModerationOverviewPage() {
           titleIcon={BookOpen}
           titleColor="#7c3aed"
           rows={[
-            {
-              label: 'Total FAQs',
-              sub: 'All statuses in the system',
-              value: v(data?.faqs.total),
-              icon: BookOpen,
-              color: '#7c3aed',
-            },
-            {
-              label: 'Added today',
-              sub: 'Created since midnight',
-              value: v(data?.faqs.today),
-              icon: CalendarDays,
-              color: '#7c3aed',
-            },
-            {
-              label: 'Added this week',
-              sub: 'Created in the last 7 days',
-              value: v(data?.faqs.thisWeek),
-              icon: CalendarCheck,
-              color: '#7c3aed',
-            },
+            { label: 'Total FAQs', sub: 'All statuses in the system', value: v(data?.faqs.total), icon: BookOpen, color: '#7c3aed' },
+            { label: 'Added today', sub: 'Created since midnight', value: v(data?.faqs.today), icon: CalendarDays, color: '#7c3aed' },
+            { label: 'Added this week', sub: 'Created in the last 7 days', value: v(data?.faqs.thisWeek), icon: CalendarCheck, color: '#7c3aed' },
           ]}
         />
 
@@ -180,27 +102,9 @@ export function ModerationOverviewPage() {
           titleIcon={Flag}
           titleColor="var(--color-danger)"
           rows={[
-            {
-              label: 'Total flagged',
-              sub: 'Open or under review flags',
-              value: v(data?.flaggedFaqs.total),
-              icon: AlertOctagon,
-              color: 'var(--color-danger)',
-            },
-            {
-              label: 'Flagged today',
-              sub: 'New flags since midnight',
-              value: v(data?.flaggedFaqs.today),
-              icon: AlertTriangle,
-              color: 'var(--color-warning)',
-            },
-            {
-              label: 'Flagged this week',
-              sub: 'Flags in the last 7 days',
-              value: v(data?.flaggedFaqs.thisWeek),
-              icon: Clock,
-              color: 'var(--color-warning)',
-            },
+            { label: 'Total flagged', sub: 'Open or under review flags', value: v(data?.flaggedFaqs.total), icon: AlertOctagon, color: 'var(--color-danger)' },
+            { label: 'Flagged today', sub: 'New flags since midnight', value: v(data?.flaggedFaqs.today), icon: AlertTriangle, color: 'var(--color-warning)' },
+            { label: 'Flagged this week', sub: 'Flags in the last 7 days', value: v(data?.flaggedFaqs.thisWeek), icon: Clock, color: 'var(--color-warning)' },
           ]}
         />
       </div>

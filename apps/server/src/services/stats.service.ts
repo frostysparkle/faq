@@ -589,6 +589,10 @@ async getCommunityIdleBuckets(): Promise<IdleBuckets> {
       flaggedTotal,
       flaggedToday,
       flaggedThisWeek,
+      // Published FAQs count (denominator for helpful/unhelpful %)
+      publishedTotal,
+      // Helpful/unhelpful aggregation
+      engagementAgg,
     ] = await Promise.all([
       // --- Personal questions ---
       QuestionModel.countDocuments({ type: 'personal' }),
@@ -629,7 +633,24 @@ async getCommunityIdleBuckets(): Promise<IdleBuckets> {
         status: { $in: ['open', 'under_review'] },
         createdAt: { $gte: weekAgo },
       }).then((ids) => ids.length),
+      // --- Published FAQs ---
+      FaqModel.countDocuments({ status: 'published' }),
+      // --- Helpful / unhelpful aggregate across published FAQs ---
+      FaqModel.aggregate<{ totalHelpful: number; totalUnhelpful: number }>([
+        { $match: { status: 'published' } },
+        {
+          $group: {
+            _id: null,
+            totalHelpful: { $sum: '$helpfulCount' },
+            totalUnhelpful: { $sum: '$unhelpfulCount' },
+          },
+        },
+      ]).then((r) => r[0] ?? { totalHelpful: 0, totalUnhelpful: 0 }),
     ]);
+
+    const totalVotes = engagementAgg.totalHelpful + engagementAgg.totalUnhelpful;
+    const helpfulPct = totalVotes > 0 ? (engagementAgg.totalHelpful / totalVotes) * 100 : 0;
+    const unhelpfulPct = totalVotes > 0 ? (engagementAgg.totalUnhelpful / totalVotes) * 100 : 0;
 
     return {
       personal: { total: personalTotal, unanswered: personalUnanswered, today: personalToday },
@@ -637,6 +658,8 @@ async getCommunityIdleBuckets(): Promise<IdleBuckets> {
       communityToday: { total: communityTodayTotal, answered: communityTodayAnswered, unanswered: communityTodayUnanswered },
       faqs: { total: faqTotal, today: faqToday, thisWeek: faqThisWeek },
       flaggedFaqs: { total: flaggedTotal, today: flaggedToday, thisWeek: flaggedThisWeek },
+      helpfulFaqs: { percentage: Math.round(helpfulPct * 10) / 10, publishedTotal },
+      unhelpfulFaqs: { percentage: Math.round(unhelpfulPct * 10) / 10, publishedTotal },
     };
   },
 };
@@ -718,5 +741,7 @@ export interface ModeratorDashboardStats {
   communityToday: { total: number; answered: number; unanswered: number };
   faqs: { total: number; today: number; thisWeek: number };
   flaggedFaqs: { total: number; today: number; thisWeek: number };
+  helpfulFaqs: { percentage: number; publishedTotal: number };
+  unhelpfulFaqs: { percentage: number; publishedTotal: number };
 }
 

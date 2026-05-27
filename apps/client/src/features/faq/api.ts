@@ -44,6 +44,8 @@ export interface ModeratorDashboardStats {
   communityToday: { total: number; answered: number; unanswered: number };
   faqs: { total: number; today: number; thisWeek: number };
   flaggedFaqs: { total: number; today: number; thisWeek: number };
+  helpfulFaqs: { percentage: number; publishedTotal: number };
+  unhelpfulFaqs: { percentage: number; publishedTotal: number };
 }
 
 export const faqApi = {

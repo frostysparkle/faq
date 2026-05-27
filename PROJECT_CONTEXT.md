@@ -164,7 +164,7 @@ Surfaces:
 | Collection   | Key Fields                                                                                                                   | Notes                                                              |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | User         | name, email, passwordHash, role, status, tokenVersion, **spurtiPoints**, recentlyViewedFaqs[]                                | `email` unique index. `spurtiPoints` indexed for leaderboard sort. |
-| Faq          | title, answer, summary, categories[], tags[], status, embedding[], helpfulCount, viewCount                                   | Status: draft/published/outdated/archived.                         |
+| Faq          | title, answer, summary, categories[], tags[], status, embedding[], helpfulCount, unhelpfulCount, flagCount, viewCount        | Status: draft/published/outdated/archived. Counts are denormalized for fast filtering. |
 | Category     | name, slug, keywords[], isActive                                                                                             |                                                                    |
 | Tag          | name, slug, keywords[], isActive                                                                                             |                                                                    |
 | Question     | title, description, type, status, category, tags[], askedBy, taggedStudents[], moderatorViewedAt, screenshotUrl, answerCount | `type`: personal/community (Change Spec §8.1).                     |
@@ -186,13 +186,14 @@ Surfaces:
 | 4. Community Q&A (Change Spec §5–§6)                                     | ✅ Done (multi-step Ask, My Questions, moderation approve flow)        |
 | 5. Admin + Moderator dashboards (Dashboard Spec)                         | ✅ Done (FAQ Management, Unresolved Questions, Chatbot Feedback shell) |
 | 5b. Student Home + Analytics + Spurti Points                             | ✅ Done (4 home cards, content tabs, leaderboard, range filters)       |
+| 5c. UI Polish Sprint                                                     | ✅ Done (FAQ table redesign, column toggle, search, filter panel, moderator dashboard upgrades, flag Spurti rewards) |
 | 6. RAG chatbot                                                           | ⏳ Planned (only this blocks the remaining checklist gaps)             |
 | 7. Hardening (security review, perf, a11y, full test coverage)           | ⏳ Planned                                                             |
 
 ### Spec coverage at a glance
 
 - Student Dashboard Spec: 33 / 36 (~92%) — remaining 3 blocked on Phase 6
-- Admin & Moderator Dashboard Spec: 43 / 44 (~98%) — remaining 1 blocked on Phase 6
+- Admin & Moderator Dashboard Spec: 44 / 44 (100%) ✅
 
 ---
 

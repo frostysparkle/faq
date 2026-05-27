@@ -640,6 +640,95 @@ Score: **33/36 (~92%)**, with the remaining 3 items all blocked on out-of-scope 
 
 ---
 
+## 2026-05-27 — UI Polish Sprint: FAQ Management redesign, Moderator Dashboard upgrades, Browse FAQs filter panel
+
+### What was completed
+
+**FAQ Management tab (FaqsAdminTab + FaqManagementPage):**
+- Complete SaaS-style table redesign: hardcoded colour constants `C`, white card container with shadow/border-radius, 6-column CSS Grid (`52px 190px minmax(0,1fr) 160px 140px 130px`), row hover effects.
+- Numbered badge column (01, 02…) with purple pill styling.
+- Details column restructured as **2-row stacked layout**: top row = folder icon + category name (full, no truncation); bottom row = status dot + status pill + divider + calendar icon + updated time. Fixes overflow/truncation seen in the single-row layout.
+- Engagement column: ThumbsUp (green) + ThumbsDown (red) with counts.
+- Flag column: red "Flagged" pill + "by N students" when flagged; gray flag + "—" when clean.
+- Action buttons: eye (gray, toggles answer expansion), pencil (blue, inline edit), trash (red, archive) — 36×36px each with borders.
+- Expanded answer panel below row.
+- **Column visibility toggle**: "Columns" button opens a dropdown with checkboxes for Details / Engagement / Flag / Actions. Question column is always locked. Badge shows count of hidden columns. Outside-click closes the dropdown. `buildGrid()` rebuilds CSS grid template dynamically. Hidden columns cause Question to expand via `minmax(0,1fr)`.
+- **Search bar**: debounced 350ms, `q` + `sort=relevance` fed into `useFaqList`. Clear (×) button, indigo focus state, "No FAQs matched 'keyword'" empty state, purple badge in footer showing active search term.
+- **3 summary cards row** (Helpful FAQs / Unhelpful FAQs / Flagged FAQs) moved to `FaqManagementPage` above the tab bar, using `useModeratorStats`. Old 2-card (Helpful% / Flagged%) row removed entirely.
+- Tab bar (FAQs / Categories / Tags) now renders **below** the 3 summary cards.
+- Tags tab redesigned to match Categories tab: hidden input by default, "New Tag" button reveals inline form; collapses on successful submit.
+- `FaqSummaryCard` component shared between FAQ Management and Moderator Dashboard.
+
+**InlineFaqEditor:**
+- Extended `ExistingFaq` interface with `helpfulCount?`, `unhelpfulCount?`, `flagCount?`.
+- Added `resetHelpful`, `resetUnhelpful`, `resetFlags` boolean state and "Reset counters" UI section (edit mode only) with `ResetCheckbox` components.
+- Added `statsResetNote` banner when server signals the answer body changed.
+
+**FlagInbox:**
+- Added Spurti points selector (−1 / 0 / +1 / +2) per flag row using `spurtiMap` state.
+- Passes `spurtiPoints` into both Resolve and Dismiss mutations.
+- Fixed curly/smart-quote parse error (`type="button"` had unicode quotes).
+
+**Shared schemas:**
+- `faqUpdateSchema`: added `resetHelpful`, `resetUnhelpful`, `resetFlags` optional booleans.
+- `flagUpdateStatusSchema`: added `spurtiPoints: z.number().int().min(-1).max(2).optional()`.
+
+**Server services:**
+- `faq.service.update()`: manual stat resets (`resetHelpful/Unhelpful/Flags`) when answer body did NOT change; auto-reset still fires on answer change.
+- `flag.service.updateStatus()`: awards/deducts Spurti Points to the reporter if `spurtiPoints !== 0`.
+- `stats.service.getModeratorDashboardStats()`: added two extra parallel queries — published FAQ count + helpful/unhelpful aggregate. Returns new `helpfulFaqs` and `unhelpfulFaqs` fields.
+- `ModeratorDashboardStats` interface extended with `helpfulFaqs: { percentage, publishedTotal }` and `unhelpfulFaqs: { percentage, publishedTotal }`.
+
+**Client `faq/api.ts`:**
+- `ModeratorDashboardStats` interface mirrored with the two new fields.
+
+**Moderator Dashboard (ModerationOverviewPage):**
+- Welcome banner ("Welcome back, [Name] 👋 · Signed in as moderator").
+- Top 2-column grid: Open Community Q&A (IdleBucketCards) / Personal Questions / Community Questions / Community Questions Today / FAQs / Flagged FAQs — all using the `StatCard` component with icon-per-row, big number + label, coloured subtitle.
+- Flagged FAQs card remains in the 2-column grid with Total / Today / This week rows.
+- Role-based login redirect: moderators → `/moderation`, admins → `/admin` (via `<Navigate replace>` in HomePage).
+
+**Browse FAQs (FaqsPage):**
+- Full redesign to match SaaS filter panel reference image.
+- Search bar: wider, rounded-12, subtle shadow, icon + clear button.
+- "Filters" toggle button (SlidersHorizontal icon) shows/hides the filter panel with ChevronUp/Down.
+- Filter panel (white card, rounded-16):
+  - CATEGORIES section: uppercase label, "Show all / Show less" toggle (threshold: 8), `CategoryPill` with hover state, "All Categories" pill with LayoutGrid icon.
+  - TAGS section: same Show all pattern, `TagPill` rounded-20 with `#` prefix, "All Tags" pill with Tag icon.
+  - Footer row: "↺ Reset all" clears all filters; green "N active filters" badge (visible when any filter is active).
+- Status filter (mod/admin only) shown as a row inside the panel.
+- `showAllCats` / `showAllTags` state per section; defaults to 8 visible.
+
+### Architectural decisions
+
+- **`buildGrid()` re-derives the CSS grid template string** from the `visibleCols` record on every render. No side effects — just a pure string builder. Column headers and row cells both receive the same `grid` string so they stay aligned.
+- **Summary cards live in `FaqManagementPage`, not in `FaqsAdminTab`.** This means they render regardless of whether the FAQs / Categories / Tags sub-tab is active — consistent dashboard feel.
+- **Spurti point selector is local component state (`spurtiMap`).** Not sent to the server until Resolve or Dismiss is clicked. No optimistic update needed.
+- **Details column 2-row stack instead of 3-column flex.** Category name no longer truncates at single letters. Status and Updated are `whitespace: nowrap` so they never overflow.
+- **Browse FAQs filter panel defaults to open (`filtersOpen = true`).** Students arrive with context immediately visible; they can collapse it.
+
+### Files touched
+
+**New / rewritten:**
+- `apps/client/src/features/faq/FaqsPage.tsx` (Browse FAQs redesign)
+- `apps/client/src/features/admin/FaqManagementPage.tsx` (removed old stat cards, moved tab bar below summary cards)
+
+**Updated:**
+- `apps/client/src/features/admin/tabs/FaqsAdminTab.tsx` (table redesign, column toggle, search bar, summary cards removed)
+- `apps/client/src/features/admin/tabs/FlagInbox.tsx` (Spurti selector, smart-quote fix)
+- `apps/client/src/features/admin/tabs/InlineFaqEditor.tsx` (reset counters UI)
+- `apps/client/src/features/admin/tabs/TagsAdminTab.tsx` (button-reveal pattern matching Categories tab)
+- `apps/client/src/features/moderation/ModerationOverviewPage.tsx` (5-card grid, welcome banner)
+- `apps/client/src/pages/HomePage.tsx` (role-based redirect)
+- `apps/server/src/services/faq.service.ts` (manual stat resets)
+- `apps/server/src/services/flag.service.ts` (Spurti points award on flag resolution)
+- `apps/server/src/services/stats.service.ts` (helpfulFaqs/unhelpfulFaqs in moderator stats)
+- `packages/shared/src/schemas/faq.schema.ts` (reset fields)
+- `packages/shared/src/schemas/flag.schema.ts` (spurtiPoints)
+- `apps/client/src/features/faq/api.ts` (ModeratorDashboardStats extended)
+
+---
+
 ## 2026-05-26 — Idle bucket cards + Community filter sync + Q-match cache
 
 ### What was completed
