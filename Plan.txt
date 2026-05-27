@@ -123,8 +123,41 @@ Additional Features:
 • On click: view student names.
 • Filter option: prioritize questions asked by multiple students (high → low order).
 
-<------------------------ ****** The above is already implemented! ********  ------------------------->
+Moderator Dashboard Updates
+Header Section (Default View)
+• Display:
+“Welcome back, Jahnvi 👋 Samagama Internship Portal · Signed in as moderator”
+• This replaces the default landing page.
+• Remove: “Moderation Dashboard · Items requiring your attention.”
+• Below the welcome message, show all dashboard cards.
+---
+Dashboard Cards
+📌 Personal Questions Card
+• Total count of personal questions posted by all students.
+• Count of Total unanswered personal questions.
+• Count of Total personal questions posted today by all students.
+---
+📌 Community Questions Card
+• Total count of community questions posted by all students (answered + unanswered).
+• Count of community questions answered by peer students.
+• Count of community questions unanswered by peer students.
+---
+📌 Community Questions Today Card
+• Total count of community questions posted today (answered + unanswered).
+• Count of community questions answered today by peer students.
+• Count of community questions unanswered today by peer students.
+---
+📌 FAQs Card
+• Total count of FAQs.
+• Count of FAQs added today.
+• Count of FAQs added this week.
+---
+📌 Flagged FAQs Card
+• Total count of flagged FAQs.
+• Count of FAQs flagged today.
+• Count of FAQs flagged this week.
 
+<------------------------ ****** The above is already implemented! ********  ------------------------->
 
 <------------------------ ****** The below work implementation work is pending ********  ------------------------->
 
