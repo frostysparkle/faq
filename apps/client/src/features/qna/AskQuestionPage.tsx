@@ -380,7 +380,7 @@ function StepIndicator({ current }: { current: Step }) {
   const steps: { key: Step; label: string }[] = [
     { key: 'write', label: '1. Write' },
     { key: 'faq-match', label: '2. Check FAQ' },
-    { key: 'question-match', label: '3. Check Q' },
+    { key: 'question-match', label: '3. Check Community Questions' },
     { key: 'submit', label: '4. Submit' },
   ];
   const currentIdx = steps.findIndex((s) => s.key === current);
