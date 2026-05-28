@@ -12,6 +12,10 @@ export const FAQ_CATEGORIES = [
   'Deadlines',
   'Project Submission',
   'Internship Guidelines',
+  'Selection & Offer',
+  'ViBe Platform',
+  'Team Formation',
+  'Rosetta',
   'Other',
 ] as const;
 
