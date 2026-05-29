@@ -6,6 +6,7 @@ import { RequireAuth } from './features/auth/RequireAuth';
 import { HomePage } from './pages/HomePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ComingSoonPage } from './pages/ComingSoonPage';
+import { ChatbotPage } from './pages/ChatbotPage';
 import { FaqsPage } from './features/faq/FaqsPage';
 import { AskQuestionPage } from './features/qna/AskQuestionPage';
 import { CommunityPage } from './features/qna/CommunityPage';
@@ -44,7 +45,7 @@ export function App() {
         <Route path="/ask" element={<AskQuestionPage />} />
         <Route path="/my-questions" element={<MyQuestionsPage />} />
         <Route path="/analytics" element={<StudentAnalyticsPage />} />
-        <Route path="/chatbot" element={<ComingSoonPage title="Yaksha Chatbot" />} />
+        <Route path="/chatbot" element={<ChatbotPage />} />
 
         {/* Moderation (shared between moderator and admin per Dashboard Spec) */}
         <Route path="/moderation" element={<ModerationOverviewPage />} />
