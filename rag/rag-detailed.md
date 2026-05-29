@@ -7,7 +7,7 @@ We are adopting a "Single Source of Truth" architecture. MERN application's Mong
 You own the data and the logic. You will use MongoDB's Vector Search to store and retrieve FAQs and queries. When a user asks a question, your Node.js server will search the database, bundle the retrieved documents with the user's chat history, and send one complete package to the LLM. You also handle the logic for user eligibility, ticket creation, and automatic data expiry via MongoDB TTL indexes.
 
 **What it means for the LLM / Integration Team:**
-Your job becomes much simpler. You do not need to build CRUD APIs, manage data syncing, or write cron jobs. You will host `llama.cpp` on the isolated server, wrap it in a lightweight API (like FastAPI or Express), and wait for the backend to send you text. You process the text, return the answer, and immediately forget the interaction happened.
+Your job becomes much simpler. You do not need to build CRUD APIs, manage data syncing, or write cron jobs. You will host A llm using LMStudio, on the isolated server, wrap it in a lightweight API (like FastAPI or Express), and wait for the backend to send you text. You process the text, return the answer, and immediately forget the interaction happened.
 
 ---
 
