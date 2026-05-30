@@ -265,13 +265,27 @@ export function AskQuestionPage() {
             ))}
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
-            <Button variant="ghost" onClick={() => setStep('write')}>
-              ← Edit question
-            </Button>
-            <Button variant="success" onClick={() => navigate('/faqs')}>
+            <button
+              type="button"
+              onClick={() => setStep('write')}
+              style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: 'var(--color-primary)', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              ← Edit Question
+            </button>
+            <button
+              type="button"
+              onClick={onFaqDoesntAnswer}
+              style={{ padding: '9px 20px', borderRadius: 10, border: '1.5px solid var(--color-border)', background: 'var(--color-pill)', color: 'var(--color-text-muted)', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              None of these – Continue
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/faqs')}
+              style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: '#16a34a', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(22,163,74,0.3)' }}
+            >
               ✓ This answers it
-            </Button>
-            <Button onClick={onFaqDoesntAnswer}>None of these — continue</Button>
+            </button>
           </div>
         </div>
       )}
