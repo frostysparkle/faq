@@ -14,11 +14,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, ChevronRight, ImagePlus, X } from 'lucide-react';
+import { AlertTriangle, ChevronRight, HelpCircle, ImagePlus, X } from 'lucide-react';
 import { z } from 'zod';
 import type { ExistingAnswerCheckResult, QuestionType } from '@samagama/shared';
-import { Card } from '../../components/ui/Card';
-import { SectionHeader } from '../../components/ui/SectionHeader';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { useCategories } from '../faq/queries';
@@ -105,13 +103,29 @@ export function AskQuestionPage() {
   };
 
   return (
-    <div>
-      <SectionHeader title="Ask a Question" sub="We'll check existing answers before posting." />
+    <div style={{ maxWidth: 720, margin: '0 auto' }}>
+      {/* Section heading */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+        <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--color-card)', boxShadow: '0 2px 8px rgba(124,58,237,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <HelpCircle size={18} color="var(--color-purple)" />
+        </div>
+        <div>
+          <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>Ask a Question</span>
+          <span style={{ fontSize: 13, color: 'var(--color-text-muted)', marginLeft: 10 }}>We'll check existing answers before posting</span>
+        </div>
+      </div>
 
       <StepIndicator current={step} />
 
       {step === 'write' && (
-        <Card>
+        <div className="mod-card mod-card-purple">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 20px 0' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--color-purple-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <HelpCircle size={17} color="var(--color-purple)" />
+            </div>
+            <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>Describe your question</span>
+          </div>
+          <div style={{ padding: '14px 20px 20px' }}>
           <form onSubmit={onWrite}>
             <FormField label="Description *" error={errors.description?.message}>
               <textarea
@@ -216,7 +230,8 @@ export function AskQuestionPage() {
               <ChevronRight size={14} />
             </Button>
           </form>
-        </Card>
+          </div>
+        </div>
       )}
 
       {step === 'faq-match' && check && (
@@ -227,7 +242,7 @@ export function AskQuestionPage() {
           </Banner>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
             {check.matchedFaqs.map((faq) => (
-              <Card key={faq.id}>
+              <div key={faq.id} className="mod-card mod-card-orange" style={{ padding: '16px 18px' }}>
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>{faq.title}</div>
                 {faq.summary && (
                   <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 8 }}>
@@ -246,7 +261,7 @@ export function AskQuestionPage() {
                 >
                   {faq.answer}
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -269,7 +284,7 @@ export function AskQuestionPage() {
           </Banner>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
             {check.matchedQuestions.map((q) => (
-              <Card key={q.id}>
+              <div key={q.id} className="mod-card mod-card-blue" style={{ padding: '16px 18px' }}>
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>{q.title}</div>
                 <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 10 }}>
                   {q.description.slice(0, 200)}
@@ -285,7 +300,7 @@ export function AskQuestionPage() {
                     Same query — tag me
                   </Button>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -300,7 +315,7 @@ export function AskQuestionPage() {
       )}
 
       {step === 'submit' && (
-        <Card>
+        <div className="mod-card mod-card-purple" style={{ padding: '20px 24px' }}>
           <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>
             How should we post this?
           </div>
@@ -335,11 +350,11 @@ export function AskQuestionPage() {
               {createMutation.isPending ? 'Submitting…' : 'Submit question'}
             </Button>
           </div>
-        </Card>
+        </div>
       )}
 
       {step === 'done' && (
-        <Card style={{ textAlign: 'center', padding: 40 }}>
+        <div className="mod-card mod-card-green" style={{ padding: 40, textAlign: 'center' }}>
           <div
             style={{
               width: 64,
@@ -370,59 +385,37 @@ export function AskQuestionPage() {
             </Button>
             <Button onClick={() => navigate('/my-questions')}>Go to My Questions</Button>
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );
 }
 
 function StepIndicator({ current }: { current: Step }) {
-  const steps: { key: Step; label: string }[] = [
-    { key: 'write', label: '1. Write' },
-    { key: 'faq-match', label: '2. Check FAQ' },
-    { key: 'question-match', label: '3. Check Community Questions' },
-    { key: 'submit', label: '4. Submit' },
+  const steps: { key: Step; label: string; num: number }[] = [
+    { key: 'write', label: 'Write', num: 1 },
+    { key: 'faq-match', label: 'Check FAQ', num: 2 },
+    { key: 'question-match', label: 'Check Community', num: 3 },
+    { key: 'submit', label: 'Submit', num: 4 },
   ];
   const currentIdx = steps.findIndex((s) => s.key === current);
   return (
-    <div
-      style={{
-        display: 'flex',
-        gap: 0,
-        marginBottom: 20,
-        background: 'var(--color-card)',
-        border: '1px solid var(--color-border)',
-        borderRadius: 10,
-        overflow: 'hidden',
-      }}
-    >
+    <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 22 }}>
       {steps.map((s, i) => {
         const isCurrent = current === s.key;
         const isPast = i < currentIdx || current === 'done';
+        const dotColor = isCurrent ? 'var(--color-purple)' : isPast ? 'var(--color-success)' : 'var(--color-border)';
         return (
-          <div
-            key={s.key}
-            style={{
-              flex: 1,
-              padding: '10px 8px',
-              textAlign: 'center',
-              fontSize: 13,
-              fontWeight: isCurrent ? 600 : 400,
-              background: isCurrent
-                ? 'var(--color-primary)'
-                : isPast
-                  ? 'var(--color-primary-bg)'
-                  : 'transparent',
-              color: isCurrent
-                ? 'white'
-                : isPast
-                  ? 'var(--color-primary-text)'
-                  : 'var(--color-text-muted)',
-              borderRight: i < steps.length - 1 ? '1px solid var(--color-border)' : 'none',
-              transition: 'all 0.2s',
-            }}
-          >
-            {s.label}
+          <div key={s.key} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: dotColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: isCurrent || isPast ? 'white' : 'var(--color-text-muted)', transition: 'all 0.2s', boxShadow: isCurrent ? '0 2px 8px rgba(124,58,237,0.35)' : 'none' }}>
+                {isPast && !isCurrent ? '✓' : s.num}
+              </div>
+              <div style={{ fontSize: 11, fontWeight: isCurrent ? 700 : 500, color: isCurrent ? 'var(--color-purple)' : isPast ? 'var(--color-success)' : 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>{s.label}</div>
+            </div>
+            {i < steps.length - 1 && (
+              <div style={{ flex: 1, height: 2, background: isPast ? 'var(--color-success)' : 'var(--color-border)', marginBottom: 14, transition: 'background 0.2s' }} />
+            )}
           </div>
         );
       })}
@@ -442,8 +435,8 @@ function FormField({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--color-text-muted)', display: 'block', marginBottom: 7 }}>
         {label}
       </label>
       {children}
@@ -561,9 +554,9 @@ function readFileAsDataUrl(file: File): Promise<string> {
 const inputStyle: React.CSSProperties = {
   width: '100%',
   background: 'var(--color-input)',
-  border: '1px solid var(--color-border)',
-  borderRadius: 8,
-  padding: '10px 12px',
+  border: '1.5px solid var(--color-border)',
+  borderRadius: 10,
+  padding: '12px 14px',
   color: 'var(--color-text)',
   fontSize: 14,
   fontFamily: 'inherit',

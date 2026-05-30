@@ -18,6 +18,9 @@ const envSchema = z.object({
   LLM_PROVIDER: z.enum(['mock', 'gemini', 'local-llama']).default('mock'),
   GEMINI_API_KEY: z.string().optional(),
   EMBEDDING_PROVIDER: z.enum(['mock', 'gemini']).default('mock'),
+  // LLM server (rag/llm-server) — used when LLM_PROVIDER=local-llama
+  LLM_BASE_URL: z.string().url().optional(),
+  LLM_INTERNAL_SECRET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

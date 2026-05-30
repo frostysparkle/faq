@@ -1,5 +1,5 @@
-// Persistent sidebar. Sections come from the navByRole table.
 import { NavLink } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 import type { UserRole } from '@samagama/shared';
 import { navByRole, type NavItem } from './navigation';
 import { useAuth } from '../features/auth/AuthProvider';
@@ -14,8 +14,6 @@ interface SidebarProps {
 export function Sidebar({ role, userName, open }: SidebarProps) {
   const items = navByRole[role];
   const { logout } = useAuth();
-
-  // Group consecutive items by their section header.
   const groups = groupBySection(items);
 
   return (
@@ -30,44 +28,40 @@ export function Sidebar({ role, userName, open }: SidebarProps) {
         overflow: 'hidden',
       }}
     >
-      <div
-        style={{
-          padding: open ? '18px 18px 14px' : '16px 12px',
-          borderBottom: '1px solid var(--color-sidebar-border)',
-        }}
-      >
+      {/* Logo / brand */}
+      <div style={{
+        padding: open ? '18px 18px 14px' : '14px 0',
+        borderBottom: '1px solid var(--color-sidebar-border)',
+        display: 'flex',
+        justifyContent: open ? 'flex-start' : 'center',
+      }}>
         {open ? (
           <div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: 'white', letterSpacing: '-0.5px' }}>
-              Samagama
-            </div>
-            <div
-              style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}
-              data-testid="role-label"
-            >
+            <div style={{ fontSize: 17, fontWeight: 800, color: 'white', letterSpacing: '-0.5px' }}>Samagama</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 1 }} data-testid="role-label">
               Internship Portal · {role}
             </div>
           </div>
         ) : (
-          <div style={{ fontSize: 17, fontWeight: 800, color: 'white', textAlign: 'center' }}>
-            S
-          </div>
+          <div style={{
+            width: 32, height: 32, borderRadius: 9,
+            background: 'var(--color-primary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 15, fontWeight: 900, color: 'white',
+          }}>S</div>
         )}
       </div>
 
+      {/* Nav */}
       <nav style={{ flex: 1, padding: '6px 10px', overflowY: 'auto' }}>
         {groups.map((group, gi) => (
           <div key={gi} style={{ marginBottom: 8 }}>
             {open && group.section && (
-              <div
-                style={{
-                  fontSize: 10,
-                  color: 'rgba(255,255,255,0.35)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px',
-                  padding: '8px 10px 4px',
-                }}
-              >
+              <div style={{
+                fontSize: 10, color: 'rgba(255,255,255,0.35)',
+                textTransform: 'uppercase', letterSpacing: '1px',
+                padding: '8px 10px 4px',
+              }}>
                 {group.section}
               </div>
             )}
@@ -78,62 +72,71 @@ export function Sidebar({ role, userName, open }: SidebarProps) {
         ))}
       </nav>
 
-      {open && (
+      {/* User footer */}
+      <div style={{
+        padding: open ? '12px 14px' : '12px 0',
+        borderTop: '1px solid var(--color-sidebar-border)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: open ? 'flex-start' : 'center',
+        gap: open ? 10 : 0,
+      }}>
         <div
+          title={open ? undefined : userName}
           style={{
-            padding: '12px 14px',
-            borderTop: '1px solid var(--color-sidebar-border)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
+            width: 32, height: 32, borderRadius: '50%',
+            background: 'var(--color-primary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 13, fontWeight: 700, color: 'white',
+            flexShrink: 0, cursor: 'default',
           }}
         >
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              background: 'var(--color-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 13,
-              fontWeight: 700,
-              color: 'white',
-              flexShrink: 0,
-            }}
-          >
-            {userName.charAt(0).toUpperCase()}
-          </div>
+          {userName.charAt(0).toUpperCase()}
+        </div>
+
+        {open ? (
           <div style={{ flex: 1, overflow: 'hidden' }}>
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: 'white',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
+            <div style={{
+              fontSize: 12, fontWeight: 600, color: 'white',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
               {userName}
             </div>
             <button
               onClick={logout}
               style={{
-                fontSize: 10,
-                color: 'rgba(255,255,255,0.4)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
+                fontSize: 10, color: 'rgba(255,255,255,0.4)',
+                background: 'none', border: 'none', cursor: 'pointer', padding: 0,
               }}
             >
               Sign out
             </button>
           </div>
-        </div>
-      )}
+        ) : (
+          <button
+            onClick={logout}
+            title="Sign out"
+            style={{
+              position: 'absolute',
+              bottom: 58,
+              left: 0,
+              width: 60,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '7px 0',
+              background: 'none', border: 'none',
+              cursor: 'pointer',
+              color: 'rgba(255,255,255,0.35)',
+              transition: 'color 0.15s',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.7)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.35)'; }}
+          >
+            <LogOut size={15} />
+          </button>
+        )}
+      </div>
     </aside>
   );
 }
@@ -144,6 +147,7 @@ function SidebarLink({ item, open }: { item: NavItem; open: boolean }) {
     <NavLink
       to={item.path}
       end={item.path === '/'}
+      title={open ? undefined : item.label}
       style={({ isActive }) => ({
         width: '100%',
         display: 'flex',
@@ -163,31 +167,15 @@ function SidebarLink({ item, open }: { item: NavItem; open: boolean }) {
     >
       <Icon size={16} style={{ flexShrink: 0 }} />
       {open && (
-        <span
-          style={{
-            flex: 1,
-            textAlign: 'left',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
+        <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {item.label}
         </span>
       )}
       {open && item.badge && (
-        <span
-          style={{
-            background: '#ef4444',
-            color: 'white',
-            borderRadius: 10,
-            padding: '1px 6px',
-            fontSize: 10,
-            fontWeight: 700,
-            minWidth: 18,
-            textAlign: 'center',
-          }}
-        >
+        <span style={{
+          background: '#ef4444', color: 'white', borderRadius: 10,
+          padding: '1px 6px', fontSize: 10, fontWeight: 700, minWidth: 18, textAlign: 'center',
+        }}>
           {item.badge}
         </span>
       )}

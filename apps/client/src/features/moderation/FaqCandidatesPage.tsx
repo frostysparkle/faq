@@ -1,9 +1,6 @@
-// FAQ Candidates — approved answers eligible for promotion to FAQ.
-import { BookOpen, ArrowRight } from 'lucide-react';
-import { Card } from '../../components/ui/Card';
+import { ArrowRight, BookOpen, Lightbulb } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
-import { SectionHeader } from '../../components/ui/SectionHeader';
 import { useFaqCandidates, useConvertToFaq } from '../admin/queries';
 import { useAuth } from '../auth/AuthProvider';
 
@@ -15,104 +12,89 @@ export function FaqCandidatesPage() {
 
   return (
     <div>
-      <SectionHeader
-        title="FAQ Candidates"
-        sub="Approved answers eligible for knowledge base promotion."
-      />
+      {/* Section heading */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+        <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--color-card)', boxShadow: '0 2px 8px rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Lightbulb size={18} color="var(--color-success)" />
+        </div>
+        <div>
+          <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>FAQ Candidates</span>
+          <span style={{ fontSize: 13, color: 'var(--color-text-muted)', marginLeft: 10 }}>Approved answers eligible for knowledge base promotion</span>
+        </div>
+      </div>
 
-      {isLoading && <Card>Loading…</Card>}
+      {isLoading && <div className="mod-card mod-card-green" style={{ padding: 24, fontSize: 13, color: 'var(--color-text-muted)' }}>Loading…</div>}
 
       {!isLoading && (data?.length ?? 0) === 0 && (
-        <Card style={{ textAlign: 'center', padding: 36 }}>
-          <BookOpen size={32} color="var(--color-border)" style={{ marginBottom: 8 }} />
-          <div style={{ fontSize: 14, fontWeight: 600 }}>No FAQ candidates yet</div>
-          <div
-            style={{
-              fontSize: 12,
-              color: 'var(--color-text-muted)',
-              marginTop: 4,
-              maxWidth: 360,
-              marginInline: 'auto',
-            }}
-          >
+        <div className="mod-card mod-card-green" style={{ padding: 40, textAlign: 'center' }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--color-success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+            <BookOpen size={26} color="var(--color-success)" />
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>No FAQ candidates yet</div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', maxWidth: 360, margin: '0 auto' }}>
             When moderators mark approved answers as eligible for FAQ conversion, they'll appear here.
           </div>
-        </Card>
+        </div>
       )}
 
       {data && data.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {data.map((candidate) => (
-            <Card key={candidate.id}>
-              {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>
-                    Original Question
-                  </div>
-                  <div style={{ fontSize: 15, fontWeight: 600 }}>{candidate.questionTitle}</div>
+            <div key={candidate.id} className="mod-card mod-card-green">
+              {/* Card header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 20px 0' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--color-success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Lightbulb size={17} color="var(--color-success)" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>{candidate.questionTitle}</span>
                 </div>
                 <Badge color="accent">{candidate.category}</Badge>
               </div>
 
-              {/* Question description */}
-              {candidate.questionDescription && (
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--color-text-muted)',
-                    marginBottom: 10,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {candidate.questionDescription.length > 200
-                    ? candidate.questionDescription.slice(0, 200) + '…'
-                    : candidate.questionDescription}
-                </div>
-              )}
+              <div style={{ padding: '12px 20px 20px' }}>
+                {candidate.questionDescription && (
+                  <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 12, lineHeight: 1.55 }}>
+                    {candidate.questionDescription.length > 200 ? candidate.questionDescription.slice(0, 200) + '…' : candidate.questionDescription}
+                  </div>
+                )}
 
-              {/* Answer body */}
-              <div
-                style={{
-                  background: 'var(--color-input)',
-                  border: '1px solid var(--color-border)',
-                  borderLeft: '3px solid var(--color-success)',
-                  borderRadius: 8,
-                  padding: 12,
-                  marginBottom: 12,
-                  fontSize: 13,
-                  color: 'var(--color-text)',
-                  lineHeight: 1.6,
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
-                {candidate.answerBody}
-              </div>
-
-              {/* Meta + actions */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-                  by {candidate.author.name}
-                  {candidate.moderator && ` · approved by ${candidate.moderator.name}`}
-                  {' · '}{timeAgo(candidate.approvedAt)}
+                {/* Answer body */}
+                <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderLeft: '3px solid var(--color-success)', borderRadius: 10, padding: '12px 14px', marginBottom: 14, fontSize: 13, color: 'var(--color-text)', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
+                  {candidate.answerBody}
                 </div>
-                {isAdmin && (
-                  <Button
-                    size="sm"
-                    onClick={() => convert.mutate(candidate.id)}
-                    disabled={convert.isPending}
-                  >
-                    <ArrowRight size={13} /> Convert to FAQ Draft
-                  </Button>
+
+                {/* Footer */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                    by <strong>{candidate.author.name}</strong>
+                    {candidate.moderator && <> · approved by <strong>{candidate.moderator.name}</strong></>}
+                    {' · '}{timeAgo(candidate.approvedAt)}
+                  </div>
+                  {isAdmin && (
+                    <button
+                      onClick={() => convert.mutate(candidate.id)}
+                      disabled={convert.isPending}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 18px',
+                        background: 'var(--color-success)', color: 'white',
+                        border: 'none', borderRadius: 10, cursor: 'pointer',
+                        fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
+                        boxShadow: '0 3px 10px rgba(16,185,129,0.25)', opacity: convert.isPending ? 0.6 : 1,
+                      }}
+                    >
+                      <ArrowRight size={13} /> Convert to FAQ Draft
+                    </button>
+                  )}
+                </div>
+
+                {convert.isSuccess && convert.variables === candidate.id && (
+                  <div style={{ marginTop: 8, fontSize: 12, color: 'var(--color-success)', fontWeight: 600 }}>
+                    ✓ Converted to FAQ draft — find it in FAQ Management.
+                  </div>
                 )}
               </div>
-
-              {convert.isSuccess && convert.variables === candidate.id && (
-                <div style={{ marginTop: 8, fontSize: 12, color: 'var(--color-success)', fontWeight: 500 }}>
-                  ✓ Converted to FAQ draft — find it in FAQ Management.
-                </div>
-              )}
-            </Card>
+            </div>
           ))}
         </div>
       )}
