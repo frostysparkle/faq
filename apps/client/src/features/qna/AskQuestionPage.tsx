@@ -237,11 +237,11 @@ export function AskQuestionPage() {
       {step === 'faq-match' && check && (
         <div>
           <Banner color="warning" icon={<AlertTriangle size={18} />}>
-            <strong>We found {check.matchedFaqs.length} possibly related FAQ(s).</strong> Check if
+            <strong>We found {Math.min(check.matchedFaqs.length, 3)} possibly related FAQ(s).</strong> Check if
             any of these answers your question.
           </Banner>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-            {check.matchedFaqs.map((faq) => (
+            {check.matchedFaqs.slice(0, 3).map((faq) => (
               <div key={faq.id} className="mod-card mod-card-orange" style={{ padding: '16px 18px' }}>
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>{faq.title}</div>
                 {faq.summary && (
