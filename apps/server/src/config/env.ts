@@ -15,12 +15,15 @@ const envSchema = z.object({
   CORS_ORIGINS: z.string().default('http://localhost:5173'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
-  LLM_PROVIDER: z.enum(['mock', 'gemini', 'local-llama']).default('mock'),
+  LLM_PROVIDER: z.enum(['mock', 'gemini', 'local-llama', 'ollama']).default('mock'),
   GEMINI_API_KEY: z.string().optional(),
   EMBEDDING_PROVIDER: z.enum(['mock', 'gemini']).default('mock'),
   // LLM server (rag/llm-server) — used when LLM_PROVIDER=local-llama
   LLM_BASE_URL: z.string().url().optional(),
   LLM_INTERNAL_SECRET: z.string().optional(),
+  // Ollama — used when LLM_PROVIDER=ollama (no API key needed)
+  OLLAMA_BASE_URL: z.string().url().default('http://localhost:11434'),
+  OLLAMA_MODEL: z.string().default('gemma3:4b'),
 });
 
 const parsed = envSchema.safeParse(process.env);
