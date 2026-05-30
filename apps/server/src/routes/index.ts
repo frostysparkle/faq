@@ -12,6 +12,8 @@ import { chatbotRouter } from './chatbot.routes.js';
 import { userRouter } from './user.routes.js';
 import { auditRouter } from './audit.routes.js';
 import { settingsRouter } from './settings.routes.js';
+import { adminRouter } from './admin.routes.js';
+import { helpRouter } from './help.routes.js';
 
 const router = Router();
 
@@ -31,6 +33,8 @@ router.use('/chat', chatbotRouter);
 router.use('/users', userRouter);
 router.use('/audit-logs', auditRouter);
 router.use('/settings', settingsRouter);
+router.use('/admin', adminRouter);
+router.use('/help-data', helpRouter);
 
 export const apiRouter = router;
 

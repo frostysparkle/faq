@@ -16,6 +16,7 @@ import {
   MessageCircle,
   MessageSquare,
   MessageSquarePlus,
+  Search,
   Settings,
   BarChart3,
   Bot,
@@ -37,6 +38,7 @@ export interface NavItem {
 export const navByRole: Record<UserRole, NavItem[]> = {
   student: [
     { section: 'Main', label: 'Home', path: '/', icon: Home },
+    { label: 'Search', path: '/search', icon: Search },
     { label: 'Browse FAQs', path: '/faqs', icon: BookOpen },
     { label: 'Community Q&A', path: '/community', icon: MessageCircle },
     { section: 'My Activity', label: 'Ask a Question', path: '/ask', icon: MessageSquarePlus },
@@ -51,12 +53,14 @@ export const navByRole: Record<UserRole, NavItem[]> = {
       path: '/moderation/unresolved',
       icon: MessageSquare,
     },
-    { section: 'Knowledge', label: 'FAQ Management', path: '/admin/faqs', icon: BookOpen },
+    { section: 'Knowledge', label: 'Search', path: '/search', icon: Search },
+    { label: 'FAQ Management', path: '/admin/faqs', icon: BookOpen },
     { label: 'Chatbot Feedback', path: '/admin/bot-feedback', icon: Bot },
   ],
   admin: [
     { section: 'Overview', label: 'Admin Overview', path: '/admin', icon: LayoutDashboard },
-    { section: 'Knowledge', label: 'FAQ Management', path: '/admin/faqs', icon: BookOpen },
+    { section: 'Knowledge', label: 'Search', path: '/search', icon: Search },
+    { label: 'FAQ Management', path: '/admin/faqs', icon: BookOpen },
     { section: 'People', label: 'User Management', path: '/admin/users', icon: Users },
     {
       section: 'System',
