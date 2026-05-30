@@ -9,14 +9,14 @@ export function ModerationOverviewPage() {
 
       {/* Welcome banner */}
       <div style={{
-        background: 'linear-gradient(135deg, #0891b2 0%, #0f2744 100%)',
+        background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 60%, #4c1d95 100%)',
         borderRadius: 20,
         padding: '28px 32px',
         marginBottom: 24,
         color: 'white',
         position: 'relative',
         overflow: 'hidden',
-        boxShadow: '0 12px 40px rgba(8,145,178,0.22)',
+        boxShadow: '0 12px 40px rgba(124,58,237,0.22)',
       }}>
         <div style={{ position: 'absolute', top: -40, right: -30, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
         <div style={{ position: 'absolute', bottom: -50, right: 120, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />

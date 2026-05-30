@@ -118,4 +118,8 @@ export const faqApi = {
     const res = await apiClient.get<ApiSuccess<ModeratorDashboardStats>>('/api/stats/moderator');
     return res.data.data;
   },
+  async getVotesTrend(): Promise<{ date: string; helpful: number; unhelpful: number; flagged: number }[]> {
+    const res = await apiClient.get<ApiSuccess<{ date: string; helpful: number; unhelpful: number; flagged: number }[]>>('/api/stats/votes-trend');
+    return res.data.data;
+  },
 };

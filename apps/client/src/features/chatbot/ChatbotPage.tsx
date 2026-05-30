@@ -64,7 +64,7 @@ export function ChatbotPage() {
       <div className="mod-card mod-card-blue" style={{ marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(8,145,178,0.3)' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(124,58,237,0.3)' }}>
               <Bot size={20} color="white" />
             </div>
             <div>
@@ -120,7 +120,7 @@ export function ChatbotPage() {
             border: 'none', borderRadius: 10, cursor: 'pointer',
             fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
             opacity: !input.trim() || sendMutation.isPending ? 0.5 : 1,
-            boxShadow: '0 2px 8px rgba(8,145,178,0.25)', transition: 'opacity 0.15s',
+            boxShadow: '0 2px 8px rgba(124,58,237,0.25)', transition: 'opacity 0.15s',
           }}
         >
           <Send size={13} /> Send
@@ -136,7 +136,7 @@ export function ChatbotPage() {
 
 function BotAvatar() {
   return (
-    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 6px rgba(8,145,178,0.25)' }}>
+    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 6px rgba(124,58,237,0.25)' }}>
       <Bot size={16} color="white" />
     </div>
   );

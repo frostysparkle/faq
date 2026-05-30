@@ -16,54 +16,46 @@ export function Sidebar({ role, userName, open }: SidebarProps) {
   const { logout } = useAuth();
   const groups = groupBySection(items);
 
+  const initials = userName
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w.charAt(0).toUpperCase())
+    .join('');
+
   return (
-    <aside
-      style={{
-        width: open ? 236 : 60,
-        background: 'var(--color-sidebar)',
-        flexShrink: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        transition: 'width 0.2s ease',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Logo / brand */}
+    <aside className="sidebar" style={{ width: open ? 236 : 60 }}>
+
+      {/* ── Brand ──────────────────────────────────────────────────────── */}
       <div style={{
-        padding: open ? '18px 18px 14px' : '14px 0',
+        padding: open ? '16px 16px 14px' : '14px 0',
         borderBottom: '1px solid var(--color-sidebar-border)',
         display: 'flex',
         justifyContent: open ? 'flex-start' : 'center',
+        flexShrink: 0,
       }}>
         {open ? (
-          <div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: 'white', letterSpacing: '-0.5px' }}>Samagama</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 1 }} data-testid="role-label">
-              Internship Portal · {role}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div className="sidebar-logo">S</div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--color-sidebar-username)', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
+                Samagama
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--color-sidebar-sub)', marginTop: 2 }} data-testid="role-label">
+                Internship Portal · {role}
+              </div>
             </div>
           </div>
         ) : (
-          <div style={{
-            width: 32, height: 32, borderRadius: 9,
-            background: 'var(--color-primary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 15, fontWeight: 900, color: 'white',
-          }}>S</div>
+          <div className="sidebar-logo">S</div>
         )}
       </div>
 
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: '6px 10px', overflowY: 'auto' }}>
+      {/* ── Nav ────────────────────────────────────────────────────────── */}
+      <nav style={{ flex: 1, padding: '8px 8px', overflowY: 'auto' }}>
         {groups.map((group, gi) => (
           <div key={gi} style={{ marginBottom: 8 }}>
             {open && group.section && (
-              <div style={{
-                fontSize: 10, color: 'rgba(255,255,255,0.35)',
-                textTransform: 'uppercase', letterSpacing: '1px',
-                padding: '8px 10px 4px',
-              }}>
-                {group.section}
-              </div>
+              <div className="sidebar-section-label">{group.section}</div>
             )}
             {group.items.map((item) => (
               <SidebarLink key={item.path} item={item} open={open} />
@@ -72,66 +64,122 @@ export function Sidebar({ role, userName, open }: SidebarProps) {
         ))}
       </nav>
 
-      {/* User footer */}
+      {/* ── User footer ────────────────────────────────────────────────── */}
       <div style={{
-        padding: open ? '12px 14px' : '12px 0',
+        padding: open ? '10px 12px' : '10px 0',
         borderTop: '1px solid var(--color-sidebar-border)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: open ? 'flex-start' : 'center',
         gap: open ? 10 : 0,
+        flexShrink: 0,
       }}>
+        {/* Avatar */}
         <div
           title={open ? undefined : userName}
           style={{
-            width: 32, height: 32, borderRadius: '50%',
-            background: 'var(--color-primary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, fontWeight: 700, color: 'white',
-            flexShrink: 0, cursor: 'default',
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 12,
+            fontWeight: 700,
+            color: 'white',
+            flexShrink: 0,
+            cursor: 'default',
+            boxShadow: '0 0 0 2px var(--color-sidebar-border)',
           }}
         >
-          {userName.charAt(0).toUpperCase()}
+          {initials}
         </div>
 
         {open ? (
-          <div style={{ flex: 1, overflow: 'hidden' }}>
-            <div style={{
-              fontSize: 12, fontWeight: 600, color: 'white',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              {userName}
+          <>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <div style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: 'var(--color-sidebar-username)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
+                {userName}
+              </div>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                marginTop: 2,
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: '0.07em',
+                textTransform: 'uppercase',
+                color: 'var(--color-sidebar-active-text)',
+                background: 'var(--color-sidebar-active)',
+                borderRadius: 4,
+                padding: '1px 6px',
+              }}>
+                {role}
+              </div>
             </div>
+
             <button
               onClick={logout}
+              title="Sign out"
               style={{
-                fontSize: 10, color: 'rgba(255,255,255,0.4)',
-                background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--color-sidebar-logout)',
+                padding: 6,
+                borderRadius: 6,
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'color var(--transition), background var(--transition)',
+                flexShrink: 0,
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLButtonElement;
+                el.style.color = 'var(--color-sidebar-text-hover)';
+                el.style.background = 'var(--color-sidebar-hover)';
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLButtonElement;
+                el.style.color = 'var(--color-sidebar-logout)';
+                el.style.background = 'none';
               }}
             >
-              Sign out
+              <LogOut size={14} />
             </button>
-          </div>
+          </>
         ) : (
           <button
             onClick={logout}
             title="Sign out"
             style={{
               position: 'absolute',
-              bottom: 58,
+              bottom: 52,
               left: 0,
               width: 60,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               padding: '7px 0',
-              background: 'none', border: 'none',
+              background: 'none',
+              border: 'none',
               cursor: 'pointer',
-              color: 'rgba(255,255,255,0.35)',
-              transition: 'color 0.15s',
+              color: 'var(--color-sidebar-logout)',
+              transition: 'color var(--transition)',
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.7)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.35)'; }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-sidebar-text-hover)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-sidebar-logout)';
+            }}
           >
             <LogOut size={15} />
           </button>
@@ -148,36 +196,60 @@ function SidebarLink({ item, open }: { item: NavItem; open: boolean }) {
       to={item.path}
       end={item.path === '/'}
       title={open ? undefined : item.label}
-      style={({ isActive }) => ({
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
+      className={({ isActive }) => ['sidebar-link', isActive ? 'active' : ''].filter(Boolean).join(' ')}
+      style={() => ({
         gap: open ? 10 : 0,
         justifyContent: open ? 'flex-start' : 'center',
-        padding: open ? '9px 10px' : '9px',
-        borderRadius: 8,
-        marginBottom: 2,
-        background: isActive ? 'var(--color-sidebar-active)' : 'transparent',
-        color: isActive ? 'var(--color-sidebar-active-text)' : 'var(--color-sidebar-text)',
-        fontSize: 13,
-        fontWeight: isActive ? 600 : 400,
-        textDecoration: 'none',
-        transition: 'all 0.15s',
+        padding: open ? '9px 10px 9px 9px' : '9px',
       })}
     >
-      <Icon size={16} style={{ flexShrink: 0 }} />
-      {open && (
-        <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {item.label}
-        </span>
-      )}
-      {open && item.badge && (
-        <span style={{
-          background: '#ef4444', color: 'white', borderRadius: 10,
-          padding: '1px 6px', fontSize: 10, fontWeight: 700, minWidth: 18, textAlign: 'center',
-        }}>
-          {item.badge}
-        </span>
+      {({ isActive }) => (
+        <>
+          {open ? (
+            <div style={{
+              width: 28,
+              height: 28,
+              borderRadius: 7,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              background: isActive ? 'var(--color-sidebar-active)' : 'transparent',
+              transition: 'background var(--transition)',
+            }}>
+              <Icon size={15} />
+            </div>
+          ) : (
+            <Icon size={16} style={{ flexShrink: 0 }} />
+          )}
+
+          {open && (
+            <span style={{
+              flex: 1,
+              textAlign: 'left',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
+              {item.label}
+            </span>
+          )}
+
+          {open && item.badge && (
+            <span style={{
+              background: '#ef4444',
+              color: 'white',
+              borderRadius: 10,
+              padding: '1px 6px',
+              fontSize: 10,
+              fontWeight: 700,
+              minWidth: 18,
+              textAlign: 'center',
+            }}>
+              {item.badge}
+            </span>
+          )}
+        </>
       )}
     </NavLink>
   );

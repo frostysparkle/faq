@@ -9,7 +9,7 @@ export function ModeratorAnalyticsPage() {
   return (
     <div>
       {/* Welcome banner */}
-      <div style={{ background: 'linear-gradient(135deg, #0891b2 0%, #0f2744 100%)', borderRadius: 20, padding: '28px 32px', marginBottom: 24, color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 12px 40px rgba(8,145,178,0.22)' }}>
+      <div style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 60%, #4c1d95 100%)', borderRadius: 20, padding: '28px 32px', marginBottom: 24, color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 12px 40px rgba(124,58,237,0.25)' }}>
         <div style={{ position: 'absolute', top: -40, right: -30, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
         <div style={{ fontSize: 11, opacity: 0.6, marginBottom: 4, letterSpacing: '0.06em', textTransform: 'uppercase' }}>My Performance</div>
         <div style={{ fontSize: 26, fontWeight: 800, marginBottom: 4, letterSpacing: '-0.02em' }}>{user?.name ?? 'Moderator'} 📊</div>

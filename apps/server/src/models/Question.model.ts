@@ -3,6 +3,11 @@
 //   - `screenshotUrl`                  → optional image attached at Ask time.
 //   - `taggedStudents[]`               → other students who tagged themselves to this question.
 //   - `moderatorViewedAt`              → timestamp set the first time a mod opens it (for "Seen" tick).
+//
+// Aligned with remote repo:
+//   - `priorityScore`  → computed priority for moderation queue ordering.
+//   - `resolvedAt`     → timestamp when the question was resolved.
+//   - `embedding`      → 384-dim vector for semantic duplicate detection (populated async).
 import { Schema, model, type InferSchemaType, type HydratedDocument } from 'mongoose';
 import { QUESTION_STATUSES, QUESTION_TYPES } from '@samagama/shared';
 
@@ -50,6 +55,26 @@ const questionSchema = new Schema(
 
     viewCount: { type: Number, default: 0 },
     answerCount: { type: Number, default: 0 },
+
+    /** Priority score for moderation queue ordering — mirrors remote priorityScore. */
+    priorityScore: { type: Number, default: 0, index: true },
+
+    /** Set when the question status transitions to 'resolved'. */
+    resolvedAt: { type: Date },
+
+    /**
+     * 384-dim embedding of the question title for semantic duplicate detection.
+     * Populated asynchronously by the embedding service after creation.
+     */
+    embedding: {
+      type: [Number],
+      default: undefined,
+      select: false,
+      validate: {
+        validator: (v: number[]) => !v || v.length === 0 || v.length === 384,
+        message: 'embedding must be exactly 384 dimensions',
+      },
+    },
   },
   { timestamps: true },
 );
@@ -60,6 +85,7 @@ questionSchema.index(
   { weights: { title: 10, description: 1 }, name: 'question_text_index' },
 );
 questionSchema.index({ status: 1, type: 1, updatedAt: -1 });
+questionSchema.index({ status: 1, priorityScore: -1, createdAt: -1 });
 
 export type QuestionDocument = HydratedDocument<InferSchemaType<typeof questionSchema>>;
 export const QuestionModel = model('Question', questionSchema);

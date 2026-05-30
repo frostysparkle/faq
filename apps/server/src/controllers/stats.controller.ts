@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { statsService } from '../services/stats.service.js';
+import { analyticsService } from '../services/analytics.service.js';
 import { ok } from '../utils/api-response.js';
 import { ApiError } from '../utils/api-error.js';
 
@@ -58,6 +59,12 @@ export const statsController = {
   async getFaqQuality(req: Request, res: Response) {
     const filter = (req.query.filter as 'all' | 'rewrite' | 'archive') ?? 'all';
     return ok(res, await statsService.listFaqsForQuality(filter));
+  },
+
+  /** Daily helpful / unhelpful / flagged vote counts for the last 7 days.
+   *  Drives the real sparklines in the FAQ Management summary cards. */
+  async getVotesTrend(_req: Request, res: Response) {
+    return ok(res, await analyticsService.getVotesTrend());
   },
 };
 

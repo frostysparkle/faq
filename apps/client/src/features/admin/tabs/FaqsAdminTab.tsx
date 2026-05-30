@@ -121,14 +121,16 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
   };
 
   const queryParams = useMemo(() => {
-    const q: { filter?: 'helpful' | 'flagged'; page: number; pageSize: number; q?: string; sort?: string } = { page, pageSize };
+    const q: { filter?: 'helpful' | 'flagged'; page: number; pageSize: number; q?: string; sort?: 'relevance' | 'recent' | 'added' | 'popular' | 'helpful' } = { page, pageSize };
     if (filter === 'helpful') q.filter = 'helpful';
     if (filter === 'flagged') q.filter = 'flagged';
     if (searchQuery) { q.q = searchQuery; q.sort = 'relevance'; }
     return q;
   }, [filter, page, pageSize, searchQuery]);
 
-  const { data, isLoading } = useFaqList(queryParams);
+  // Poll every 30 s so engagement counts stay in sync with student votes
+  // submitted in other sessions without requiring a manual reload.
+  const { data, isLoading } = useFaqList(queryParams, { refetchInterval: 30_000 });
   const { data: categories } = useCategories();
   const { data: tags } = useTags();
 

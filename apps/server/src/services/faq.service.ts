@@ -24,6 +24,8 @@ import { RECENT_FAQS_LIMIT } from '@samagama/shared';
 import { FaqModel, type FaqDocument } from '../models/Faq.model.js';
 import { UserModel } from '../models/User.model.js';
 import { ApiError } from '../utils/api-error.js';
+import { generateEmbedding, cosineSimilarity } from './embedding.service.js';
+import { analyticsService } from './analytics.service.js';
 
 interface ListOptions {
   query: FaqListQuery;
@@ -62,12 +64,12 @@ function projectFaq(faq: PopulatedFaq, role: UserRole, hasUserFeedback?: boolean
     updatedAt: faq.updatedAt.toISOString(),
     createdAt: faq.createdAt.toISOString(),
   };
-  // viewCount, helpfulCount, unhelpfulCount are moderator/admin-only (Dashboard Spec).
-  // Students never see raw counts on Browse FAQs.
+  // helpfulCount and unhelpfulCount are shown to all roles so students see vote totals
+  // when browsing FAQs. viewCount and flagCount remain moderator/admin-only.
+  base.helpfulCount = faq.helpfulCount ?? 0;
+  base.unhelpfulCount = faq.unhelpfulCount ?? 0;
   if (role === 'moderator' || role === 'admin') {
     base.viewCount = faq.viewCount;
-    base.helpfulCount = faq.helpfulCount;
-    base.unhelpfulCount = faq.unhelpfulCount;
     base.flagCount = faq.flagCount;
   }
   if (hasUserFeedback !== undefined) base.hasUserFeedback = hasUserFeedback;
@@ -148,6 +150,11 @@ export const faqService = {
       FaqModel.countDocuments(filter),
     ]);
 
+    // Fire-and-forget: log search queries so admin can surface unanswered searches.
+    if (query.q) {
+      void analyticsService.logSearch({ query: query.q, resultCount: total });
+    }
+
     return {
       items: items.map((faq) => projectFaq(faq, role)),
       total,
@@ -187,6 +194,14 @@ export const faqService = {
       updatedBy: actorId,
       publishedAt: input.status === 'published' ? new Date() : undefined,
     });
+
+    // Fire-and-forget: generate 384-dim embedding for the FAQ title.
+    // Mirrors remote embeddingBackfillJob pattern — non-blocking.
+    if (input.status === 'published') {
+      void scheduleEmbedding(doc._id.toString(), input.title);
+      void analyticsService.track('faq_viewed', { entityType: 'faq', entityId: doc._id.toString(), userId: actorId });
+    }
+
     return doc;
   },
 
@@ -224,6 +239,16 @@ export const faqService = {
     }
 
     await current.save();
+
+    // Regenerate embedding if title or answer changed and FAQ is published.
+    if (current.status === 'published' && (input.title || answerChanged)) {
+      void scheduleEmbedding(current._id.toString(), current.title);
+    }
+    // Recompute quality score async when a meaningful content field changes.
+    if (answerChanged || input.title || input.summary) {
+      void FaqModel.calculateQualityScore(current._id.toString());
+    }
+
     return { faq: current, statsReset: answerChanged };
   },
 
@@ -258,6 +283,9 @@ export const faqService = {
         },
       },
     );
+
+    // Fire-and-forget analytics event.
+    void analyticsService.track('faq_viewed', { userId, entityType: 'faq', entityId: faqId });
   },
 
   /** One vote per user. Switching from helpful -> unhelpful is allowed. */
@@ -276,26 +304,81 @@ export const faqService = {
       unhelpful: faq.unhelpfulVotes?.some((v) => v.equals(userObjectId)) ?? false,
     };
 
-    if (had[rating]) return; // Already voted this way — idempotent no-op.
-
     const update: Record<string, unknown> = {};
-    if (rating === 'helpful') {
+
+    if (had[rating]) {
+      // Toggle OFF — user clicked the same rating again, remove their vote.
+      if (rating === 'helpful') {
+        update.$pull = { helpfulVotes: userObjectId };
+        update.$inc = { helpfulCount: -1 };
+      } else {
+        update.$pull = { unhelpfulVotes: userObjectId };
+        update.$inc = { unhelpfulCount: -1 };
+      }
+    } else if (rating === 'helpful') {
+      // Switch to helpful (and remove any previous unhelpful vote).
       update.$addToSet = { helpfulVotes: userObjectId };
       update.$pull = { unhelpfulVotes: userObjectId };
-      update.$inc = {
-        helpfulCount: 1,
-        ...(had.unhelpful ? { unhelpfulCount: -1 } : {}),
-      };
+      update.$inc = { helpfulCount: 1, ...(had.unhelpful ? { unhelpfulCount: -1 } : {}) };
     } else {
+      // Switch to unhelpful (and remove any previous helpful vote).
       update.$addToSet = { unhelpfulVotes: userObjectId };
       update.$pull = { helpfulVotes: userObjectId };
-      update.$inc = {
-        unhelpfulCount: 1,
-        ...(had.helpful ? { helpfulCount: -1 } : {}),
-      };
+      update.$inc = { unhelpfulCount: 1, ...(had.helpful ? { helpfulCount: -1 } : {}) };
     }
 
     await FaqModel.updateOne({ _id: faqId }, update);
+
+    // Fire-and-forget analytics event.
+    void analyticsService.track(rating === 'helpful' ? 'faq_helpful' : 'faq_unhelpful', {
+      userId,
+      entityType: 'faq',
+      entityId: faqId,
+    });
+
+    // Recompute quality score after feedback changes helpfulness ratio.
+    void FaqModel.calculateQualityScore(faqId);
+  },
+
+  /**
+   * Cosine-similarity duplicate check. Mirrors remote POST /api/faqs/check-similar.
+   * Requires embeddings to be populated on published FAQs.
+   * Falls back to text search when embeddings are missing.
+   */
+  async checkSimilarity(
+    title: string,
+    opts: { limit?: number; threshold?: number } = {},
+  ): Promise<{ id: string; title: string; similarity: number }[]> {
+    const limit = Math.min(opts.limit ?? 5, 20);
+    const threshold = opts.threshold ?? 0.5;
+
+    const queryEmbedding = await generateEmbedding(title);
+
+    // Fetch published FAQs with their embeddings (select: false requires explicit select).
+    const faqs = await FaqModel.find({ status: 'published' })
+      .select('title embedding')
+      .lean<{ _id: Types.ObjectId; title: string; embedding?: number[] }[]>();
+
+    const scored = faqs
+      .filter((f) => f.embedding && f.embedding.length === 384)
+      .map((f) => ({ id: f._id.toString(), title: f.title, similarity: cosineSimilarity(queryEmbedding, f.embedding!) }))
+      .filter((r) => r.similarity >= threshold)
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, limit);
+
+    // Fallback: if no embeddings are populated yet, use text search.
+    if (scored.length === 0 && title.trim()) {
+      const textResults = await FaqModel.find(
+        { status: 'published', $text: { $search: title } },
+        { score: { $meta: 'textScore' } },
+      )
+        .sort({ score: { $meta: 'textScore' } })
+        .limit(limit)
+        .lean<{ _id: Types.ObjectId; title: string }[]>();
+      return textResults.map((f) => ({ id: f._id.toString(), title: f.title, similarity: 0 }));
+    }
+
+    return scored;
   },
 
   async getRecentlyViewed(userId: string, role: UserRole): Promise<PublicFaq[]> {
@@ -319,3 +402,15 @@ export const faqService = {
     return ordered.map((f) => projectFaq(f, role));
   },
 };
+
+// ─── Internal helpers ─────────────────────────────────────────────────────────
+
+/** Async, non-blocking embedding generation. Saves result back to the FAQ. */
+async function scheduleEmbedding(faqId: string, title: string): Promise<void> {
+  try {
+    const embedding = await generateEmbedding(title);
+    await FaqModel.updateOne({ _id: faqId }, { embedding });
+  } catch {
+    // Swallow — embedding failures must never block the request path.
+  }
+}

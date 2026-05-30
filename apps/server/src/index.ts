@@ -3,9 +3,16 @@ import { createApp } from './app.js';
 import { connectDatabase, disconnectDatabase } from './config/database.js';
 import { env } from './config/env.js';
 import { logger } from './config/logger.js';
+import { runEmbeddingBackfill } from './jobs/embedding-backfill.js';
+import { scheduleQualityScoreRecomputation } from './jobs/analytics-jobs.js';
 
 async function start(): Promise<void> {
   await connectDatabase();
+
+  // Background jobs — fire-and-forget, never block startup.
+  void runEmbeddingBackfill();
+  scheduleQualityScoreRecomputation();
+
   const app = createApp();
 
   const server = app.listen(env.PORT, () => {

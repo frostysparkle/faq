@@ -1,7 +1,7 @@
 // Shared FAQ Management — admins and moderators see exactly the same surface (Dashboard Spec).
 // Tabs: FAQs (default) | Categories | Tags.
 import { useState } from 'react';
-import { useFaqStats, useModeratorStats } from '../faq/queries';
+import { useFaqStats, useModeratorStats, useVotesTrend } from '../faq/queries';
 import { FaqsAdminTab } from './tabs/FaqsAdminTab';
 import { CategoriesAdminTab } from './tabs/CategoriesAdminTab';
 import { TagsAdminTab } from './tabs/TagsAdminTab';
@@ -14,6 +14,7 @@ export function FaqManagementPage() {
   const { data: stats } = useFaqStats();
   const { data: modStats, isLoading: modLoading } = useModeratorStats();
 
+  const { data: trend } = useVotesTrend();
   const pct = (n: number | undefined) => (modLoading ? 0 : (n ?? 0));
   const sv  = (n: number | undefined) => (modLoading ? '…' : (n ?? 0));
 
@@ -32,7 +33,7 @@ export function FaqManagementPage() {
           icon={<ThumbsUpIcon color="var(--color-success)" />}
           title="Helpful FAQs"
           subtitle="Making a positive impact"
-          trend={<TrendBox color="var(--color-success)" ascending />}
+          trend={<TrendBox color="var(--color-success)" points={trend?.map(d => d.helpful)} />}
         >
           <RateRow
             color="var(--color-success)"
@@ -40,7 +41,7 @@ export function FaqManagementPage() {
             percentage={pct(modStats?.helpfulFaqs.percentage)}
             label="Helpful rate"
             sub={`Across ${sv(modStats?.helpfulFaqs.publishedTotal)} published FAQs`}
-            badge="+0% vs last 7 days"
+            badge={trend ? `${trend[trend.length - 1]?.helpful ?? 0} votes today` : 'Last 7 days'}
           />
         </SummaryCard>
 
@@ -52,7 +53,7 @@ export function FaqManagementPage() {
           icon={<ThumbsDownIcon color="var(--color-danger)" />}
           title="Unhelpful FAQs"
           subtitle="Needs improvement"
-          trend={<TrendBox color="var(--color-danger)" />}
+          trend={<TrendBox color="var(--color-danger)" points={trend?.map(d => d.unhelpful)} />}
         >
           <RateRow
             color="var(--color-danger)"
@@ -60,7 +61,7 @@ export function FaqManagementPage() {
             percentage={pct(modStats?.unhelpfulFaqs.percentage)}
             label="Unhelpful rate"
             sub={`Across ${sv(modStats?.unhelpfulFaqs.publishedTotal)} published FAQs`}
-            badge="+0% vs last 7 days"
+            badge={trend ? `${trend[trend.length - 1]?.unhelpful ?? 0} votes today` : 'Last 7 days'}
           />
         </SummaryCard>
 
@@ -72,7 +73,7 @@ export function FaqManagementPage() {
           icon={<FlagIcon color="var(--color-warning)" />}
           title="Flagged FAQs"
           subtitle="Requires attention"
-          trend={<TrendBox color="var(--color-warning)" />}
+          trend={<TrendBox color="var(--color-warning)" points={trend?.map(d => d.flagged)} />}
         >
           {/* Total flagged — full-width row */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '4px 0 14px' }}>
@@ -258,7 +259,7 @@ function FlaggedMini({ icon, iconBg, label, value, sub, subColor }: {
 
 // ─── TrendBox + Sparkline ─────────────────────────────────────────────────────
 
-function TrendBox({ color, ascending = false }: { color: string; ascending?: boolean }) {
+function TrendBox({ color, points }: { color: string; points?: number[] }) {
   return (
     <div style={{
       borderRadius: 12,
@@ -269,17 +270,23 @@ function TrendBox({ color, ascending = false }: { color: string; ascending?: boo
       <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 500, marginBottom: 8 }}>
         Trend (last 7 days)
       </div>
-      <Sparkline color={color} ascending={ascending} />
+      <Sparkline color={color} points={points} />
     </div>
   );
 }
 
-function Sparkline({ color, ascending }: { color: string; ascending?: boolean }) {
+function Sparkline({ color, points }: { color: string; points?: number[] }) {
   const W = 340, H = 50;
-  const ys = ascending
-    ? [H * 0.90, H * 0.78, H * 0.70, H * 0.56, H * 0.48, H * 0.30, H * 0.10]
-    : [H * 0.80, H * 0.80, H * 0.80, H * 0.80, H * 0.80, H * 0.80, H * 0.80];
-  const xs = ys.map((_, i) => i * (W / (ys.length - 1)));
+
+  // Use real data if available; fall back to a flat zero line.
+  const rawValues = points && points.length > 0 ? points : [0, 0, 0, 0, 0, 0, 0];
+  const vals = rawValues.slice(-7); // Ensure at most 7 points.
+  while (vals.length < 7) vals.unshift(0);
+
+  const maxVal = Math.max(...vals, 1); // Avoid division by zero.
+  // Map values to Y coords: higher value → lower Y (top of SVG).
+  const ys = vals.map(v => H * 0.9 - (v / maxVal) * (H * 0.8));
+  const xs = vals.map((_, i) => i * (W / (vals.length - 1)));
 
   const path = ys.reduce((acc, y, i) => {
     const x = xs[i];
@@ -289,13 +296,43 @@ function Sparkline({ color, ascending }: { color: string; ascending?: boolean })
     return `${acc} C ${cx} ${py} ${cx} ${y} ${x} ${y}`;
   }, '');
 
+  // Day labels: Mon–Sun abbreviations for the last 7 days.
+  const dayLabels = vals.map((_, i) => {
+    const d = new Date(Date.now() - (vals.length - 1 - i) * 24 * 60 * 60 * 1000);
+    return d.toLocaleDateString('en-US', { weekday: 'short' });
+  });
+
   return (
-    <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
-      <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      {ys.map((y, i) => (
-        <circle key={i} cx={xs[i]} cy={y} r={i === ys.length - 1 ? 4.5 : 3} fill={color} />
-      ))}
-    </svg>
+    <div>
+      <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+        {/* Gradient fill under the line */}
+        <defs>
+          <linearGradient id={`grad-${color.replace(/[^a-z]/gi, '')}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path
+          d={`${path} L ${xs[xs.length - 1]} ${H} L ${xs[0]} ${H} Z`}
+          fill={`url(#grad-${color.replace(/[^a-z]/gi, '')})`}
+        />
+        <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        {ys.map((y, i) => (
+          <circle key={i} cx={xs[i]} cy={y} r={i === ys.length - 1 ? 4.5 : 3} fill={color} />
+        ))}
+      </svg>
+      {/* Day labels */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+        {dayLabels.map((label, i) => (
+          <span key={i} style={{ fontSize: 9, color: 'var(--color-text-muted)', minWidth: 0 }}>{label}</span>
+        ))}
+      </div>
+      {/* Value labels on hover tooltip substitute — show min/max */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+        <span style={{ fontSize: 9, color, fontWeight: 600 }}>Min: {Math.min(...vals)}</span>
+        <span style={{ fontSize: 9, color, fontWeight: 600 }}>Max: {Math.max(...vals)}</span>
+      </div>
+    </div>
   );
 }
 

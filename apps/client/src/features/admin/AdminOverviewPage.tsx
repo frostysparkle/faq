@@ -2,7 +2,6 @@
 // action-required alerts, and quality alerts.
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle,
   BarChart3,
   ChevronRight,
   Clock,
@@ -11,15 +10,10 @@ import {
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { SectionHeader } from '../../components/ui/SectionHeader';
-import { IdleBucketCards } from '../stats/IdleBucketCards';
-import { useAdminIntelligence } from './queries';
 import { ModerationQueueCards } from '../moderation/ModerationQueueCards';
-import type { QualityAlert } from './api';
 
 export function AdminOverviewPage() {
   const navigate = useNavigate();
-  const { data, isLoading } = useAdminIntelligence();
-
   return (
     <div>
       <SectionHeader title="Admin Overview" sub="Portal health at a glance." />
@@ -38,7 +32,7 @@ export function AdminOverviewPage() {
           label="User Management"
           subtitle="Manage users and roles"
           icon={Users}
-          iconColor="#0891b2"
+          iconColor="var(--color-primary)"
           iconBg="var(--color-primary-bg)"
           cardBg="var(--color-primary-bg)"
           onClick={() => navigate('/admin/users')}
@@ -72,25 +66,6 @@ export function AdminOverviewPage() {
         />
       </div>
 
-      {/* 3. FAQ Quality Alerts */}
-      {data?.qualityAlerts && data.qualityAlerts.length > 0 && (
-        <>
-          <div style={{ fontSize: 14, fontWeight: 600, margin: '28px 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <AlertTriangle size={16} color="var(--color-warning)" />
-            FAQ Quality Alerts
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {data.qualityAlerts.map((alert) => (
-              <QualityAlertRow key={alert.id} alert={alert} onClick={() => navigate('/admin/faq-quality')} />
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* 4. Idle Bucket Cards */}
-      <div style={{ marginTop: 28 }}>
-        <IdleBucketCards />
-      </div>
     </div>
   );
 }
@@ -146,34 +121,3 @@ function QuickNavCard({ label, subtitle, icon: Icon, iconColor, iconBg, cardBg, 
   );
 }
 
-function QualityAlertRow({ alert, onClick }: { alert: QualityAlert; onClick: () => void }) {
-  const scoreColor = alert.qualityScore < 30 ? 'var(--color-danger)' : alert.qualityScore < 60 ? 'var(--color-warning)' : 'var(--color-success)';
-  return (
-    <Card as="button" onClick={onClick} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
-      <div
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 8,
-          background: `${scoreColor}22`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 14,
-          fontWeight: 700,
-          color: scoreColor,
-          flexShrink: 0,
-        }}
-      >
-        {alert.qualityScore}
-      </div>
-      <div style={{ flex: 1, textAlign: 'left' }}>
-        <div style={{ fontSize: 13, fontWeight: 500 }}>{alert.title}</div>
-        <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
-          {alert.helpfulRatio}% helpful · {alert.flagCount} flags · {alert.viewCount} views
-        </div>
-      </div>
-      <ChevronRight size={14} color="var(--color-text-muted)" />
-    </Card>
-  );
-}

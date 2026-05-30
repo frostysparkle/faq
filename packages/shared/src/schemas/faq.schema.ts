@@ -52,11 +52,11 @@ export interface PublicFaq {
   status: (typeof FAQ_STATUSES)[number];
   /** Present for moderator/admin only (Dashboard Spec §35). */
   viewCount?: number;
-  /** Present for moderator/admin only. */
+  /** Visible to all roles so students can see vote totals when browsing. */
   helpfulCount?: number;
-  /** Present for moderator/admin only. */
+  /** Visible to all roles. */
   unhelpfulCount?: number;
-  /** True when the requesting student already left feedback. */
+  /** True when the requesting student already left feedback on this FAQ. */
   hasUserFeedback?: boolean;
   /** Present for moderator/admin only — live open flag count. */
   flagCount?: number;

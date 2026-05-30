@@ -39,7 +39,7 @@ export function LoginPage() {
       <div
         style={{
           width: '42%',
-          background: 'linear-gradient(145deg, #0891b2 0%, #0f2744 100%)',
+          background: 'linear-gradient(145deg, #8b5cf6 0%, #6d28d9 60%, #4c1d95 100%)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -54,6 +54,26 @@ export function LoginPage() {
         <div style={{ position: 'absolute', top: -80, right: -60, width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
         <div style={{ position: 'absolute', bottom: -100, left: -60, width: 260, height: 260, borderRadius: '50%', background: 'rgba(255,255,255,0.035)' }} />
         <div style={{ position: 'absolute', top: '40%', right: -30, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }} />
+
+        {/* Dot-grid texture overlay */}
+        <svg
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            opacity: 0.07,
+            pointerEvents: 'none',
+          }}
+        >
+          <defs>
+            <pattern id="dot-grid" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+              <circle cx="2" cy="2" r="1.2" fill="white" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#dot-grid)" />
+        </svg>
 
         <div style={{ position: 'relative', zIndex: 1 }}>
           {/* Logo */}
@@ -79,7 +99,7 @@ export function LoginPage() {
             Everything you<br />need for your<br />internship
           </div>
           <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: 44 }}>
-            150+ curated FAQs, peer Q&A, and Yaksha — your AI assistant grounded in approved knowledge.
+            150+ curated FAQs, peer Q&amp;A, and Yaksha — your AI assistant grounded in approved knowledge.
           </div>
 
           {/* Feature highlights */}
@@ -88,13 +108,26 @@ export function LoginPage() {
             { emoji: '💬', title: 'Community Q&A', sub: 'Peer answers, moderator approved' },
             { emoji: '🤖', title: 'Yaksha AI', sub: 'RAG chatbot grounded in approved FAQs' },
           ].map((f) => (
-            <div key={f.title} style={{
-              display: 'flex', alignItems: 'center', gap: 14,
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: 14, padding: '12px 16px', marginBottom: 10,
-              backdropFilter: 'blur(4px)',
-            }}>
+            <div
+              key={f.title}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 14, padding: '12px 16px', marginBottom: 10,
+                backdropFilter: 'blur(4px)',
+                transition: 'background 0.18s, transform 0.18s',
+                cursor: 'default',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.13)';
+                (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.08)';
+                (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)';
+              }}
+            >
               <div style={{ fontSize: 22, flexShrink: 0 }}>{f.emoji}</div>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>{f.title}</div>
@@ -123,7 +156,7 @@ export function LoginPage() {
                 background: 'var(--color-primary)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 20, fontWeight: 900, color: 'white', letterSpacing: '-0.5px',
-                boxShadow: '0 4px 16px rgba(8,145,178,0.35)',
+                boxShadow: '0 4px 16px rgba(124,58,237,0.35)',
               }}>S</div>
               <div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>
@@ -138,7 +171,7 @@ export function LoginPage() {
             <form onSubmit={handleSubmit(onSubmit)}>
               {/* Email */}
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 7 }}>
+                <label className="field-label">
                   Email address
                 </label>
                 <input
@@ -146,21 +179,19 @@ export function LoginPage() {
                   autoComplete="email"
                   {...register('email')}
                   aria-invalid={!!errors.email}
-                  style={{
-                    width: '100%', padding: '12px 14px',
-                    borderRadius: 10, fontSize: 14, fontFamily: 'inherit',
-                    border: `1.5px solid ${errors.email ? 'var(--color-danger)' : 'var(--color-border)'}`,
-                    background: 'var(--color-input)', color: 'var(--color-text)',
-                    outline: 'none', boxSizing: 'border-box',
-                    transition: 'border-color 0.15s',
-                  }}
+                  className="field-input"
+                  style={errors.email ? { borderColor: 'var(--color-danger)' } : undefined}
                 />
-                {errors.email && <span style={{ display: 'block', marginTop: 5, fontSize: 12, color: 'var(--color-danger)' }}>{errors.email.message}</span>}
+                {errors.email && (
+                  <span style={{ display: 'block', marginTop: 5, fontSize: 12, color: 'var(--color-danger)' }}>
+                    {errors.email.message}
+                  </span>
+                )}
               </div>
 
               {/* Password */}
               <div style={{ marginBottom: 24 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 7 }}>
+                <label className="field-label">
                   Password
                 </label>
                 <input
@@ -168,16 +199,14 @@ export function LoginPage() {
                   autoComplete="current-password"
                   {...register('password')}
                   aria-invalid={!!errors.password}
-                  style={{
-                    width: '100%', padding: '12px 14px',
-                    borderRadius: 10, fontSize: 14, fontFamily: 'inherit',
-                    border: `1.5px solid ${errors.password ? 'var(--color-danger)' : 'var(--color-border)'}`,
-                    background: 'var(--color-input)', color: 'var(--color-text)',
-                    outline: 'none', boxSizing: 'border-box',
-                    transition: 'border-color 0.15s',
-                  }}
+                  className="field-input"
+                  style={errors.password ? { borderColor: 'var(--color-danger)' } : undefined}
                 />
-                {errors.password && <span style={{ display: 'block', marginTop: 5, fontSize: 12, color: 'var(--color-danger)' }}>{errors.password.message}</span>}
+                {errors.password && (
+                  <span style={{ display: 'block', marginTop: 5, fontSize: 12, color: 'var(--color-danger)' }}>
+                    {errors.password.message}
+                  </span>
+                )}
               </div>
 
               {serverError && (
@@ -186,21 +215,21 @@ export function LoginPage() {
                   borderRadius: 10, background: 'var(--color-danger-bg)',
                   color: 'var(--color-danger)', fontSize: 13,
                   border: '1px solid var(--color-danger)',
-                }}>{serverError}</div>
+                }}>
+                  {serverError}
+                </div>
               )}
 
               <button
                 type="submit"
                 disabled={isSubmitting}
+                className="btn btn-primary"
                 style={{
-                  width: '100%', padding: '13px',
-                  borderRadius: 12, border: 'none',
-                  background: isSubmitting ? 'var(--color-text-muted)' : 'var(--color-primary)',
-                  color: 'white', fontWeight: 700, fontSize: 15,
-                  cursor: isSubmitting ? 'progress' : 'pointer',
-                  fontFamily: 'inherit', letterSpacing: '-0.01em',
-                  boxShadow: isSubmitting ? 'none' : '0 4px 16px rgba(8,145,178,0.3)',
-                  transition: 'all 0.15s',
+                  width: '100%',
+                  padding: '13px',
+                  borderRadius: 12,
+                  fontSize: 15,
+                  letterSpacing: '-0.01em',
                 }}
               >
                 {isSubmitting ? 'Signing in…' : 'Sign in →'}

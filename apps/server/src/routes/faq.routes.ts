@@ -46,4 +46,11 @@ router.post(
   asyncHandler(faqController.submitFeedback),
 );
 
+// Similarity check — mirrors remote POST /api/faqs/check-similar.
+router.post(
+  '/check-similar',
+  requireRole('admin', 'moderator'),
+  asyncHandler(faqController.checkSimilarity),
+);
+
 export const faqRouter = router;

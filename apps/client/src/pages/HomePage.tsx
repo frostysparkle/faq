@@ -24,10 +24,10 @@ export function HomePage() {
     <div>
       {/* Welcome banner */}
       <div style={{
-        background: 'linear-gradient(135deg, #0891b2 0%, #0f2744 100%)',
+        background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 60%, #4c1d95 100%)',
         borderRadius: 20, padding: '28px 32px', marginBottom: 24,
         color: 'white', position: 'relative', overflow: 'hidden',
-        boxShadow: '0 12px 40px rgba(8,145,178,0.22)',
+        boxShadow: '0 12px 40px rgba(124,58,237,0.22)',
       }}>
         <div style={{ position: 'absolute', top: -40, right: -30, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
         <div style={{ position: 'absolute', bottom: -50, right: 120, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
@@ -56,7 +56,7 @@ function StudentHome() {
       {/* Stat cards */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1.1fr', gap: 14, marginBottom: 24, alignItems: 'stretch' }}>
 
-        <div className="mod-card mod-card-blue" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
+        <div className="mod-card mod-card-blue interactive" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-primary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <MessagesSquare size={20} color="var(--color-primary)" />
           </div>
@@ -66,7 +66,7 @@ function StudentHome() {
           <MessagesSquare size={80} color="var(--color-primary)" style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06 }} />
         </div>
 
-        <div className="mod-card mod-card-orange" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
+        <div className="mod-card mod-card-orange interactive" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-warning-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <HelpCircle size={20} color="var(--color-warning)" />
           </div>
@@ -76,7 +76,7 @@ function StudentHome() {
           <HelpCircle size={80} color="var(--color-warning)" style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06 }} />
         </div>
 
-        <div className="mod-card mod-card-green" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
+        <div className="mod-card mod-card-green interactive" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <MessageCircle size={20} color="var(--color-success)" />
           </div>
@@ -86,7 +86,7 @@ function StudentHome() {
           <MessageCircle size={80} color="var(--color-success)" style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06 }} />
         </div>
 
-        <div className="mod-card mod-card-purple" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
+        <div className="mod-card mod-card-purple interactive" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-purple-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Sparkles size={20} color="var(--color-purple)" />
           </div>

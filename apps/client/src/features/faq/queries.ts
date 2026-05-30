@@ -20,10 +20,11 @@ export const faqKeys = {
   tags: ['tags'] as const,
 };
 
-export function useFaqList(query: Partial<FaqListQuery>) {
+export function useFaqList(query: Partial<FaqListQuery>, options: { refetchInterval?: number } = {}) {
   return useQuery({
     queryKey: faqKeys.list(query),
     queryFn: () => faqApi.list(query),
+    refetchInterval: options.refetchInterval,
   });
 }
 
@@ -52,8 +53,13 @@ export function useFaqFeedback(faqId: string) {
   return useMutation({
     mutationFn: (rating: 'helpful' | 'unhelpful') => faqApi.submitFeedback(faqId, rating),
     onSuccess: () => {
+      // Refresh the FAQ's own detail + every list view (student Browse FAQs + admin table).
       void qc.invalidateQueries({ queryKey: faqKeys.detail(faqId) });
       void qc.invalidateQueries({ queryKey: faqKeys.lists() });
+      // Bust the moderator/admin stat summary cards so Helpful rate %
+      // and Unhelpful rate % reflect the new vote immediately.
+      void qc.invalidateQueries({ queryKey: ['stats', 'moderator'] });
+      void qc.invalidateQueries({ queryKey: ['stats', 'faqs'] });
     },
   });
 }
@@ -71,6 +77,15 @@ export function useModeratorStats() {
   return useQuery({
     queryKey: ['stats', 'moderator'],
     queryFn: faqApi.getModeratorStats,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useVotesTrend() {
+  return useQuery({
+    queryKey: ['stats', 'votes-trend'],
+    queryFn: faqApi.getVotesTrend,
+    refetchInterval: 60_000,
   });
 }
 

@@ -1,7 +1,7 @@
 // Unified semantic search — FAQs + Community Q&A in one place.
 // Engine: MiniSearch (TF-IDF) running in a Web Worker, payloads in IndexedDB.
 // Spec: semantic/faq_semantic.md
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BookOpen, MessageSquare, Search, Sparkles, X, Zap } from 'lucide-react';
 import { useUnifiedSearch, type SearchDoc } from '../../hooks/useUnifiedSearch';
@@ -39,7 +39,7 @@ export function UnifiedSearchPage() {
     <div>
       {/* Section heading */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-        <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--color-card)', boxShadow: '0 2px 8px rgba(8,145,178,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--color-card)', boxShadow: '0 2px 8px rgba(124,58,237,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Sparkles size={18} color="var(--color-primary)" />
         </div>
         <div>

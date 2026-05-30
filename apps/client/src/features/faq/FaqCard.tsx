@@ -39,7 +39,7 @@ export function FaqCard({ faq, role }: FaqCardProps) {
     : 'mod-card-blue';
 
   return (
-    <div className={`mod-card ${cardColor}`}>
+    <div className={`mod-card ${cardColor} interactive`}>
       {/* Collapsed header */}
       <div style={{ padding: '14px 18px', display: 'flex', gap: 12, justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <button
@@ -130,16 +130,6 @@ function FeedbackButton({ label, icon, color, state, onClick }: {
       {label}
     </button>
   );
-}
-
-if (typeof document !== 'undefined') {
-  const id = 'faq-spin-keyframe';
-  if (!document.getElementById(id)) {
-    const s = document.createElement('style');
-    s.id = id;
-    s.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
-    document.head.appendChild(s);
-  }
 }
 
 function timeAgo(isoDate: string): string {

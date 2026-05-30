@@ -84,4 +84,18 @@ export const faqController = {
     if (!req.user) throw ApiError.unauthorized();
     return ok(res, await faqService.getRecentlyViewed(req.user.id, req.user.role));
   },
+
+  /** POST /api/faqs/check-similar — mirrors remote POST /api/faqs/check-similar. */
+  async checkSimilarity(req: Request, res: Response) {
+    const { title, limit, threshold } = req.body as {
+      title: string;
+      limit?: number;
+      threshold?: number;
+    };
+    if (!title || typeof title !== 'string' || title.trim().length < 3) {
+      throw ApiError.badRequest('title must be at least 3 characters');
+    }
+    const results = await faqService.checkSimilarity(title.trim(), { limit, threshold });
+    return ok(res, results);
+  },
 };

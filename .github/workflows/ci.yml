@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, Avatar]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Typecheck · Test · Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://127.0.0.1:27017/samagama_test
+          JWT_ACCESS_SECRET: ci-access-secret-at-least-32-characters-long
+          JWT_REFRESH_SECRET: ci-refresh-secret-at-least-32-characters-long
+          CORS_ORIGINS: http://localhost:5173
+          LOG_LEVEL: silent
+          LLM_PROVIDER: mock
+          EMBEDDING_PROVIDER: mock
+
+      - name: Build
+        run: npm run build

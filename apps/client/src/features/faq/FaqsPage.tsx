@@ -66,8 +66,8 @@ export function FaqsPage() {
 
       {/* Search + Filters toggle */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-        <div className="mod-card mod-card-blue" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, padding: '12px 18px', borderRadius: 14 }}>
-          <Search size={17} color="var(--color-primary)" style={{ flexShrink: 0 }} />
+        <div className="topbar-search" style={{ flex: 1 }}>
+          <Search size={16} color="var(--color-primary)" style={{ flexShrink: 0 }} />
           <input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}

@@ -32,36 +32,31 @@ export function AppShell() {
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <header style={{
-          background: 'var(--color-topbar)',
-          borderBottom: '1px solid var(--color-border)',
-          padding: '0 20px',
-          height: 56,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          flexShrink: 0,
-          boxShadow: '0 1px 0 var(--color-border)',
-        }}>
+        <header
+          style={{
+            background: 'var(--color-topbar)',
+            borderBottom: '1px solid var(--color-border)',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+            padding: '0 20px',
+            height: 56,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            flexShrink: 0,
+          }}
+        >
           <button
             onClick={() => setSidebarOpen((v) => !v)}
             aria-label="Toggle sidebar"
-            style={iconButtonStyle}
+            className="topbar-icon-btn"
           >
             <Menu size={18} />
           </button>
 
           {/* Functional search bar — Enter navigates to /search?q=... */}
           <div
-            style={{
-              flex: 1, maxWidth: 340,
-              display: 'flex', alignItems: 'center', gap: 8,
-              background: 'var(--color-input)',
-              border: '1.5px solid var(--color-border)',
-              borderRadius: 10, padding: '7px 14px',
-              transition: 'border-color 0.15s',
-              cursor: 'text',
-            }}
+            className="topbar-search"
+            style={{ flex: 1, maxWidth: 340 }}
             onClick={() => searchRef.current?.focus()}
           >
             <Search size={14} color="var(--color-text-muted)" />
@@ -74,11 +69,15 @@ export function AppShell() {
                 if (e.key === 'Enter') { goToSearch(searchValue); setSearchValue(''); }
                 if (e.key === 'Escape') { setSearchValue(''); searchRef.current?.blur(); }
               }}
-              placeholder="Quick search… (Enter)"
+              placeholder="Quick search…  ⌘K"
               aria-label="Quick search"
               style={{
-                border: 'none', background: 'none', outline: 'none',
-                color: 'var(--color-text)', fontSize: 13, flex: 1,
+                border: 'none',
+                background: 'none',
+                outline: 'none',
+                color: 'var(--color-text)',
+                fontSize: 13,
+                flex: 1,
                 fontFamily: 'inherit',
               }}
             />
@@ -86,24 +85,28 @@ export function AppShell() {
 
           <div style={{ flex: 1 }} />
 
-          <button aria-label="Notifications" title="Notifications" style={iconButtonStyle}>
+          <button
+            aria-label="Notifications"
+            title="Notifications"
+            className="topbar-icon-btn"
+            style={{ position: 'relative' }}
+          >
             <Bell size={18} />
+            <span style={{
+              position: 'absolute', top: 7, right: 7,
+              width: 6, height: 6, borderRadius: '50%',
+              background: '#3b82f6',
+              border: '1.5px solid var(--color-topbar)',
+            }} />
           </button>
 
           <button
             onClick={toggle}
             aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-            style={{
-              background: 'var(--color-pill)',
-              border: '1.5px solid var(--color-border)',
-              borderRadius: 10, padding: '6px 14px',
-              cursor: 'pointer', color: 'var(--color-pill-text)',
-              display: 'flex', alignItems: 'center', gap: 6,
-              fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
-              transition: 'all 0.15s',
-            }}
+            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            className="topbar-icon-btn"
           >
-            {theme === 'light' ? <><Moon size={14} /> Dark</> : <><Sun size={14} /> Light</>}
+            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           </button>
         </header>
 
@@ -116,9 +119,3 @@ export function AppShell() {
     </div>
   );
 }
-
-const iconButtonStyle: React.CSSProperties = {
-  background: 'transparent', border: 'none', cursor: 'pointer',
-  color: 'var(--color-text-muted)', padding: 7, borderRadius: 8,
-  display: 'flex', alignItems: 'center', transition: 'background 0.15s',
-};

@@ -40,3 +40,25 @@ export const requireRole =
     }
     next();
   };
+
+/**
+ * Allows access if the authenticated user has one of the given roles OR is the
+ * owner of the resource. Mirrors remote requireOwnerOrRole.
+ *
+ * @param getOwnerId — async fn(req) → string | null that resolves the resource owner id.
+ * @param roles      — role(s) that are always allowed regardless of ownership.
+ */
+export const requireOwnerOrRole =
+  (getOwnerId: (req: Request) => Promise<string | null>, ...roles: UserRole[]): RequestHandler =>
+  async (req, _res, next) => {
+    if (!req.user) return next(ApiError.unauthorized());
+    if (roles.includes(req.user.role)) return next();
+
+    try {
+      const ownerId = await getOwnerId(req);
+      if (ownerId && ownerId.toString() === req.user.id) return next();
+      return next(ApiError.forbidden('You do not have access to this resource'));
+    } catch (err) {
+      next(err);
+    }
+  };

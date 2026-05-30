@@ -53,5 +53,12 @@ router.get(
   asyncHandler(statsController.getFaqQuality),
 );
 
+// Daily vote trend for the last 7 days — moderator/admin only.
+router.get(
+  '/votes-trend',
+  requireRole('moderator', 'admin'),
+  asyncHandler(statsController.getVotesTrend),
+);
+
 export const statsRouter = router;
 

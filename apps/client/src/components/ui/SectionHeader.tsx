@@ -13,17 +13,33 @@ export function SectionHeader({ title, sub, action }: SectionHeaderProps) {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-end',
-        marginBottom: 16,
+        marginBottom: 20,
         gap: 12,
       }}
     >
-      <div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-text)' }}>{title}</div>
-        {sub && (
-          <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 2 }}>{sub}</div>
-        )}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <div
+          style={{
+            width: 4,
+            borderRadius: 4,
+            background: 'var(--color-primary)',
+            alignSelf: 'stretch',
+            minHeight: 28,
+            flexShrink: 0,
+          }}
+        />
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+            {title}
+          </div>
+          {sub && (
+            <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 3, lineHeight: 1.4 }}>
+              {sub}
+            </div>
+          )}
+        </div>
       </div>
-      {action}
+      {action && <div style={{ flexShrink: 0 }}>{action}</div>}
     </div>
   );
 }

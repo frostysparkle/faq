@@ -75,7 +75,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
         storeFields: ['type'],
         extractField: (document, fieldName) => {
           if (fieldName === 'tags') return (document as SearchDoc).tags.join(' ');
-          return (document as Record<string, unknown>)[fieldName] as string;
+          return (document as unknown as Record<string, unknown>)[fieldName] as string;
         },
         searchOptions: {
           boost: { tags: 4, title: 2, content: 1 },
