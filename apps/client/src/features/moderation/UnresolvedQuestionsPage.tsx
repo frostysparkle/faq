@@ -265,6 +265,19 @@ const STATUS_COLORS: Record<string, string> = {
   archived: 'var(--color-text-muted)',
 };
 
+/**
+ * Strip the title prefix from the description so the same sentence isn't shown twice.
+ * The title is always derived from the first sentence of the description, so showing
+ * both would repeat that sentence verbatim in the card.
+ */
+function descriptionBody(title: string, description: string): string {
+  const rawTitle = title.endsWith('…') ? title.slice(0, -1) : title;
+  if (description.startsWith(rawTitle)) {
+    return description.slice(rawTitle.length).replace(/^[\.\!\?\s]+/, '').trim();
+  }
+  return description;
+}
+
 function CommunityQuestionCard({
   question,
   pendingAnswers,
@@ -273,9 +286,20 @@ function CommunityQuestionCard({
   pendingAnswers: PendingAnswerSummary[];
 }) {
   const hasPending = pendingAnswers.length > 0;
-  // Auto-expand the review section when there are pending answers.
   const [showAnswers, setShowAnswers] = useState(hasPending);
+  const [showModAnswer, setShowModAnswer] = useState(false);
+  const [modBody, setModBody] = useState('');
+  const respond = useRespondToPersonal();
   const color = STATUS_COLORS[question.status] ?? 'var(--color-text-muted)';
+
+  const extra = descriptionBody(question.title, question.description);
+
+  const submitModAnswer = async () => {
+    if (modBody.trim().length < 10) return;
+    await respond.mutateAsync({ questionId: question.id, body: modBody });
+    setModBody('');
+    setShowModAnswer(false);
+  };
 
   return (
     <Card style={{ marginBottom: 12 }}>
@@ -286,23 +310,67 @@ function CommunityQuestionCard({
           {question.status}
         </span>
       </div>
-      <div style={{ fontSize: 12, color: 'var(--color-text)', lineHeight: 1.55, marginBottom: 8, whiteSpace: 'pre-wrap' }}>
-        {question.description.slice(0, 250)}{question.description.length > 250 ? '…' : ''}
-      </div>
+
+      {/* Only show the remainder of the description that isn't already in the title */}
+      {extra && (
+        <div style={{ fontSize: 12, color: 'var(--color-text)', lineHeight: 1.55, marginBottom: 8, whiteSpace: 'pre-wrap' }}>
+          {extra.slice(0, 250)}{extra.length > 250 ? '…' : ''}
+        </div>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
           by {question.author.name} · {timeAgo(question.createdAt)} · {question.answerCount} peer answer{question.answerCount === 1 ? '' : 's'}
         </div>
-        {hasPending && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {hasPending && (
+            <button
+              type="button"
+              onClick={() => setShowAnswers((v) => !v)}
+              style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 8, background: showAnswers ? 'var(--color-primary)' : 'var(--color-input)', color: showAnswers ? 'white' : 'var(--color-text-muted)', border: '1px solid var(--color-primary)', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              {showAnswers ? 'Hide' : 'Review'} {pendingAnswers.length} pending answer{pendingAnswers.length === 1 ? '' : 's'}
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => setShowAnswers((v) => !v)}
-            style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 8, background: showAnswers ? 'var(--color-primary)' : 'var(--color-input)', color: showAnswers ? 'white' : 'var(--color-text-muted)', border: '1px solid var(--color-primary)', cursor: 'pointer', fontFamily: 'inherit' }}
+            onClick={() => setShowModAnswer((v) => !v)}
+            style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 8, background: showModAnswer ? '#16a34a' : 'var(--color-input)', color: showModAnswer ? 'white' : 'var(--color-text-muted)', border: '1px solid #16a34a', cursor: 'pointer', fontFamily: 'inherit' }}
           >
-            {showAnswers ? 'Hide' : 'Review'} {pendingAnswers.length} pending answer{pendingAnswers.length === 1 ? '' : 's'}
+            {showModAnswer ? 'Cancel' : 'Answer as moderator'}
           </button>
-        )}
+        </div>
       </div>
+
+      {/* ── Moderator direct answer ── */}
+      {showModAnswer && (
+        <div style={{ marginTop: 12, borderTop: '1px solid var(--color-border)', paddingTop: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 6 }}>
+            Moderator answer — posted immediately, visible to all students
+          </div>
+          <textarea
+            value={modBody}
+            onChange={(e) => setModBody(e.target.value)}
+            placeholder="Write your answer here. It will be approved immediately and visible to students."
+            rows={5}
+            maxLength={4000}
+            style={{ width: '100%', background: 'var(--color-input)', border: '1px solid #16a34a', borderRadius: 8, padding: 10, fontSize: 13, fontFamily: 'inherit', color: 'var(--color-text)', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }}
+          />
+          {respond.error && (
+            <div role="alert" style={{ fontSize: 12, color: 'var(--color-danger)', marginTop: 4 }}>
+              {respond.error instanceof Error ? respond.error.message : 'Could not submit answer'}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
+            <Button size="sm" variant="ghost" onClick={() => { setShowModAnswer(false); setModBody(''); }}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={submitModAnswer} disabled={respond.isPending || modBody.trim().length < 10}>
+              {respond.isPending ? 'Posting…' : 'Post answer'}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* ── Inline pending-answer review ── */}
       {hasPending && showAnswers && (

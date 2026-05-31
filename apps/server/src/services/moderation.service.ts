@@ -146,9 +146,6 @@ export const moderationService = {
   ): Promise<void> {
     const question = await QuestionModel.findById(questionId);
     if (!question) throw ApiError.notFound('Question not found');
-    if (question.type !== 'personal') {
-      throw ApiError.badRequest('Use the peer-answer flow for community questions');
-    }
 
     const trimmed = body.trim();
     if (trimmed.length < 10) throw ApiError.badRequest('Response must be at least 10 characters');
@@ -164,7 +161,9 @@ export const moderationService = {
     });
 
     question.answerCount += 1;
-    question.status = 'resolved';
+    // Personal questions are fully resolved by a moderator response.
+    // Community questions stay 'answered' so peers can still contribute.
+    question.status = question.type === 'personal' ? 'resolved' : 'answered';
     await question.save();
   },
 

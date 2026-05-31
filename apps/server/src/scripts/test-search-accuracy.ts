@@ -488,7 +488,7 @@ async function main() {
     groupResults.filter((r) => !r.passed).forEach((r) => {
       const top = r.topMatches[0];
       console.log(`  - ❌ "${truncate(r.variation, 70)}"`);
-      if (top) console.log(`       → matched Q${COMMUNITY_TEST_GROUPS.findIndex((_, i2) => i2 === (r.topMatches[0] as { correctGroup: boolean; title: string }).correctGroup ? gi : -1) + 1} "${truncate(top.title, 50)}" (${top.score.toFixed(3)})`);
+      if (top) console.log(`       → matched "${truncate(top.title, 50)}" (${top.score.toFixed(3)})`);
       else console.log(`       → no match above threshold`);
     });
   }
