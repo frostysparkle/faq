@@ -258,25 +258,8 @@ function CommunityQueue() {
   );
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  open: 'var(--color-primary)',
-  answered: '#16a34a',
-  resolved: 'var(--color-text-muted)',
-  archived: 'var(--color-text-muted)',
-};
-
-/**
- * Strip the title prefix from the description so the same sentence isn't shown twice.
- * The title is always derived from the first sentence of the description, so showing
- * both would repeat that sentence verbatim in the card.
- */
-function descriptionBody(title: string, description: string): string {
-  const rawTitle = title.endsWith('…') ? title.slice(0, -1) : title;
-  if (description.startsWith(rawTitle)) {
-    return description.slice(rawTitle.length).replace(/^[\.\!\?\s]+/, '').trim();
-  }
-  return description;
-}
+/** Characters shown before a "Read more" link appears (~2–3 lines at card width). */
+const PREVIEW_LENGTH = 220;
 
 function CommunityQuestionCard({
   question,
@@ -288,11 +271,14 @@ function CommunityQuestionCard({
   const hasPending = pendingAnswers.length > 0;
   const [showAnswers, setShowAnswers] = useState(hasPending);
   const [showModAnswer, setShowModAnswer] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [modBody, setModBody] = useState('');
   const respond = useRespondToPersonal();
-  const color = STATUS_COLORS[question.status] ?? 'var(--color-text-muted)';
 
-  const extra = descriptionBody(question.title, question.description);
+  // Show the full description as a single unified block — no separate title.
+  const fullText = question.description;
+  const isLong = fullText.length > PREVIEW_LENGTH;
+  const displayText = isLong && !expanded ? fullText.slice(0, PREVIEW_LENGTH).trimEnd() : fullText;
 
   const submitModAnswer = async () => {
     if (modBody.trim().length < 10) return;
@@ -302,22 +288,37 @@ function CommunityQuestionCard({
   };
 
   return (
-    <Card style={{ marginBottom: 12 }}>
-      {/* ── Question header ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-        <div style={{ fontSize: 15, fontWeight: 600, flex: 1 }}>{question.title}</div>
-        <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: 'var(--color-input)', color, border: `1px solid ${color}`, whiteSpace: 'nowrap', textTransform: 'capitalize' }}>
-          {question.status}
-        </span>
+    <Card style={{ marginBottom: 10 }}>
+      {/* ── Unified question text (no split title / description) ── */}
+      <div style={{ fontSize: 13, color: 'var(--color-text)', lineHeight: 1.6, marginBottom: 8 }}>
+        {displayText}
+        {isLong && !expanded && (
+          <span>
+            {'… '}
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+            >
+              Read more
+            </button>
+          </span>
+        )}
+        {isLong && expanded && (
+          <span>
+            {' '}
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+            >
+              Show less
+            </button>
+          </span>
+        )}
       </div>
 
-      {/* Only show the remainder of the description that isn't already in the title */}
-      {extra && (
-        <div style={{ fontSize: 12, color: 'var(--color-text)', lineHeight: 1.55, marginBottom: 8, whiteSpace: 'pre-wrap' }}>
-          {extra.slice(0, 250)}{extra.length > 250 ? '…' : ''}
-        </div>
-      )}
-
+      {/* ── Metadata + action buttons ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
           by {question.author.name} · {timeAgo(question.createdAt)} · {question.answerCount} peer answer{question.answerCount === 1 ? '' : 's'}
