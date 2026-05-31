@@ -33,7 +33,7 @@ interface SearchDoc {
 }
 
 type WorkerMessage =
-  | { type: 'INIT'; payload: { dataEndpoint: string } }
+  | { type: 'INIT'; payload: { dataEndpoint: string; token: string | null } }
   | { type: 'SEARCH'; payload: { query: string } };
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -51,10 +51,9 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
   if (type === 'INIT') {
     const tInit = performance.now();
     try {
-      const response = await fetch(payload.dataEndpoint, {
-        headers: { 'Accept': 'application/json' },
-        credentials: 'include',
-      });
+      const headers: Record<string, string> = { Accept: 'application/json' };
+      if (payload.token) headers['Authorization'] = `Bearer ${payload.token}`;
+      const response = await fetch(payload.dataEndpoint, { headers });
       if (!response.ok) throw new Error(`Failed to fetch search data: ${response.status}`);
 
       const raw = await response.json() as SearchDoc[] | { data: SearchDoc[] };

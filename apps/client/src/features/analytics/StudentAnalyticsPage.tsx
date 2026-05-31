@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BarChart3, CheckCircle, MessageCircle, Sparkles, Trophy } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useAuth } from '../auth/AuthProvider';
 import { useStudentHomeStats, useLeaderboard } from '../stats/queries';
 
@@ -60,11 +61,13 @@ export function StudentAnalyticsPage() {
               <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--color-purple-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <BarChart3 size={17} color="var(--color-purple)" />
               </div>
-              <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>Top contributors — Spurti Points</span>
+              <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>
+                Top contributors — {range === 'all' ? 'All-Time Points' : `${rangeLabel(range)} Answers`}
+              </span>
             </div>
             <div style={{ padding: '14px 20px 20px' }}>
               {lbLoading && <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>Loading…</div>}
-              {leaderboard && <PointsBars entries={leaderboard.entries} />}
+              {leaderboard && <PointsBars entries={leaderboard.entries} range={range} />}
             </div>
           </div>
         </div>
@@ -78,7 +81,7 @@ export function StudentAnalyticsPage() {
             <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>Peer Ranking</span>
           </div>
           {lbLoading && <div className="mod-card mod-card-purple" style={{ padding: 20, fontSize: 13, color: 'var(--color-text-muted)' }}>Loading…</div>}
-          {leaderboard && <LeaderboardCard entries={leaderboard.entries} myRank={leaderboard.myRank} currentUserId={user.id} />}
+          {leaderboard && <LeaderboardCard entries={leaderboard.entries} myRank={leaderboard.myRank} currentUserId={user.id} range={range} />}
         </div>
       </div>
     </div>
@@ -102,29 +105,54 @@ function PerfCard({ label, value, sub, icon: Icon, color, cardClass }: {
   );
 }
 
-function PointsBars({ entries }: { entries: { userId: string; name: string; spurtiPoints: number; isMe?: boolean }[] }) {
+function PointsBars({ entries, range }: { entries: { userId: string; name: string; spurtiPoints: number; approvedAnswers: number; isMe?: boolean }[], range: Range }) {
   const top = entries.slice(0, 8);
-  const max = Math.max(1, ...top.map((e) => e.spurtiPoints));
+  const getValue = (e: typeof entries[0]) => range === 'all' ? e.spurtiPoints : e.approvedAnswers;
+  
+  const data = top.map(e => ({
+    name: e.isMe ? 'You' : e.name,
+    value: getValue(e),
+    isMe: e.isMe,
+  })).reverse(); // Reverse so rank 1 is at the top in the horizontal chart
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {top.map((e) => (
-        <div key={e.userId} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ fontSize: 12, color: e.isMe ? 'var(--color-purple)' : 'var(--color-text-muted)', width: 80, fontWeight: e.isMe ? 700 : 500, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {e.isMe ? 'You' : e.name}
-          </div>
-          <div style={{ flex: 1, height: 8, background: 'var(--color-input)', borderRadius: 4, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${(e.spurtiPoints / max) * 100}%`, background: e.isMe ? 'var(--color-purple)' : 'var(--color-primary)', borderRadius: 4 }} />
-          </div>
-          <div style={{ fontSize: 12, fontWeight: 700, width: 36, textAlign: 'right', color: 'var(--color-text)' }}>{e.spurtiPoints}</div>
-        </div>
-      ))}
+    <div style={{ height: 300, width: '100%', marginTop: 10 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--color-border)" />
+          <XAxis type="number" hide />
+          <YAxis 
+            dataKey="name" 
+            type="category" 
+            axisLine={false} 
+            tickLine={false}
+            tick={{ fill: 'var(--color-text-muted)', fontSize: 12, fontWeight: 500 }}
+            width={80}
+          />
+          <Tooltip 
+            cursor={{ fill: 'var(--color-input)', opacity: 0.4 }}
+            contentStyle={{ borderRadius: 8, border: '1px solid var(--color-border)', backgroundColor: 'var(--color-card)', fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}
+            itemStyle={{ color: 'var(--color-text)' }}
+            formatter={(value) => [value, range === 'all' ? 'Points' : 'Answers']}
+          />
+          <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={16}>
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.isMe ? 'var(--color-purple)' : 'var(--color-primary)'} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
 
-function LeaderboardCard({ entries, myRank, currentUserId }: {
+function LeaderboardCard({ entries, myRank, currentUserId, range }: {
   entries: { rank: number; userId: string; name: string; spurtiPoints: number; approvedAnswers: number; isMe?: boolean }[];
-  myRank?: number; currentUserId: string;
+  myRank?: number; currentUserId: string; range: Range;
 }) {
   return (
     <div className="mod-card mod-card-purple" style={{ overflow: 'hidden' }}>
@@ -132,7 +160,9 @@ function LeaderboardCard({ entries, myRank, currentUserId }: {
         <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Trophy size={17} color="#f59e0b" />
         </div>
-        <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>Spurti Points</span>
+        <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>
+          {range === 'all' ? 'All-Time Points' : `${rangeLabel(range)} Answers`}
+        </span>
       </div>
       <div style={{ padding: '12px 0 8px' }}>
         {entries.map((e) => (
@@ -144,9 +174,13 @@ function LeaderboardCard({ entries, myRank, currentUserId }: {
               <div style={{ fontSize: 13, fontWeight: e.userId === currentUserId ? 700 : 500, color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {e.userId === currentUserId ? `${e.name} (You)` : e.name}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{e.approvedAnswers} approved</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+                {range === 'all' ? `${e.approvedAnswers} approved` : `${e.spurtiPoints} all-time pts`}
+              </div>
             </div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--color-text)' }}>{e.spurtiPoints} pts</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--color-text)' }}>
+              {range === 'all' ? `${e.spurtiPoints} pts` : `${e.approvedAnswers} ans`}
+            </div>
           </div>
         ))}
       </div>

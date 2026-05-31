@@ -43,7 +43,7 @@ export interface LeaderboardEntry {
 }
 
 export interface LeaderboardResponse {
-  range: 'week' | 'month' | 'all';
+  range: 'day' | 'week' | 'month' | 'all';
   entries: LeaderboardEntry[];
   myRank?: number;
 }
@@ -138,11 +138,12 @@ export const statsService = {
    * Top 20 students are returned, plus the current user's rank if they're outside the top 20.
    */
   async getLeaderboard(
-    range: 'week' | 'month' | 'all',
+    range: 'day' | 'week' | 'month' | 'all',
     currentUserId: string,
   ): Promise<LeaderboardResponse> {
     const since = (() => {
       const now = Date.now();
+      if (range === 'day') return new Date(now - 24 * 60 * 60 * 1000);
       if (range === 'week') return new Date(now - 7 * 24 * 60 * 60 * 1000);
       if (range === 'month') return new Date(now - 30 * 24 * 60 * 60 * 1000);
       return null;
@@ -162,17 +163,37 @@ export const statsService = {
 
     const students = await UserModel.find({ role: 'student', status: 'active' })
       .select('name spurtiPoints')
-      .sort({ spurtiPoints: -1, name: 1 })
       .lean<{ _id: mongoose.Types.ObjectId; name: string; spurtiPoints?: number }[]>();
 
-    const ranked: LeaderboardEntry[] = students.map((s, idx) => ({
-      rank: idx + 1,
+    let ranked: LeaderboardEntry[] = students.map((s) => ({
+      rank: 0,
       userId: s._id.toString(),
       name: s.name,
       spurtiPoints: s.spurtiPoints ?? 0,
       approvedAnswers: approvedByUser.get(s._id.toString()) ?? 0,
       isMe: s._id.toString() === currentUserId,
     }));
+
+    if (range !== 'all') {
+      ranked.sort((a, b) => {
+        if (b.approvedAnswers !== a.approvedAnswers) {
+          return b.approvedAnswers - a.approvedAnswers;
+        }
+        if (b.spurtiPoints !== a.spurtiPoints) {
+          return b.spurtiPoints - a.spurtiPoints;
+        }
+        return a.name.localeCompare(b.name);
+      });
+    } else {
+      ranked.sort((a, b) => {
+        if (b.spurtiPoints !== a.spurtiPoints) {
+          return b.spurtiPoints - a.spurtiPoints;
+        }
+        return a.name.localeCompare(b.name);
+      });
+    }
+
+    ranked = ranked.map((r, idx) => ({ ...r, rank: idx + 1 }));
 
     const top = ranked.slice(0, 20);
     const myRank = ranked.find((r) => r.isMe)?.rank;

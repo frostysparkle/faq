@@ -1,8 +1,13 @@
 // Community Q&A service. Implements PRD §8.6 + Change Spec §5–§6.
 //
 // Notable rules baked in:
-//  - Existing-answer check returns top FAQ matches AND top open community-question matches.
+//  - Existing-answer check returns top 3 FAQ matches using HYBRID search:
+//      • Primary: cosine similarity on pre-generated 384-dim embeddings (semantic).
+//      • Fallback: MongoDB $text if no embeddings are populated yet (keyword).
+//    This catches paraphrased questions that share no keywords with the FAQ.
 //    A short-lived signed token is returned; createQuestion requires it (PRD QNA-002).
+//  - Community-question duplicate check (step 2) stays keyword-based ($text) — sufficient
+//    for open questions which share vocabulary with the student's draft.
 //  - Personal questions are visible only to the asker, moderators, and admins.
 //  - Community-question answer cap: hard server-side guard at COMMUNITY_ANSWER_CAP (Change Spec §5.5).
 //  - Tag-me: any student may register their interest in an existing community question.
@@ -29,15 +34,85 @@ import { UserModel } from '../models/User.model.js';
 import { ApiError } from '../utils/api-error.js';
 import { createTtlCache } from '../utils/ttl-cache.js';
 import { env } from '../config/env.js';
+import { generateEmbedding, cosineSimilarity } from './embedding.service.js';
 
 /** Signed token TTL for the existing-answer check (15 minutes). Long enough to read suggestions, short enough to limit replay. */
 const EXISTING_CHECK_TTL = 15 * 60;
 
+/** How many FAQ matches to show the student (spec: 2–3). */
+const FAQ_MATCH_LIMIT = 3;
+
 /**
- * In-memory cache for the FAQ + community-question similarity lookup.
+ * Minimum cosine similarity to be considered a meaningful FAQ match (Option A).
+ *
+ * Tuning guide (applies to both FAQ and community-question scans):
+ *   0.35 — original value; catches broad associations but risks irrelevant results.
+ *   0.50 — recommended: requires moderate semantic overlap; filters noise well.
+ *   0.65 — strict: only very close paraphrases pass; fewer false positives but may miss valid matches.
+ *
+ * With the all-minilm (Ollama) or text-embedding-004 (Gemini) models,
+ * 0.50 reliably catches paraphrased questions that share no keywords.
+ */
+const SEMANTIC_THRESHOLD = 0.50;
+
+/**
+ * Minimum cosine similarity for community-question duplicate detection (Option C).
+ * Slightly lower than FAQ threshold because student-written questions vary more in phrasing.
+ */
+const QUESTION_SEMANTIC_THRESHOLD = 0.50;
+
+/**
+ * Server-wide cache of published FAQ embeddings (title + 384-dim vector).
+ *
+ * Why a single shared slot:
+ *   - FAQs change rarely; a 1-hour TTL is safe for an internship portal.
+ *   - Eliminates a full-collection MongoDB round-trip (and 450 KB+ transfer)
+ *     on every checkExisting call. The cosine scan then runs purely in CPU.
+ *   - One entry = the entire FAQ list; maxEntries=1 keeps memory bounded.
+ *
+ * Invalidation: call faqEmbeddingCache.clear() whenever a FAQ is published
+ * or its title/answer is edited (handled in faq.service.ts — see scheduleEmbedding).
+ */
+const faqEmbeddingCache = createTtlCache<{ id: string; title: string; summary?: string; answer: string; embedding: number[] }[]>({
+  ttlMs: 60 * 60_000,  // 1 hour
+  maxEntries: 1,
+});
+
+/** Cache key for the single FAQ-embedding list slot. */
+const FAQ_EMBED_CACHE_KEY = 'all';
+
+/**
+ * Fetch all published FAQ embeddings, using the server-wide cache to avoid
+ * repeated MongoDB round-trips. Falls back to an empty list on DB error so
+ * the caller can degrade gracefully to keyword search.
+ */
+async function getPublishedFaqEmbeddings(): Promise<{ id: string; title: string; summary?: string; answer: string; embedding: number[] }[]> {
+  const cached = faqEmbeddingCache.get(FAQ_EMBED_CACHE_KEY);
+  if (cached) return cached;
+
+  const faqs = await FaqModel.find({ status: 'published' })
+    .select('title summary answer embedding')
+    .lean<{ _id: Types.ObjectId; title: string; summary?: string; answer: string; embedding?: number[] }[]>();
+
+  const withEmbeddings = faqs
+    .filter((f) => f.embedding && f.embedding.length === 384)
+    .map((f) => ({
+      id: f._id.toString(),
+      title: f.title,
+      summary: f.summary,
+      answer: f.answer,
+      embedding: f.embedding!,
+    }));
+
+  faqEmbeddingCache.set(FAQ_EMBED_CACHE_KEY, withEmbeddings);
+  return withEmbeddings;
+}
+
+/**
+ * In-memory cache for the per-user checkExisting result.
  * TTL of 60 seconds covers the common pattern of a student clicking "Check Existing Answers"
- * twice in quick succession (e.g. after editing the description) without hitting the text
- * indexes again. Cache key includes userId so each user gets a freshly-signed token.
+ * twice in quick succession (e.g. after editing the description) without re-running the
+ * embedding scan. Cache key includes userId so each user gets a freshly-signed token.
  */
 const checkExistingCache = createTtlCache<{
   faqMatches: PublicFaqMatch[];
@@ -47,6 +122,11 @@ const checkExistingCache = createTtlCache<{
 /** Normalize free text so trivial differences (case, extra whitespace) hit the same cache row. */
 function normalizeForCache(text: string): string {
   return text.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+/** Export so faq.service.ts can invalidate the embedding list on publish/edit. */
+export function invalidateFaqEmbeddingCache(): void {
+  faqEmbeddingCache.clear();
 }
 
 interface CheckTokenPayload {
@@ -147,15 +227,42 @@ function projectAnswer(a: PopulatedAnswer, viewerId?: string): PublicAnswer {
 }
 
 // ----------------------------------------------------------------------------
+// Internal helpers
+// ----------------------------------------------------------------------------
+
+/**
+ * Option C: Async, non-blocking embedding generation for community questions.
+ * Saves the 384-dim vector back to the Question document so future checkExisting
+ * calls can use cosine similarity instead of falling back to keyword search.
+ * Mirrors the pattern used by scheduleEmbedding in faq.service.ts.
+ */
+async function scheduleQuestionEmbedding(questionId: string, title: string): Promise<void> {
+  try {
+    const embedding = await generateEmbedding(title);
+    await QuestionModel.updateOne({ _id: questionId }, { embedding });
+  } catch {
+    // Swallow — embedding failures must never block the request path.
+  }
+}
+
+// ----------------------------------------------------------------------------
 // Service
 // ----------------------------------------------------------------------------
 
 export const qnaService = {
   /**
    * Existing-answer check (PRD §8.6 / Change Spec §6.4):
-   *   1. Look up top FAQ matches via the FAQ text index.
-   *   2. Look up top OPEN community-question matches.
-   *   3. Issue a short-lived token; createQuestion will require it.
+   *   1. FAQ match — HYBRID (Option A + existing):
+   *      a. Generate a single embedding for the student's query (title + description).
+   *      b. Fetch all published FAQ embeddings from the server-wide cache.
+   *      c. Score each FAQ by cosine similarity; keep those ≥ SEMANTIC_THRESHOLD (0.50).
+   *      d. FALLBACK: if no embeddings are populated yet, use MongoDB $text.
+   *      Returns top FAQ_MATCH_LIMIT (3) results.
+   *   2. Community-question match — HYBRID semantic + keyword fallback (Option C):
+   *      Reuses the same query embedding from step 1 to scan stored question embeddings.
+   *      Falls back to MongoDB $text if no question embeddings exist yet.
+   *      Returns top 2 open/answered community questions the student didn't author.
+   *   3. Issue a short-lived JWT; createQuestion requires it (PRD QNA-002).
    */
   async checkExisting(
     input: CheckExistingInput,
@@ -173,18 +280,87 @@ export const qnaService = {
       matchedFaqs = cached.faqMatches;
       matchedQuestions = cached.questionMatches;
     } else {
+      // Build the query text used by both the embedding call and the $text fallback.
       const queryText = `${input.title} ${input.description ?? ''}`.trim();
 
-      const [faqRows, questionRows] = await Promise.all([
-        FaqModel.find(
+      // ── Generate embedding + fetch community question candidates in parallel ──
+      // One embedding call serves both the FAQ scan and the community-question scan (Option C).
+      const [queryEmbedding, questionCandidates] = await Promise.all([
+        generateEmbedding(queryText),
+        // Fetch open/answered community questions (excluding the requester's own) with embeddings.
+        // select('+embedding') is required because the field is select:false on the schema.
+        QuestionModel.find({
+          type: 'community',
+          status: { $in: ['open', 'answered'] },
+          askedBy: { $ne: new Types.ObjectId(userId) },
+        })
+          .select('+embedding')
+          .lean<{ _id: Types.ObjectId; title: string; description: string; answerCount: number; embedding?: number[] }[]>(),
+      ]);
+
+      // ── Step 1: FAQ cosine scan against server-wide cache ───────────────────
+      const faqCandidates = await getPublishedFaqEmbeddings();
+
+      let semanticMatches = faqCandidates
+        .map((f) => ({
+          id: f.id,
+          title: f.title,
+          summary: f.summary,
+          answer: f.answer,
+          score: cosineSimilarity(queryEmbedding, f.embedding),
+        }))
+        .filter((f) => f.score >= SEMANTIC_THRESHOLD)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, FAQ_MATCH_LIMIT);
+
+      // FALLBACK: no FAQ embeddings populated yet → use keyword search.
+      if (semanticMatches.length === 0 && queryText.trim()) {
+        const textRows = await FaqModel.find(
           { status: 'published', $text: { $search: queryText } },
           { score: { $meta: 'textScore' } },
         )
           .sort({ score: { $meta: 'textScore' } })
-          .limit(5)
-          .lean(),
-        // Change Spec §6.4: only OPEN/answered community questions, excluding the requester's own.
-        QuestionModel.find(
+          .limit(FAQ_MATCH_LIMIT)
+          .lean<{ _id: Types.ObjectId; title: string; summary?: string; answer: string; score?: number }[]>();
+
+        semanticMatches = textRows.map((f) => ({
+          id: f._id.toString(),
+          title: f.title,
+          summary: f.summary,
+          answer: f.answer,
+          score: f.score ?? 0,
+        }));
+      }
+
+      matchedFaqs = semanticMatches.map((f) => ({
+        id: f.id,
+        title: f.title,
+        summary: f.summary ?? undefined,
+        answer: f.answer,
+        score: f.score,
+      }));
+
+      // ── Step 2: Community-question semantic scan (Option C) ──────────────────
+      // Run cosine similarity against all community questions that have embeddings stored.
+      const withEmbeddings = questionCandidates.filter(
+        (q) => q.embedding && q.embedding.length === 384,
+      );
+
+      let questionMatches = withEmbeddings
+        .map((q) => ({
+          id: q._id.toString(),
+          title: q.title,
+          description: q.description,
+          answerCount: q.answerCount,
+          score: cosineSimilarity(queryEmbedding, q.embedding!),
+        }))
+        .filter((q) => q.score >= QUESTION_SEMANTIC_THRESHOLD)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 2);
+
+      // FALLBACK: no question embeddings exist yet → use keyword search.
+      if (questionMatches.length === 0 && queryText.trim()) {
+        const keywordRows = await QuestionModel.find(
           {
             type: 'community',
             status: { $in: ['open', 'answered'] },
@@ -195,24 +371,18 @@ export const qnaService = {
         )
           .sort({ score: { $meta: 'textScore' } })
           .limit(2)
-          .lean(),
-      ]);
+          .lean<{ _id: Types.ObjectId; title: string; description: string; answerCount: number; score?: number }[]>();
 
-      matchedFaqs = faqRows.map((f) => ({
-        id: f._id.toString(),
-        title: f.title,
-        summary: f.summary ?? undefined,
-        answer: f.answer,
-        score: (f as { score?: number }).score ?? 0,
-      }));
+        questionMatches = keywordRows.map((q) => ({
+          id: q._id.toString(),
+          title: q.title,
+          description: q.description,
+          answerCount: q.answerCount,
+          score: (q as { score?: number }).score ?? 0,
+        }));
+      }
 
-      matchedQuestions = questionRows.map((q) => ({
-        id: q._id.toString(),
-        title: q.title,
-        description: q.description,
-        answerCount: q.answerCount,
-        score: (q as { score?: number }).score ?? 0,
-      }));
+      matchedQuestions = questionMatches;
 
       checkExistingCache.set(cacheKey, { faqMatches: matchedFaqs, questionMatches: matchedQuestions });
     }
@@ -261,10 +431,14 @@ export const qnaService = {
       existingAnswerCheck: { checkedAt: new Date() },
     });
 
-    // Cache invalidation: a new community question changes what `checkExisting` would
-    // return for similar drafts. The cheapest correct fix is to drop the whole map; the
-    // cache will warm again within seconds and stay correct.
-    if (input.type === 'community') checkExistingCache.clear();
+    // Option C: generate and store a semantic embedding for community questions so
+    // future checkExisting calls can use cosine similarity instead of keyword search.
+    if (input.type === 'community') {
+      void scheduleQuestionEmbedding(created._id.toString(), input.title);
+      // Cache invalidation: a new community question changes what `checkExisting` would
+      // return for similar drafts. Drop the whole map so it warms fresh.
+      checkExistingCache.clear();
+    }
 
     return this.getQuestionById(created.id, userId, 'student');
   },
@@ -492,3 +666,4 @@ export const qnaService = {
     };
   },
 };
+

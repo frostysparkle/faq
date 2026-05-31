@@ -70,6 +70,10 @@ export function ChatbotFab() {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
+  // Resize State
+  const [dimensions, setDimensions] = useState({ width: 380, height: 580 });
+  const isResizing = useRef(false);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const sendMutation = useSendMessage();
@@ -87,6 +91,49 @@ export function ChatbotFab() {
     const t = setTimeout(() => inputRef.current?.focus(), 100);
     return () => clearTimeout(t);
   }, [open]);
+
+  // Resizing logic for Top, Left, and Top-Left edges
+  const startResize = (direction: 'top' | 'left' | 'top-left', e: React.PointerEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startWidth = dimensions.width;
+    const startHeight = dimensions.height;
+
+    const onPointerMove = (moveEv: PointerEvent) => {
+      if (!isResizing.current) return;
+      const dx = startX - moveEv.clientX; // expanding left means dx is positive
+      const dy = startY - moveEv.clientY; // expanding top means dy is positive
+
+      setDimensions((prev) => {
+        let newW = prev.width;
+        let newH = prev.height;
+        if (direction === 'left' || direction === 'top-left') {
+          newW = Math.max(300, Math.min(startWidth + dx, window.innerWidth - 32));
+        }
+        if (direction === 'top' || direction === 'top-left') {
+          newH = Math.max(400, Math.min(startHeight + dy, window.innerHeight - 32));
+        }
+        return { width: newW, height: newH };
+      });
+    };
+
+    const onPointerUp = () => {
+      isResizing.current = false;
+      document.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('pointerup', onPointerUp);
+      document.body.style.cursor = ''; // reset global cursor
+    };
+
+    // set cursor globally to avoid cursor flickering when mouse moves faster than element
+    if (direction === 'top') document.body.style.cursor = 'ns-resize';
+    else if (direction === 'left') document.body.style.cursor = 'ew-resize';
+    else document.body.style.cursor = 'nwse-resize';
+
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+  };
 
   /* Send a message */
   const send = async () => {
@@ -157,7 +204,19 @@ export function ChatbotFab() {
 
   /* ── Chat panel (visible when open) ─────────────────────────────────── */
   return (
-    <section className="yaksha-mini" id="ym-panel" aria-label="Yaksha-mini chat">
+    <section 
+      className="yaksha-mini" 
+      id="ym-panel" 
+      aria-label="Yaksha-mini chat"
+      style={{
+        '--ym-width': `${dimensions.width}px`,
+        '--ym-height': `${dimensions.height}px`
+      } as React.CSSProperties}
+    >
+      <div className="ym-resize-handle top" onPointerDown={(e) => startResize('top', e)} />
+      <div className="ym-resize-handle left" onPointerDown={(e) => startResize('left', e)} />
+      <div className="ym-resize-handle top-left" onPointerDown={(e) => startResize('top-left', e)} />
+
       {/* Header */}
       <div className="yaksha-mini-head">
         <div className="ym-titles">
@@ -241,15 +300,6 @@ export function ChatbotFab() {
           <SendIcon />
         </button>
       </form>
-
-      {/* Footer */}
-      <p className="yaksha-mini-foot">
-        For your specific case, log in at{' '}
-        <a href="https://samagama.in" target="_blank" rel="noopener noreferrer">
-          samagama.in
-        </a>{' '}
-        and ask Yaksha.
-      </p>
     </section>
   );
 }

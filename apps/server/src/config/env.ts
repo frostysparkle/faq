@@ -15,15 +15,20 @@ const envSchema = z.object({
   CORS_ORIGINS: z.string().default('http://localhost:5173'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
-  LLM_PROVIDER: z.enum(['mock', 'gemini', 'local-llama', 'ollama']).default('mock'),
+  LLM_PROVIDER: z.enum(['mock', 'gemini', 'local-llama', 'ollama', 'groq']).default('mock'),
   GEMINI_API_KEY: z.string().optional(),
-  EMBEDDING_PROVIDER: z.enum(['mock', 'gemini']).default('mock'),
+  EMBEDDING_PROVIDER: z.enum(['mock', 'gemini', 'ollama']).default('mock'),
   // LLM server (rag/llm-server) — used when LLM_PROVIDER=local-llama
   LLM_BASE_URL: z.string().url().optional(),
   LLM_INTERNAL_SECRET: z.string().optional(),
   // Ollama — used when LLM_PROVIDER=ollama (no API key needed)
   OLLAMA_BASE_URL: z.string().url().default('http://localhost:11434'),
   OLLAMA_MODEL: z.string().default('gemma3:4b'),
+  // Groq — used when LLM_PROVIDER=groq. Free tier: 14,400 req/day, 30 req/min.
+  // Models: llama-3.3-70b-versatile, llama-3.1-8b-instant, mixtral-8x7b-32768.
+  // Get a free key at https://console.groq.com
+  GROQ_API_KEY: z.string().optional(),
+  GROQ_MODEL: z.string().default('llama-3.3-70b-versatile'),
 });
 
 const parsed = envSchema.safeParse(process.env);

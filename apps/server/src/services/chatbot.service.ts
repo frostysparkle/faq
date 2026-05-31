@@ -333,6 +333,10 @@ async function callLlm(opts: {
     return callGeminiLlm(opts);
   }
 
+  if (env.LLM_PROVIDER === 'groq' && env.GROQ_API_KEY) {
+    return callGroqLlm(opts);
+  }
+
   if (env.LLM_PROVIDER === 'ollama') {
     return callOllamaLlm(opts);
   }
@@ -455,6 +459,60 @@ async function callOllamaLlm(opts: {
     return { answer, fallback_triggered };
   } catch (err) {
     logger.warn({ err }, 'Ollama call failed — falling back to mock');
+    return mockLlm({ rag_context: opts.rag_context, current_message: opts.current_message, sources: opts.sources });
+  }
+}
+
+/**
+ * Groq inference — uses llama-3.3-70b-versatile by default.
+ * Free tier: 14,400 requests/day, 30 requests/minute.
+ * Groq's API is OpenAI-compatible, so the request shape is identical to Ollama.
+ * Typical response time: 200–500 ms (significantly faster than Gemini chat).
+ */
+async function callGroqLlm(opts: {
+  system_instruction: string;
+  rag_context: string[];
+  conversation_history: ChatMessage[];
+  current_message: string;
+  sources: FaqSource[];
+}): Promise<{ answer: string; fallback_triggered: boolean }> {
+  try {
+    const contextBlock = opts.rag_context.length > 0
+      ? `\n\nAPPROVED FAQ CONTEXT:\n${opts.rag_context.join('\n\n')}`
+      : '';
+
+    const messages = [
+      { role: 'system', content: opts.system_instruction + contextBlock },
+      ...opts.conversation_history.map(m => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content,
+      })),
+      { role: 'user', content: opts.current_message },
+    ];
+
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${env.GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: env.GROQ_MODEL,
+        messages,
+        temperature: 0.2,
+        max_tokens: 500,
+        stream: false,
+      }),
+    });
+
+    if (!res.ok) throw new Error(`Groq returned ${res.status}: ${await res.text()}`);
+
+    const json = (await res.json()) as { choices: { message: { content: string } }[] };
+    const answer = json.choices?.[0]?.message?.content?.trim() ?? FALLBACK_STRING;
+    const fallback_triggered = answer === FALLBACK_STRING || answer.includes("I don't have an answer");
+    return { answer, fallback_triggered };
+  } catch (err) {
+    logger.warn({ err }, 'Groq call failed — falling back to mock');
     return mockLlm({ rag_context: opts.rag_context, current_message: opts.current_message, sources: opts.sources });
   }
 }

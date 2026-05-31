@@ -64,7 +64,8 @@ export function useUnifiedSearch(dataEndpoint: string) {
 
     workerRef.current.onerror = (e) => setError(e.message);
 
-    workerRef.current.postMessage({ type: 'INIT', payload: { dataEndpoint } });
+    const token = localStorage.getItem('samagama:accessToken');
+    workerRef.current.postMessage({ type: 'INIT', payload: { dataEndpoint, token } });
 
     return () => {
       workerRef.current?.terminate();

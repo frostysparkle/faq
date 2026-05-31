@@ -6,7 +6,6 @@ import { RequireAuth } from './features/auth/RequireAuth';
 import { HomePage } from './pages/HomePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ChatbotPage } from './features/chatbot/ChatbotPage';
-import { UnifiedSearchPage } from './features/search/UnifiedSearchPage';
 import { FaqsPage } from './features/faq/FaqsPage';
 import { AskQuestionPage } from './features/qna/AskQuestionPage';
 import { CommunityPage } from './features/qna/CommunityPage';
@@ -46,8 +45,6 @@ export function App() {
         <Route path="/my-questions" element={<MyQuestionsPage />} />
         <Route path="/analytics" element={<StudentAnalyticsPage />} />
         <Route path="/chatbot" element={<ChatbotPage />} />
-        <Route path="/search" element={<UnifiedSearchPage />} />
-
         {/* Moderation (shared between moderator and admin per Dashboard Spec) */}
         <Route path="/moderation" element={<ModerationOverviewPage />} />
         <Route path="/moderation/unresolved" element={<UnresolvedQuestionsPage />} />

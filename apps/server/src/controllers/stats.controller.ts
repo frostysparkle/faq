@@ -23,9 +23,9 @@ export const statsController = {
   /** Spurti Points leaderboard for the analytics page. */
   async getLeaderboard(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized();
-    const range = (req.query.range as 'week' | 'month' | 'all' | undefined) ?? 'all';
-    if (!['week', 'month', 'all'].includes(range)) {
-      throw ApiError.badRequest('range must be week, month, or all');
+    const range = (req.query.range as 'day' | 'week' | 'month' | 'all' | undefined) ?? 'all';
+    if (!['day', 'week', 'month', 'all'].includes(range)) {
+      throw ApiError.badRequest('range must be day, week, month, or all');
     }
     return ok(res, await statsService.getLeaderboard(range, req.user.id));
   },

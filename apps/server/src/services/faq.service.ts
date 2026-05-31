@@ -26,6 +26,7 @@ import { UserModel } from '../models/User.model.js';
 import { ApiError } from '../utils/api-error.js';
 import { generateEmbedding, cosineSimilarity } from './embedding.service.js';
 import { analyticsService } from './analytics.service.js';
+import { invalidateFaqEmbeddingCache } from './qna.service.js';
 
 interface ListOptions {
   query: FaqListQuery;
@@ -405,11 +406,16 @@ export const faqService = {
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
-/** Async, non-blocking embedding generation. Saves result back to the FAQ. */
+/** Async, non-blocking embedding generation. Saves result back to the FAQ and clears
+ * the server-wide embedding cache so checkExisting picks up the refreshed vector.
+ */
 async function scheduleEmbedding(faqId: string, title: string): Promise<void> {
   try {
     const embedding = await generateEmbedding(title);
     await FaqModel.updateOne({ _id: faqId }, { embedding });
+    // Invalidate the cached list so the next checkExisting call re-fetches
+    // and includes this FAQ's updated embedding.
+    invalidateFaqEmbeddingCache();
   } catch {
     // Swallow — embedding failures must never block the request path.
   }

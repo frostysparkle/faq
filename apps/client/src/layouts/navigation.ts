@@ -8,6 +8,8 @@
 //  - Moderator: rename "Pending Answers" -> "Unresolved Questions"; remove Flagged FAQs,
 //    Duplicate Candidates, Browse FAQs, and any redundant Unresolved Questions entry.
 //  - Moderator FAQ access happens via the shared "FAQ Management" link.
+//
+// Search is removed from all sidebar nav — Unified Search now lives in the topbar.
 import {
   Bookmark,
   BookOpen,
@@ -16,7 +18,6 @@ import {
   MessageCircle,
   MessageSquare,
   MessageSquarePlus,
-  Search,
   Settings,
   BarChart3,
   Bot,
@@ -38,13 +39,11 @@ export interface NavItem {
 export const navByRole: Record<UserRole, NavItem[]> = {
   student: [
     { section: 'Main', label: 'Home', path: '/', icon: Home },
-    { label: 'Search', path: '/search', icon: Search },
     { label: 'Browse FAQs', path: '/faqs', icon: BookOpen },
     { label: 'Community Q&A', path: '/community', icon: MessageCircle },
     { section: 'My Activity', label: 'Ask a Question', path: '/ask', icon: MessageSquarePlus },
     { label: 'My Questions', path: '/my-questions', icon: Bookmark },
     { label: 'Analytics', path: '/analytics', icon: BarChart3 },
-    // Recently Viewed and Yaksha Chatbot intentionally removed — see Change Spec §3.
   ],
   moderator: [
     { section: 'Moderation', label: 'Dashboard', path: '/moderation', icon: LayoutDashboard },
@@ -53,14 +52,12 @@ export const navByRole: Record<UserRole, NavItem[]> = {
       path: '/moderation/unresolved',
       icon: MessageSquare,
     },
-    { section: 'Knowledge', label: 'Search', path: '/search', icon: Search },
-    { label: 'FAQ Management', path: '/admin/faqs', icon: BookOpen },
+    { section: 'Knowledge', label: 'FAQ Management', path: '/admin/faqs', icon: BookOpen },
     { label: 'Chatbot Feedback', path: '/admin/bot-feedback', icon: Bot },
   ],
   admin: [
     { section: 'Overview', label: 'Admin Overview', path: '/admin', icon: LayoutDashboard },
-    { section: 'Knowledge', label: 'Search', path: '/search', icon: Search },
-    { label: 'FAQ Management', path: '/admin/faqs', icon: BookOpen },
+    { section: 'Knowledge', label: 'FAQ Management', path: '/admin/faqs', icon: BookOpen },
     { section: 'People', label: 'User Management', path: '/admin/users', icon: Users },
     {
       section: 'System',
