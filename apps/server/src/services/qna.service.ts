@@ -403,7 +403,16 @@ export const qnaService = {
     if (question.type !== 'community') {
       throw ApiError.forbidden('Only community questions can be tagged');
     }
-    if (!verifyCheckToken(token, userId, question.title)) {
+    // Verify the token is valid and belongs to this user.
+    // We only check user ID + expiry — not the title hash — because the token
+    // was signed with the student's own input title, which is a different
+    // phrasing of the same question (not an exact match to the existing
+    // question's title). Expiry alone is sufficient: it proves the student
+    // ran checkExisting within the last 15 minutes before tagging.
+    try {
+      const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as CheckTokenPayload;
+      if (decoded.uid !== userId) throw new Error('user mismatch');
+    } catch {
       throw ApiError.forbidden('Existing-answer check token is missing or expired');
     }
     await QuestionModel.updateOne(

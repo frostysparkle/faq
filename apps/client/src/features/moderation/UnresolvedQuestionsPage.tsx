@@ -1,8 +1,9 @@
 // Unresolved Questions — Dashboard Spec moderator entry point.
 //
 // Two subsections:
-//   1. Personal Questions  → personal-type, status open/answered, asked by students directly
-//   2. Community Questions → pending peer answers awaiting review (the old "Pending Answers" view)
+//   1. Personal Questions  → all personal-type questions regardless of status
+//   2. Community Questions → ALL open community questions; questions with pending peer
+//      answers show an inline review section (approve/reject with Spurti Points).
 //
 // Community subsection adds Dashboard Spec ergonomics:
 //   - Multi-asker badge + click-to-reveal student names (taggedStudents from the API)
@@ -33,7 +34,7 @@ export function UnresolvedQuestionsPage() {
     <div>
       <SectionHeader
         title="Unresolved Questions"
-        sub="Personal questions for moderators · Community answers awaiting approval."
+        sub="Personal questions from students · All community questions with inline answer review."
       />
 
       <div role="tablist" style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
@@ -52,7 +53,9 @@ export function UnresolvedQuestionsPage() {
 }
 
 function PersonalQuestionsList() {
-  const { data, isLoading } = useQuestions({ type: 'personal', status: 'open' });
+  // No status filter — moderators should see all personal questions regardless of status.
+  // (Filtering to 'open' hid questions that had already been responded to or resolved.)
+  const { data, isLoading } = useQuestions({ type: 'personal' });
   if (isLoading) return <Card>Loading…</Card>;
   if (!data || data.length === 0) {
     return (
@@ -179,40 +182,52 @@ function PersonalQuestionRow({ question }: { question: PublicQuestion }) {
 }
 
 function CommunityQueue() {
-  const { data, isLoading } = usePendingAnswers();
+  // Fetch all community questions (not just ones with pending answers) so the
+  // moderator can see every question posted by students, including those with
+  // no peer answers yet. Pending answers are fetched alongside to enable inline
+  // review without a separate navigation step.
+  const { data: questions, isLoading: qLoading } = useQuestions({ type: 'community' });
+  const { data: pendingAnswers, isLoading: pLoading } = usePendingAnswers();
   const [prioritize, setPrioritize] = useState(true);
 
+  // Group pending answers by questionId so each question card knows its queue.
+  const pendingByQuestion = useMemo(() => {
+    const map = new Map<string, PendingAnswerSummary[]>();
+    (pendingAnswers ?? []).forEach((a) => {
+      const list = map.get(a.questionId) ?? [];
+      list.push(a);
+      map.set(a.questionId, list);
+    });
+    return map;
+  }, [pendingAnswers]);
+
   const sorted = useMemo(() => {
-    if (!data) return [];
-    if (!prioritize) return data;
-    return [...data].sort((a, b) => b.taggedStudents.length - a.taggedStudents.length);
-  }, [data, prioritize]);
+    if (!questions) return [];
+    return [...questions].sort((a, b) => {
+      if (prioritize) {
+        // Multi-asker questions (most taggedStudents) first, then by pending answers, then date.
+        const aTagged = pendingByQuestion.get(a.id)?.[0]?.taggedStudents.length ?? 0;
+        const bTagged = pendingByQuestion.get(b.id)?.[0]?.taggedStudents.length ?? 0;
+        if (aTagged !== bTagged) return bTagged - aTagged;
+        const aPending = pendingByQuestion.has(a.id) ? 1 : 0;
+        const bPending = pendingByQuestion.has(b.id) ? 1 : 0;
+        if (aPending !== bPending) return bPending - aPending;
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [questions, pendingByQuestion, prioritize]);
+
+  const isLoading = qLoading || pLoading;
+  const pendingCount = pendingAnswers?.length ?? 0;
 
   return (
     <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 12,
-          flexWrap: 'wrap',
-          gap: 8,
-        }}
-      >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
         <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-          {data ? `${data.length} pending peer answer${data.length === 1 ? '' : 's'}` : ''}
+          {questions ? `${questions.length} question${questions.length === 1 ? '' : 's'}` : ''}
+          {pendingCount > 0 ? ` · ${pendingCount} pending peer answer${pendingCount === 1 ? '' : 's'} awaiting review` : ''}
         </div>
-        <label
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: 12,
-            color: 'var(--color-text-muted)',
-            cursor: 'pointer',
-          }}
-        >
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-text-muted)', cursor: 'pointer' }}>
           <input
             type="checkbox"
             checked={prioritize}
@@ -226,20 +241,82 @@ function CommunityQueue() {
       {isLoading && <Card>Loading…</Card>}
       {!isLoading && sorted.length === 0 && (
         <Card style={{ textAlign: 'center', padding: 32 }}>
-          <div style={{ fontSize: 14, fontWeight: 600 }}>Inbox zero 🎉</div>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>No community questions yet.</div>
           <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 4 }}>
-            No pending peer answers right now.
+            Questions posted by students will appear here.
           </div>
         </Card>
       )}
-      {sorted.map((a) => (
-        <ReviewCard key={a.id} answer={a} />
+      {sorted.map((q) => (
+        <CommunityQuestionCard
+          key={q.id}
+          question={q}
+          pendingAnswers={pendingByQuestion.get(q.id) ?? []}
+        />
       ))}
     </div>
   );
 }
 
-function ReviewCard({ answer }: { answer: PendingAnswerSummary }) {
+const STATUS_COLORS: Record<string, string> = {
+  open: 'var(--color-primary)',
+  answered: '#16a34a',
+  resolved: 'var(--color-text-muted)',
+  archived: 'var(--color-text-muted)',
+};
+
+function CommunityQuestionCard({
+  question,
+  pendingAnswers,
+}: {
+  question: PublicQuestion;
+  pendingAnswers: PendingAnswerSummary[];
+}) {
+  const hasPending = pendingAnswers.length > 0;
+  // Auto-expand the review section when there are pending answers.
+  const [showAnswers, setShowAnswers] = useState(hasPending);
+  const color = STATUS_COLORS[question.status] ?? 'var(--color-text-muted)';
+
+  return (
+    <Card style={{ marginBottom: 12 }}>
+      {/* ── Question header ── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 15, fontWeight: 600, flex: 1 }}>{question.title}</div>
+        <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: 'var(--color-input)', color, border: `1px solid ${color}`, whiteSpace: 'nowrap', textTransform: 'capitalize' }}>
+          {question.status}
+        </span>
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--color-text)', lineHeight: 1.55, marginBottom: 8, whiteSpace: 'pre-wrap' }}>
+        {question.description.slice(0, 250)}{question.description.length > 250 ? '…' : ''}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+          by {question.author.name} · {timeAgo(question.createdAt)} · {question.answerCount} peer answer{question.answerCount === 1 ? '' : 's'}
+        </div>
+        {hasPending && (
+          <button
+            type="button"
+            onClick={() => setShowAnswers((v) => !v)}
+            style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 8, background: showAnswers ? 'var(--color-primary)' : 'var(--color-input)', color: showAnswers ? 'white' : 'var(--color-text-muted)', border: '1px solid var(--color-primary)', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            {showAnswers ? 'Hide' : 'Review'} {pendingAnswers.length} pending answer{pendingAnswers.length === 1 ? '' : 's'}
+          </button>
+        )}
+      </div>
+
+      {/* ── Inline pending-answer review ── */}
+      {hasPending && showAnswers && (
+        <div style={{ marginTop: 12, borderTop: '1px solid var(--color-border)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {pendingAnswers.map((a) => (
+            <ReviewCard key={a.id} answer={a} hideQuestionTitle />
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function ReviewCard({ answer, hideQuestionTitle = false }: { answer: PendingAnswerSummary; hideQuestionTitle?: boolean }) {
   const approve = useApproveAnswer();
   const reject = useRejectAnswer();
 
@@ -261,10 +338,12 @@ function ReviewCard({ answer }: { answer: PendingAnswerSummary }) {
   const multiAsker = answer.taggedStudents.length > 0;
 
   return (
-    <Card style={{ marginBottom: 12 }}>
-      <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 4 }}>
-        Answer on:
-      </div>
+    <Card style={{ marginBottom: 0 }}>
+      {!hideQuestionTitle && (
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 4 }}>
+          Answer on:
+        </div>
+      )}
       <div
         style={{
           display: 'flex',
@@ -275,7 +354,9 @@ function ReviewCard({ answer }: { answer: PendingAnswerSummary }) {
           flexWrap: 'wrap',
         }}
       >
-        <div style={{ fontSize: 15, fontWeight: 600 }}>{answer.questionTitle}</div>
+        {!hideQuestionTitle && (
+          <div style={{ fontSize: 15, fontWeight: 600 }}>{answer.questionTitle}</div>
+        )}
         {multiAsker && (
           <button
             type="button"

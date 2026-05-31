@@ -20,7 +20,9 @@
     "seed:chat-feedback": "tsx src/scripts/seed-chat-feedback.ts",
     "seed:faq-timestamps": "tsx src/scripts/seed-faq-timestamps.ts",
     "test:search": "tsx src/scripts/test-search-accuracy.ts",
-    "test:search:save": "tsx src/scripts/test-search-accuracy.ts > testing-results.md"
+    "test:search:save": "tsx src/scripts/test-search-accuracy.ts > testing-results.md",
+    "test:community": "tsx src/scripts/test-community-duplicates.ts",
+    "test:community:save": "tsx src/scripts/test-community-duplicates.ts > community-test-results.md"
   },
   "dependencies": {
     "@samagama/shared": "*",

@@ -194,7 +194,7 @@ function SidebarLink({ item, open }: { item: NavItem; open: boolean }) {
   return (
     <NavLink
       to={item.path}
-      end={item.path === '/'}
+      end
       title={open ? undefined : item.label}
       className={({ isActive }) => ['sidebar-link', isActive ? 'active' : ''].filter(Boolean).join(' ')}
       style={() => ({
