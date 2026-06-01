@@ -10,14 +10,14 @@
 //   - "Prioritize multi-asker first" toggle
 //   - Show More cycle: 1 → 3 → 10 answers (per-card)
 import { useMemo, useState } from 'react';
-import { CheckCircle, Edit, Users, XCircle } from 'lucide-react';
+import { BookOpen, CheckCircle, ChevronDown, ChevronUp, Edit, ThumbsDown, ThumbsUp, Users, XCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import {
   useApproveAnswer,
+  useConvertAnswerToFaq,
   usePendingAnswers,
-  usePendingAnswersForQuestion,
   useQuestions,
   useRejectAnswer,
   useRespondToPersonal,
@@ -273,6 +273,11 @@ function CommunityQuestionCard({
   const [showModAnswer, setShowModAnswer] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [modBody, setModBody] = useState('');
+  const [showStudents, setShowStudents] = useState(false);
+
+  // taggedStudents is question-level data carried on each PendingAnswerSummary
+  const taggedStudents = pendingAnswers[0]?.taggedStudents ?? [];
+  const multiAsker = taggedStudents.length > 0;
   const respond = useRespondToPersonal();
 
   // Show the full description as a single unified block — no separate title.
@@ -289,7 +294,34 @@ function CommunityQuestionCard({
 
   return (
     <Card style={{ marginBottom: 10 }}>
-      {/* ── Unified question text (no split title / description) ── */}
+      {/* ── Multi-asker badge (question-level) ── */}
+      {multiAsker && (
+        <div style={{ marginBottom: 8 }}>
+          <button
+            type="button"
+            onClick={() => setShowStudents((v) => !v)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12,
+              background: 'var(--color-primary-bg)', color: 'var(--color-primary-text)',
+              border: '1px solid var(--color-primary)', cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            <Users size={11} /> {taggedStudents.length} student{taggedStudents.length === 1 ? '' : 's'} asked
+          </button>
+          {showStudents && (
+            <div style={{
+              background: 'var(--color-input)', border: '1px solid var(--color-border)',
+              borderRadius: 8, padding: 10, marginTop: 6,
+              fontSize: 12, color: 'var(--color-text-muted)',
+            }}>
+              {taggedStudents.map((s) => s.name).join(', ')}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Unified question text ── */}
       <div style={{ fontSize: 13, color: 'var(--color-text)', lineHeight: 1.6, marginBottom: 8 }}>
         {displayText}
         {isLong && !expanded && (
@@ -330,7 +362,7 @@ function CommunityQuestionCard({
               onClick={() => setShowAnswers((v) => !v)}
               style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 8, background: showAnswers ? 'var(--color-primary)' : 'var(--color-input)', color: showAnswers ? 'white' : 'var(--color-text-muted)', border: '1px solid var(--color-primary)', cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              {showAnswers ? 'Hide' : 'Review'} {pendingAnswers.length} pending answer{pendingAnswers.length === 1 ? '' : 's'}
+              {showAnswers ? 'Hide answers' : 'Review answers'}
             </button>
           )}
           <button
@@ -375,296 +407,224 @@ function CommunityQuestionCard({
 
       {/* ── Inline pending-answer review ── */}
       {hasPending && showAnswers && (
-        <div style={{ marginTop: 12, borderTop: '1px solid var(--color-border)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {pendingAnswers.map((a) => (
-            <ReviewCard key={a.id} answer={a} hideQuestionTitle />
-          ))}
+        <div style={{ marginTop: 10, borderTop: '1px solid var(--color-border)', paddingTop: 10 }}>
+          <ReviewPanel answers={pendingAnswers} />
         </div>
       )}
     </Card>
   );
 }
 
-function ReviewCard({ answer, hideQuestionTitle = false }: { answer: PendingAnswerSummary; hideQuestionTitle?: boolean }) {
+/** Selectable list of pending answers with two progressive-reveal dropdowns.
+ *  Always shows the first answer; "+2 more" expands answers 2-3;
+ *  "remaining N" expands answers 4+. Click any row to select it. */
+function ReviewPanel({ answers }: { answers: PendingAnswerSummary[] }) {
   const approve = useApproveAnswer();
   const reject = useRejectAnswer();
+  const convertToFaq = useConvertAnswerToFaq();
 
-  // Show More cycle (Dashboard Spec): 1 (this card only) → 3 → 10 → back to 1.
-  // When `reveal` is > 1, we fetch the additional pending answers on the same question.
-  const [reveal, setReveal] = useState<1 | 3 | 10>(1);
-  const cycleReveal = () => setReveal((n) => (n === 1 ? 3 : n === 3 ? 10 : 1));
-  const fetchExtras = usePendingAnswersForQuestion(answer.questionId, reveal, reveal > 1);
-  // The extras query returns ALL pending answers up to `limit`, including the one already
-  // shown on this card. Filter that out so we only render the *additional* ones.
-  const extras = (fetchExtras.data ?? []).filter((a) => a.id !== answer.id);
-
+  const [selectedId, setSelectedId] = useState<string>(answers[0]?.id ?? '');
   const [editing, setEditing] = useState(false);
-  const [editedBody, setEditedBody] = useState(answer.body);
+  const [editedBody, setEditedBody] = useState('');
   const [note, setNote] = useState('');
   const [spurtiPoints, setSpurtiPoints] = useState(5);
-  const [showStudents, setShowStudents] = useState(false);
+  const [showSecond, setShowSecond] = useState(false);
+  const [showRest, setShowRest] = useState(false);
+  const [justApproved, setJustApproved] = useState<{ id: string } | null>(null);
 
-  const multiAsker = answer.taggedStudents.length > 0;
+  const selected = answers.find((a) => a.id === selectedId) ?? answers[0] ?? null;
+
+  const handleSelect = (id: string) => {
+    if (id === selectedId) return;
+    setSelectedId(id);
+    setEditing(false);
+    setEditedBody('');
+    setNote('');
+  };
+
+  const startEditing = () => { setEditedBody(selected?.body ?? ''); setEditing(true); };
+  const cancelEditing = () => { setEditing(false); setEditedBody(''); };
+
+  if (!selected) return null;
+
+  const firstGroup  = answers.slice(0, 1);
+  const secondGroup = answers.slice(1, 3);
+  const restGroup   = answers.slice(3);
+
+  const renderRow = (a: PendingAnswerSummary) => {
+    const isSelected = a.id === selected.id;
+    return (
+      <button
+        key={a.id}
+        type="button"
+        onClick={() => handleSelect(a.id)}
+        style={{
+          display: 'block', width: '100%', textAlign: 'left',
+          background: isSelected ? 'var(--color-primary-bg)' : 'var(--color-input)',
+          border: `1.5px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+          borderRadius: 8, padding: '9px 12px',
+          cursor: 'pointer', fontFamily: 'inherit',
+          transition: 'border-color 0.12s, background 0.12s',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+          <div style={{ width: 22, height: 22, borderRadius: '50%', background: isSelected ? 'var(--color-primary)' : 'var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: isSelected ? 'white' : 'var(--color-text-muted)', flexShrink: 0 }}>
+            {a.author.name.charAt(0).toUpperCase()}
+          </div>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)' }}>{a.author.name}</span>
+          <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>· {timeAgo(a.createdAt)}</span>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: a.upvoteCount > 0 ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
+              <ThumbsUp size={11} /> {a.upvoteCount}
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: a.downvoteCount > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+              <ThumbsDown size={11} /> {a.downvoteCount}
+            </span>
+            {isSelected && (
+              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Selected</span>
+            )}
+          </div>
+        </div>
+        {isSelected && editing ? (
+          <textarea
+            value={editedBody}
+            onChange={(e) => setEditedBody(e.target.value)}
+            rows={4}
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', background: 'var(--color-card)', border: '1px solid var(--color-primary)', borderRadius: 6, padding: '7px 10px', fontSize: 13, color: 'var(--color-text)', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }}
+          />
+        ) : (
+          <div style={{ fontSize: 13, color: 'var(--color-text)', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{a.body}</div>
+        )}
+      </button>
+    );
+  };
 
   return (
-    <Card style={{ marginBottom: 0 }}>
-      {!hideQuestionTitle && (
-        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 4 }}>
-          Answer on:
-        </div>
-      )}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 10,
-          marginBottom: 10,
-          flexWrap: 'wrap',
-        }}
-      >
-        {!hideQuestionTitle && (
-          <div style={{ fontSize: 15, fontWeight: 600 }}>{answer.questionTitle}</div>
-        )}
-        {multiAsker && (
-          <button
-            type="button"
-            onClick={() => setShowStudents((v) => !v)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              fontSize: 11,
-              fontWeight: 600,
-              padding: '3px 10px',
-              borderRadius: 12,
-              background: 'var(--color-primary-bg)',
-              color: 'var(--color-primary-text)',
-              border: '1px solid var(--color-primary)',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
+    <div>
+      {/* ── Post as FAQ prompt (appears after an answer is approved) ── */}
+      {justApproved && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+          background: 'var(--color-success-bg)', border: '1px solid var(--color-success)',
+          borderRadius: 8, padding: '9px 12px', marginBottom: 10,
+        }}>
+          <CheckCircle size={14} color="var(--color-success)" style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: 12, color: 'var(--color-text)', flex: 1 }}>
+            Answer approved — post it as an FAQ so it's searchable by all students?
+          </span>
+          {convertToFaq.error && (
+            <span style={{ fontSize: 11, color: 'var(--color-danger)' }}>
+              {convertToFaq.error instanceof Error ? convertToFaq.error.message : 'Could not post as FAQ'}
+            </span>
+          )}
+          <Button
+            size="sm" variant="success" disabled={convertToFaq.isPending}
+            onClick={async () => {
+              await convertToFaq.mutateAsync(justApproved.id);
+              setJustApproved(null);
             }}
           >
-            <Users size={11} /> {answer.taggedStudents.length} student
-            {answer.taggedStudents.length === 1 ? '' : 's'} asked
-          </button>
-        )}
-      </div>
-
-      {showStudents && multiAsker && (
-        <div
-          style={{
-            background: 'var(--color-input)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 8,
-            padding: 10,
-            marginBottom: 10,
-            fontSize: 12,
-            color: 'var(--color-text-muted)',
-          }}
-        >
-          {answer.taggedStudents.map((s) => s.name).join(', ')}
+            <BookOpen size={12} /> {convertToFaq.isPending ? 'Posting…' : 'Post as FAQ'}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setJustApproved(null)}>
+            Dismiss
+          </Button>
         </div>
       )}
 
-      {editing ? (
-        <textarea
-          value={editedBody}
-          onChange={(e) => setEditedBody(e.target.value)}
-          rows={6}
-          style={{
-            width: '100%',
-            background: 'var(--color-input)',
-            border: '1px solid var(--color-primary)',
-            borderRadius: 8,
-            padding: 12,
-            marginBottom: 10,
-            fontSize: 13,
-            color: 'var(--color-text)',
-            fontFamily: 'inherit',
-            resize: 'vertical',
-            boxSizing: 'border-box',
-            outline: 'none',
-          }}
-        />
-      ) : (
-        <div
-          style={{
-            background: 'var(--color-input)',
-            border: '1px solid var(--color-border)',
-            borderLeft: '3px solid var(--color-primary)',
-            borderRadius: 8,
-            padding: 12,
-            marginBottom: 12,
-            fontSize: 13,
-            color: 'var(--color-text)',
-            lineHeight: 1.6,
-            whiteSpace: 'pre-wrap',
-          }}
-        >
-          {answer.body}
-        </div>
-      )}
+      {/* ── Answer list with progressive reveal ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
 
-      <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 10 }}>
-        by {answer.author.name} · {timeAgo(answer.createdAt)}
-      </div>
+        {/* Group 1 — always visible */}
+        {firstGroup.map(renderRow)}
 
-      {reveal > 1 && (
-        <div
-          style={{
-            borderTop: '1px solid var(--color-border)',
-            paddingTop: 10,
-            marginBottom: 10,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: 'var(--color-text-muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '.5px',
-              marginBottom: 8,
-            }}
-          >
-            Other pending answers on this question
-          </div>
-          {fetchExtras.isLoading && (
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Loading…</div>
-          )}
-          {!fetchExtras.isLoading && extras.length === 0 && (
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-              No other pending answers.
-            </div>
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {extras.map((extra) => (
-              <div
-                key={extra.id}
-                style={{
-                  background: 'var(--color-input)',
-                  borderRadius: 8,
-                  padding: 10,
-                  fontSize: 12,
-                  lineHeight: 1.55,
-                  whiteSpace: 'pre-wrap',
-                  color: 'var(--color-text)',
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: 'var(--color-text-muted)',
-                    marginBottom: 4,
-                  }}
-                >
-                  by {extra.author.name} · {timeAgo(extra.createdAt)}
-                </div>
-                {extra.body}
+        {/* Dropdown 1 — next 2 answers */}
+        {secondGroup.length > 0 && (
+          <>
+            <button
+              type="button"
+              onClick={() => setShowSecond((v) => !v)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '2px 4px', color: 'var(--color-text-muted)', fontSize: 12, fontWeight: 600 }}
+            >
+              {showSecond ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {showSecond ? 'Hide' : `Show ${secondGroup.length} more answer${secondGroup.length === 1 ? '' : 's'}`}
+            </button>
+            {showSecond && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {secondGroup.map(renderRow)}
+
+                {/* Dropdown 2 — remaining answers */}
+                {restGroup.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowRest((v) => !v)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '2px 4px', color: 'var(--color-text-muted)', fontSize: 12, fontWeight: 600 }}
+                    >
+                      {showRest ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      {showRest ? 'Hide remaining' : `Show ${restGroup.length} remaining answer${restGroup.length === 1 ? '' : 's'}`}
+                    </button>
+                    {showRest && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {restGroup.map(renderRow)}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            )}
+          </>
+        )}
 
-      <input
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        placeholder="Optional note (shown to author on rejection)"
-        style={{
-          width: '100%',
-          background: 'var(--color-input)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 8,
-          padding: '8px 12px',
-          marginBottom: 10,
-          fontSize: 12,
-          color: 'var(--color-text)',
-          fontFamily: 'inherit',
-          outline: 'none',
-          boxSizing: 'border-box',
-        }}
-      />
+      </div>
 
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          marginBottom: 10,
-        }}
-      >
-        <label
-          style={{ fontSize: 12, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}
-        >
-          Spurti Points on approval:
-        </label>
+      {/* ── Action bar — everything on one row ── */}
+      <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <input
-          type="number"
-          min={-1}
-          max={5}
-          step={1}
-          value={spurtiPoints}
-          onChange={(e) => setSpurtiPoints(Math.max(-1, Math.min(5, parseInt(e.target.value, 10) || 0)))}
-          style={{
-            width: 64,
-            background: 'var(--color-input)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 8,
-            padding: '6px 10px',
-            fontSize: 13,
-            color: 'var(--color-text)',
-            fontFamily: 'inherit',
-            outline: 'none',
-            textAlign: 'center',
-          }}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Note (optional, shown to author on rejection)"
+          style={{ flex: 1, minWidth: 160, background: 'var(--color-input)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '5px 10px', fontSize: 12, color: 'var(--color-text)', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
         />
-        <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>(-1 to 5)</span>
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          gap: 8,
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Button variant="ghost" size="sm" onClick={cycleReveal}>
-          Show {reveal === 1 ? '+2 answers' : reveal === 3 ? 'all 10 answers' : 'top answer only'}
+        <label style={{ fontSize: 11, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
+          Spurti
+          <input
+            type="number" min={-1} max={5} step={1} value={spurtiPoints}
+            onChange={(e) => setSpurtiPoints(Math.max(-1, Math.min(5, parseInt(e.target.value, 10) || 0)))}
+            style={{ width: 48, background: 'var(--color-input)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '4px 6px', fontSize: 12, color: 'var(--color-text)', fontFamily: 'inherit', outline: 'none', textAlign: 'center' }}
+          />
+        </label>
+        <Button
+          variant="success" size="sm" disabled={approve.isPending}
+          onClick={() => {
+            const payload = editing
+              ? { id: selected.id, editedBody, note: note || undefined, spurtiPoints }
+              : { id: selected.id, note: note || undefined, spurtiPoints };
+            approve.mutate(payload, {
+              onSuccess: () => setJustApproved({ id: selected.id }),
+            });
+          }}
+        >
+          <CheckCircle size={12} /> {editing ? 'Edit & Approve' : 'Approve'}
         </Button>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <Button
-            variant="success"
-            size="sm"
-            disabled={approve.isPending}
-            onClick={() =>
-              approve.mutate(
-                editing
-                  ? { id: answer.id, editedBody, note: note || undefined, spurtiPoints }
-                  : { id: answer.id, note: note || undefined, spurtiPoints },
-              )
-            }
-          >
-            <CheckCircle size={13} /> {editing ? 'Edit & Approve' : 'Approve'}
+        {!editing ? (
+          <Button variant="ghost" size="sm" onClick={startEditing}>
+            <Edit size={12} /> Edit
           </Button>
-          {!editing && (
-            <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
-              <Edit size={13} /> Edit
-            </Button>
-          )}
-          <Button
-            variant="danger"
-            size="sm"
-            disabled={reject.isPending}
-            onClick={() => reject.mutate({ id: answer.id, note: note || undefined })}
-          >
-            <XCircle size={13} /> Reject
+        ) : (
+          <Button variant="ghost" size="sm" onClick={cancelEditing}>
+            Cancel edit
           </Button>
-        </div>
+        )}
+        <Button
+          variant="danger" size="sm" disabled={reject.isPending}
+          onClick={() => reject.mutate({ id: selected.id, note: note || undefined })}
+        >
+          <XCircle size={12} /> Reject
+        </Button>
       </div>
-    </Card>
+    </div>
   );
 }
 

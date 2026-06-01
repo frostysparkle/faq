@@ -31,12 +31,14 @@ export function createApp(): Express {
   }
 
   // Global rate limit (per-IP). Tighter limits live on individual routes.
+  // Disabled in development so demo simulations and manual testing aren't blocked.
   app.use(
     rateLimit({
       windowMs: 60 * 1000,
       limit: 200,
       standardHeaders: 'draft-7',
       legacyHeaders: false,
+      skip: () => !env.isProduction,
     }),
   );
 

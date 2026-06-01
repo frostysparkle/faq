@@ -65,7 +65,7 @@ export const qnaApi = {
   ): Promise<{ upvoteCount: number; downvoteCount: number; myVote: 'up' | 'down' | null }> {
     const res = await apiClient.post<
       ApiSuccess<{ upvoteCount: number; downvoteCount: number; myVote: 'up' | 'down' | null }>
-    >(`/api/qna/answers/${answerId}/vote/${direction}`);
+    >(`/api/qna/answers/${answerId}/vote/${direction}?allowPending=true`);
     return res.data.data;
   },
 };
@@ -79,6 +79,8 @@ interface PendingAnswerSummary {
   author: { id: string; name: string };
   /** Other students who tagged themselves on the same question (Dashboard Spec). */
   taggedStudents: { id: string; name: string }[];
+  upvoteCount: number;
+  downvoteCount: number;
   createdAt: string;
 }
 
@@ -107,6 +109,23 @@ export const moderationApi = {
   },
   async respondToPersonal(questionId: string, body: string): Promise<void> {
     await apiClient.post(`/api/moderation/questions/${questionId}/respond`, { body });
+  },
+  async convertQuestionToFaq(
+    questionId: string,
+    opts: { removeAndConvert?: boolean; answerBody?: string } = {},
+  ): Promise<{ faqId: string }> {
+    const res = await apiClient.post<ApiSuccess<{ faqId: string }>>(
+      `/api/moderation/questions/${questionId}/convert-to-faq`,
+      opts,
+    );
+    return res.data.data;
+  },
+
+  async convertAnswerToFaq(answerId: string): Promise<{ faqId: string }> {
+    const res = await apiClient.post<ApiSuccess<{ faqId: string }>>(
+      `/api/moderation/faq-candidates/${answerId}/convert`,
+    );
+    return res.data.data;
   },
 };
 

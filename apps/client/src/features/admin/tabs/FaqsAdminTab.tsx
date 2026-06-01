@@ -39,11 +39,11 @@ const DEFAULT_VISIBLE: Record<ColKey, boolean> = {
 };
 
 function buildGrid(vis: Record<ColKey, boolean>): string {
-  const cols = ['52px', 'minmax(0,1fr)'];
-  if (vis.details)    cols.push('minmax(0,1.4fr)');
-  if (vis.engagement) cols.push('160px');
-  if (vis.flag)       cols.push('140px');
-  if (vis.actions)    cols.push('130px');
+  const cols = ['52px', 'minmax(0,2.5fr)'];
+  if (vis.details)    cols.push('minmax(0,1fr)');
+  if (vis.engagement) cols.push('120px');
+  if (vis.flag)       cols.push('100px');
+  if (vis.actions)    cols.push('110px');
   return cols.join(' ');
 }
 
@@ -331,10 +331,12 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
           <ColHead>Question</ColHead>
           {visibleCols.details && (
             <ColHead>
-              <span>Details</span>
-              <span style={{ fontSize: 11, fontWeight: 400, color: C.muted, marginLeft: 8 }}>
-                Category · Status · Updated
-              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span>Details</span>
+                <span style={{ fontSize: 10, fontWeight: 400, color: C.muted }}>
+                  Category · Status · Updated
+                </span>
+              </div>
             </ColHead>
           )}
           {visibleCols.engagement && (
@@ -345,9 +347,7 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
             </ColHead>
           )}
           {visibleCols.flag && (
-            <ColHead>
-              <Flag size={14} color={C.muted} />
-            </ColHead>
+            <ColHead>Flag</ColHead>
           )}
           {visibleCols.actions && <ColHead>Actions</ColHead>}
         </div>
@@ -568,24 +568,18 @@ function FaqRow({
           <div>
             {flagCount > 0 ? (
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-                  <Flag size={13} color={C.flagBadge.fg} strokeWidth={2} />
-                  <span style={{
-                    fontSize: 12, fontWeight: 700, padding: '2px 10px', borderRadius: 20,
-                    background: C.flagBadge.bg, color: C.flagBadge.fg,
-                  }}>
-                    Flagged
-                  </span>
-                </div>
-                <p style={{ margin: 0, fontSize: 11, color: C.muted }}>
+                <span style={{
+                  fontSize: 12, fontWeight: 700, padding: '2px 10px', borderRadius: 20,
+                  background: C.flagBadge.bg, color: C.flagBadge.fg,
+                }}>
+                  Flagged
+                </span>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: C.muted }}>
                   by {flagCount} student{flagCount === 1 ? '' : 's'}
                 </p>
               </div>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Flag size={14} color={C.flagNone} strokeWidth={1.5} />
-                <span style={{ fontSize: 13, color: C.flagNone }}>—</span>
-              </div>
+              <span style={{ fontSize: 13, color: C.flagNone }}>—</span>
             )}
           </div>
         )}

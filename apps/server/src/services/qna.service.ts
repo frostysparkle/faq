@@ -546,9 +546,9 @@ export const qnaService = {
   },
 
   async listAnswers(questionId: string, viewerId: string, role: UserRole): Promise<PublicAnswer[]> {
-    // Students only see approved answers. Moderators/admins see all.
+    // All roles see all answers. Moderators/admins additionally see rejected ones.
     const filter: FilterQuery<AnswerDocument> = { questionId };
-    if (role === 'student') filter.status = 'approved';
+    if (role === 'student') filter.status = { $in: ['pending', 'approved'] };
 
     const answers = await AnswerModel.find(filter)
       .select('+upvotes +downvotes')
@@ -609,11 +609,12 @@ export const qnaService = {
     answerId: string,
     userId: string,
     direction: 'up' | 'down',
+    allowPending = false,
   ): Promise<{ upvoteCount: number; downvoteCount: number; myVote: 'up' | 'down' | null }> {
     const userObjId = new Types.ObjectId(userId);
     const answer = await AnswerModel.findById(answerId).select('+upvotes +downvotes');
     if (!answer) throw ApiError.notFound('Answer not found');
-    if (answer.status !== 'approved') throw ApiError.forbidden('Answer is not yet approved');
+    if (answer.status !== 'approved' && !allowPending) throw ApiError.forbidden('Answer is not yet approved');
     if (answer.answeredBy.toString() === userId) {
       throw ApiError.forbidden('You cannot vote on your own answer');
     }

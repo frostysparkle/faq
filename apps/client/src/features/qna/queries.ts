@@ -119,3 +119,33 @@ export function useRespondToPersonal() {
     },
   });
 }
+
+export function useConvertQuestionToFaq() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      questionId,
+      removeAndConvert,
+      answerBody,
+    }: {
+      questionId: string;
+      removeAndConvert?: boolean;
+      answerBody?: string;
+    }) => moderationApi.convertQuestionToFaq(questionId, { removeAndConvert, answerBody }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qnaKeys.all });
+      void qc.invalidateQueries({ queryKey: qnaKeys.pendingAnswers });
+    },
+  });
+}
+
+export function useConvertAnswerToFaq() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (answerId: string) => moderationApi.convertAnswerToFaq(answerId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qnaKeys.all });
+      void qc.invalidateQueries({ queryKey: qnaKeys.pendingAnswers });
+    },
+  });
+}

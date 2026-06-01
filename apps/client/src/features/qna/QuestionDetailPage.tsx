@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronDown, ChevronLeft, ChevronUp, MessageSquare, ThumbsDown, ThumbsUp, Check } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronUp, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { COMMUNITY_ANSWER_CAP } from '@samagama/shared';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -15,106 +15,114 @@ export function QuestionDetailPage() {
   const { data: answers, isLoading: aLoading } = useAnswers(id);
   const [reveal, setReveal] = useState<'top' | 'three' | 'all'>('top');
   const [showAnswerForm, setShowAnswerForm] = useState(false);
+  const [answersOpen, setAnswersOpen] = useState(true);
 
   const visibleAnswers = useMemo(() => {
     if (!answers) return [];
-    const approved = answers.filter((a) => a.status === 'approved');
-    if (reveal === 'top') return approved.slice(0, 1);
-    if (reveal === 'three') return approved.slice(0, 3);
-    return approved.slice(0, COMMUNITY_ANSWER_CAP);
+    if (reveal === 'top') return answers.slice(0, 1);
+    if (reveal === 'three') return answers.slice(0, 3);
+    return answers.slice(0, COMMUNITY_ANSWER_CAP);
   }, [answers, reveal]);
 
-  const allApprovedCount = answers?.filter((a) => a.status === 'approved').length ?? 0;
   const totalAnswers = answers?.length ?? 0;
   const capReached = totalAnswers >= COMMUNITY_ANSWER_CAP;
 
-  if (qLoading) return <div className="mod-card mod-card-blue" style={{ padding: 24 }}>Loading…</div>;
-  if (!question) return <div className="mod-card mod-card-red" style={{ padding: 24 }}>Question not found.</div>;
+  if (qLoading) return <div className="mod-card mod-card-blue" style={{ padding: 16 }}>Loading…</div>;
+  if (!question) return <div className="mod-card mod-card-red" style={{ padding: 16 }}>Question not found.</div>;
 
   const isOwnQuestion = user?.id === question.author.id;
 
   return (
-    <div style={{ maxWidth: 860, margin: '0 auto' }}>
+    <div style={{ maxWidth: 800, margin: '0 auto' }}>
       {/* Back */}
-      <button onClick={() => navigate(-1)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: 12, marginBottom: 14, fontFamily: 'inherit' }}>
+      <button onClick={() => navigate(-1)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: 12, marginBottom: 10, fontFamily: 'inherit' }}>
         <ChevronLeft size={14} /> Back
       </button>
 
-      {/* Question card */}
-      <div className="mod-card mod-card-blue" style={{ marginBottom: 16 }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 20px 0' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--color-primary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <MessageSquare size={17} color="var(--color-primary)" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>Community Question</span>
-          </div>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            {question.category && <Badge color="accent">{question.category.name}</Badge>}
-            <Badge color={question.type === 'personal' ? 'warning' : 'default'}>{question.type}</Badge>
-            <Badge color={statusColor(question.status)}>{question.status}</Badge>
-          </div>
+      {/* ── Question card (prominent) ── */}
+      <div className="mod-card mod-card-blue" style={{ padding: '16px 18px', marginBottom: 10 }}>
+        {/* Badges row */}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
+          {question.category && <Badge color="accent">{question.category.name}</Badge>}
+          <Badge color={question.type === 'personal' ? 'warning' : 'default'}>{question.type}</Badge>
+          <Badge color={statusColor(question.status)}>{question.status}</Badge>
         </div>
-
-        {/* Body */}
-        <div style={{ padding: '14px 20px 20px' }}>
-          <div style={{ fontSize: 15, color: 'var(--color-text)', lineHeight: 1.7, whiteSpace: 'pre-wrap', fontWeight: 500 }}>
-            {question.description}
-          </div>
-          <div style={{ marginTop: 14, fontSize: 12, color: 'var(--color-text-muted)' }}>
-            Asked by <strong>{question.author.name}</strong>
-          </div>
+        {/* Question text — main focus */}
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-text)', lineHeight: 1.65, whiteSpace: 'pre-wrap', marginBottom: 10 }}>
+          {question.description}
+        </div>
+        {/* Meta */}
+        <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+          Asked by <strong>{question.author.name}</strong>
         </div>
       </div>
 
       {question.type === 'personal' ? (
-        <div className="mod-card mod-card-purple" style={{ padding: '18px 20px' }}>
-          <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
-            Personal questions are answered directly by moderators. Peer answers are not enabled for this thread.
-          </div>
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', padding: '10px 14px', background: 'var(--color-input)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
+          Personal questions are answered directly by moderators. Peer answers are not enabled for this thread.
         </div>
       ) : (
         <>
-          {!aLoading && allApprovedCount === 0 ? (
-            <div className="mod-card mod-card-green" style={{ padding: 32, textAlign: 'center' }}>
-              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--color-success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
-                <MessageSquare size={22} color="var(--color-success)" />
-              </div>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>No approved answers yet</div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Be the first to share what worked for you.</div>
-            </div>
-          ) : (
-            <AnswerDropdown
-              count={allApprovedCount} cap={COMMUNITY_ANSWER_CAP}
-              isLoading={aLoading} answers={visibleAnswers}
-              questionId={question.id} userId={user?.id}
-              hiddenCount={allApprovedCount - visibleAnswers.length}
-              reveal={reveal} setReveal={setReveal}
-            />
-          )}
-
-          {!isOwnQuestion && question.status !== 'resolved' && question.status !== 'archived' && (
-            <div style={{ marginTop: 16 }}>
-              {capReached ? (
-                <div className="mod-card mod-card-orange" style={{ padding: '16px 20px' }}>
-                  <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
-                    This question has reached the maximum of {COMMUNITY_ANSWER_CAP} answers. You can still upvote or downvote existing answers.
-                  </div>
+          {/* ── Answers section ── */}
+          <div className="mod-card mod-card-green" style={{ padding: '12px 16px', marginBottom: 10 }}>
+            {/* Compact header row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: answersOpen ? 10 : 0 }}>
+              <button onClick={() => setAnswersOpen((v) => !v)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)' }}>
+                  Answers ({totalAnswers}/{COMMUNITY_ANSWER_CAP})
+                </span>
+                {answersOpen ? <ChevronUp size={14} color="var(--color-text-muted)" /> : <ChevronDown size={14} color="var(--color-text-muted)" />}
+              </button>
+              {/* Show more controls inline */}
+              {answersOpen && totalAnswers > 1 && (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {reveal !== 'three' && totalAnswers > 1 && totalAnswers <= 3 || (reveal === 'top' && totalAnswers > 1) ? (
+                    <Button variant="ghost" size="sm" onClick={() => setReveal('three')}>Show top 3</Button>
+                  ) : null}
+                  {(reveal === 'top' || reveal === 'three') && totalAnswers > 3 && (
+                    <Button variant="ghost" size="sm" onClick={() => setReveal('all')}>Show all ({totalAnswers})</Button>
+                  )}
+                  {reveal !== 'top' && (
+                    <Button variant="ghost" size="sm" onClick={() => setReveal('top')}>Show less</Button>
+                  )}
                 </div>
-              ) : !showAnswerForm ? (
-                <button onClick={() => setShowAnswerForm(true)} style={{
-                  padding: '10px 24px', borderRadius: 10, border: 'none',
-                  background: 'var(--color-success)', color: 'white',
-                  fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
-                  boxShadow: '0 4px 12px rgba(16,185,129,0.25)',
-                }}>
-                  Answer this question
-                </button>
-              ) : (
-                <AnswerPopup questionId={question.id} showConfirmation={allApprovedCount > 0} onClose={() => setShowAnswerForm(false)} />
               )}
             </div>
+
+            {answersOpen && (
+              <>
+                {aLoading && <div style={{ fontSize: 12, color: 'var(--color-text-muted)', padding: '8px 0' }}>Loading answers…</div>}
+                {!aLoading && totalAnswers === 0 && (
+                  <div style={{ fontSize: 12, color: 'var(--color-text-muted)', padding: '6px 0' }}>
+                    No answers yet — be the first to share what worked for you.
+                  </div>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {visibleAnswers.map((a) => (
+                    <AnswerCard key={a.id} answer={a} questionId={question.id} canVote={!!user?.id && user.id !== a.author.id} voteMutationKey={question.id} />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* ── Answer this question ── */}
+          {!isOwnQuestion && question.status !== 'resolved' && question.status !== 'archived' && (
+            capReached ? (
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', padding: '8px 12px', background: 'var(--color-input)', borderRadius: 8, border: '1px solid var(--color-border)', marginBottom: 8 }}>
+                Max {COMMUNITY_ANSWER_CAP} answers reached — you can still vote on existing answers.
+              </div>
+            ) : !showAnswerForm ? (
+              <button onClick={() => setShowAnswerForm(true)} style={{
+                padding: '9px 20px', borderRadius: 8, border: 'none',
+                background: 'var(--color-success)', color: 'white',
+                fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+              }}>
+                Answer this question
+              </button>
+            ) : (
+              <AnswerPopup questionId={question.id} showConfirmation={totalAnswers > 0} onClose={() => setShowAnswerForm(false)} />
+            )
           )}
         </>
       )}
@@ -122,44 +130,37 @@ export function QuestionDetailPage() {
   );
 }
 
-function AnswerDropdown({ count, cap, isLoading, answers, questionId, userId, hiddenCount, reveal, setReveal }: {
-  count: number; cap: number; isLoading: boolean;
-  answers: import('@samagama/shared').PublicAnswer[];
-  questionId: string; userId: string | undefined;
-  hiddenCount: number; reveal: 'top' | 'three' | 'all';
-  setReveal: (r: 'top' | 'three' | 'all') => void;
+function AnswerCard({ answer, questionId, canVote, voteMutationKey }: {
+  answer: import('@samagama/shared').PublicAnswer;
+  questionId: string;
+  canVote: boolean;
+  voteMutationKey: string;
 }) {
-  const [open, setOpen] = useState(true);
-
+  const vote = useVoteAnswer(voteMutationKey);
   return (
-    <div>
-      {/* Section heading */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-        <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--color-card)', boxShadow: '0 2px 8px rgba(16,185,129,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Check size={16} color="var(--color-success)" />
+    <div style={{
+      background: 'var(--color-input)', border: '1px solid var(--color-border)',
+      borderLeft: '3px solid var(--color-success)',
+      borderRadius: 8, padding: '10px 12px',
+    }}>
+      {/* Author + status + votes all on one row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--color-success)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white', flexShrink: 0 }}>
+          {answer.author.name.charAt(0).toUpperCase()}
         </div>
-        <button onClick={() => setOpen((v) => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
-          <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>
-            Answers ({count}/{cap})
-          </span>
-          {open ? <ChevronUp size={18} color="var(--color-text-muted)" /> : <ChevronDown size={18} color="var(--color-text-muted)" />}
-        </button>
+        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text)' }}>{answer.author.name}</span>
+        <Badge color={answer.status === 'approved' ? 'success' : 'default'}>{answer.status}</Badge>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+          <VoteButton disabled={!canVote || vote.isPending} active={answer.myVote === 'up'} onClick={() => vote.mutate({ answerId: answer.id, direction: 'up' })}>
+            <ThumbsUp size={11} /> {answer.upvoteCount}
+          </VoteButton>
+          <VoteButton disabled={!canVote || vote.isPending} active={answer.myVote === 'down'} onClick={() => vote.mutate({ answerId: answer.id, direction: 'down' })}>
+            <ThumbsDown size={11} /> {answer.downvoteCount}
+          </VoteButton>
+        </div>
       </div>
-
-      {open && (
-        <>
-          {isLoading && <div className="mod-card mod-card-green" style={{ padding: 20 }}>Loading answers…</div>}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
-            {answers.map((a) => <AnswerCard key={a.id} answer={a} questionId={questionId} canVote={!!userId && userId !== a.author.id} />)}
-          </div>
-          {hiddenCount > 0 && (
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              {reveal === 'top' && count > 1 && <Button variant="ghost" size="sm" onClick={() => setReveal('three')}>Show top 3</Button>}
-              {(reveal === 'top' || reveal === 'three') && count > 3 && <Button variant="ghost" size="sm" onClick={() => setReveal('all')}>Show all ({count})</Button>}
-            </div>
-          )}
-        </>
-      )}
+      {/* Body */}
+      <div style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--color-text)', whiteSpace: 'pre-wrap' }}>{answer.body}</div>
     </div>
   );
 }
@@ -181,77 +182,42 @@ function AnswerPopup({ questionId, showConfirmation, onClose }: { questionId: st
   };
 
   return (
-    <div className="mod-card mod-card-green">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 20px 0' }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--color-success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Check size={17} color="var(--color-success)" />
-        </div>
-        <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>Your Answer</span>
-      </div>
-      <div style={{ padding: '14px 20px 20px' }}>
-        {showConfirmation && !confirmedAnswersInadequate ? (
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Are you sure the existing answers are not up to the mark?</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button variant="ghost" size="sm" onClick={onClose}>No, existing answers are fine</Button>
-              <Button size="sm" onClick={() => setConfirmedAnswersInadequate(true)}>Yes, I'll add a new answer</Button>
-            </div>
+    <div className="mod-card mod-card-green" style={{ padding: '14px 16px' }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', marginBottom: 10 }}>Your Answer</div>
+      {showConfirmation && !confirmedAnswersInadequate ? (
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Are you sure the existing answers are not up to the mark?</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button variant="ghost" size="sm" onClick={onClose}>No, existing are fine</Button>
+            <Button size="sm" onClick={() => setConfirmedAnswersInadequate(true)}>Yes, I'll add one</Button>
           </div>
-        ) : (
-          <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 7 }}>Your answer</label>
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={5}
-              placeholder="Share what worked for you. Be specific and link to official sources where possible."
-              style={{ width: '100%', background: 'var(--color-input)', border: '1.5px solid var(--color-border)', borderRadius: 10, padding: '10px 14px', color: 'var(--color-text)', fontSize: 13, fontFamily: 'inherit', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
-            />
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12, color: 'var(--color-text-muted)', cursor: 'pointer' }}>
-              <input type="checkbox" checked={assumeCorrect} onChange={(e) => setAssumeCorrect(e.target.checked)} style={{ accentColor: 'var(--color-success)' }} />
-              I assume that the answer I provided is correct.
-            </label>
-            {bodyError && <div role="alert" style={{ marginTop: 8, fontSize: 12, color: 'var(--color-danger)' }}>{bodyError}</div>}
-            {submit.isError && <div role="alert" style={{ marginTop: 8, background: 'var(--color-danger-bg)', color: 'var(--color-danger)', borderRadius: 8, padding: '6px 10px', fontSize: 12 }}>{submit.error instanceof Error ? submit.error.message : 'Could not submit answer'}</div>}
-            <div style={{ marginTop: 10, fontSize: 12, color: 'var(--color-text-muted)' }}>Your answer will be reviewed by a moderator before it appears publicly.</div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 14, justifyContent: 'flex-end' }}>
+        </div>
+      ) : (
+        <div>
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={4}
+            placeholder="Share what worked for you. Be specific and link to official sources where possible."
+            style={{ width: '100%', background: 'var(--color-input)', border: '1.5px solid var(--color-border)', borderRadius: 8, padding: '8px 12px', color: 'var(--color-text)', fontSize: 13, fontFamily: 'inherit', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+          />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12, color: 'var(--color-text-muted)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={assumeCorrect} onChange={(e) => setAssumeCorrect(e.target.checked)} style={{ accentColor: 'var(--color-success)' }} />
+            I believe my answer is correct.
+          </label>
+          {bodyError && <div role="alert" style={{ marginTop: 6, fontSize: 12, color: 'var(--color-danger)' }}>{bodyError}</div>}
+          {submit.isError && <div role="alert" style={{ marginTop: 6, background: 'var(--color-danger-bg)', color: 'var(--color-danger)', borderRadius: 6, padding: '5px 10px', fontSize: 12 }}>{submit.error instanceof Error ? submit.error.message : 'Could not submit answer'}</div>}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, gap: 8 }}>
+            <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Visible immediately · reviewed by moderator</span>
+            <div style={{ display: 'flex', gap: 8 }}>
               <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
               <Button size="sm" onClick={handleSubmit} disabled={submit.isPending || !assumeCorrect || body.trim().length < 10}>
-                {submit.isPending ? 'Submitting…' : 'Submit answer'}
+                {submit.isPending ? 'Submitting…' : 'Submit'}
               </Button>
             </div>
           </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function AnswerCard({ answer, questionId, canVote }: { answer: import('@samagama/shared').PublicAnswer; questionId: string; canVote: boolean }) {
-  const vote = useVoteAnswer(questionId);
-  return (
-    <div className="mod-card mod-card-green" style={{ padding: '16px 18px' }}>
-      {/* Author row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--color-success)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'white', flexShrink: 0 }}>
-          {answer.author.name.charAt(0).toUpperCase()}
         </div>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)' }}>{answer.author.name}</div>
-        </div>
-        <div style={{ marginLeft: 'auto' }}>
-          <Badge color="success">approved</Badge>
-        </div>
-      </div>
-      <div style={{ fontSize: 14, lineHeight: 1.65, whiteSpace: 'pre-wrap', color: 'var(--color-text)', marginBottom: 14 }}>{answer.body}</div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-        <VoteButton disabled={!canVote || vote.isPending} active={answer.myVote === 'up'} onClick={() => vote.mutate({ answerId: answer.id, direction: 'up' })}>
-          <ThumbsUp size={12} /> {answer.upvoteCount}
-        </VoteButton>
-        <VoteButton disabled={!canVote || vote.isPending} active={answer.myVote === 'down'} onClick={() => vote.mutate({ answerId: answer.id, direction: 'down' })}>
-          <ThumbsDown size={12} /> {answer.downvoteCount}
-        </VoteButton>
-      </div>
+      )}
     </div>
   );
 }
@@ -259,12 +225,12 @@ function AnswerCard({ answer, questionId, canVote }: { answer: import('@samagama
 function VoteButton({ children, active, disabled, onClick }: { children: React.ReactNode; active: boolean; disabled: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 20,
+      display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 20,
       background: active ? 'var(--color-success-bg)' : 'transparent',
       color: active ? 'var(--color-success)' : 'var(--color-text-muted)',
       border: `1.5px solid ${active ? 'var(--color-success)' : 'var(--color-border)'}`,
       cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1,
-      fontSize: 12, fontFamily: 'inherit', fontWeight: 600, transition: 'all 0.15s',
+      fontSize: 11, fontFamily: 'inherit', fontWeight: 600, transition: 'all 0.15s',
     }}>{children}</button>
   );
 }

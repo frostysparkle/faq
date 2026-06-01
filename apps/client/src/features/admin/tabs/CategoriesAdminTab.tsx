@@ -34,7 +34,7 @@ export function CategoriesAdminTab() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
           gap: 10,
         }}
       >
@@ -81,7 +81,6 @@ function CategoryForm({
   onClose: () => void;
 }) {
   const [name, setName] = useState(existing?.name ?? '');
-  const [description, setDescription] = useState(existing?.description ?? '');
   const create = useCreateCategory();
   const update = useUpdateCategory();
   const error = create.error ?? update.error;
@@ -89,9 +88,9 @@ function CategoryForm({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (existing) {
-      await update.mutateAsync({ id: existing._id, input: { name, description } });
+      await update.mutateAsync({ id: existing._id, input: { name } });
     } else {
-      await create.mutateAsync({ name, description, keywords: [] });
+      await create.mutateAsync({ name, keywords: [] });
     }
     onClose();
   };
@@ -109,17 +108,6 @@ function CategoryForm({
             required
             minLength={2}
             maxLength={80}
-            style={inputStyle}
-          />
-        </div>
-        <div style={{ flex: 1 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>
-            Description
-          </label>
-          <input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            maxLength={500}
             style={inputStyle}
           />
         </div>

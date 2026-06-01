@@ -75,7 +75,8 @@ export const qnaController = {
   async voteAnswer(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized();
     const direction = req.params.direction === 'up' ? 'up' : 'down';
-    const result = await qnaService.voteAnswer(req.params.id!, req.user.id, direction);
+    const allowPending = req.query.allowPending === 'true';
+    const result = await qnaService.voteAnswer(req.params.id!, req.user.id, direction, allowPending);
     return ok(res, result);
   },
 };

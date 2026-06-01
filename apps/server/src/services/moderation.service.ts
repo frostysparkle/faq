@@ -7,6 +7,7 @@ import { AnswerModel } from '../models/Answer.model.js';
 import { QuestionModel } from '../models/Question.model.js';
 import { UserModel } from '../models/User.model.js';
 import { ApiError } from '../utils/api-error.js';
+import { generateEmbedding } from './embedding.service.js';
 export interface PendingAnswerRow {
   id: string;
   body: string;
@@ -14,6 +15,8 @@ export interface PendingAnswerRow {
   questionTitle: string;
   author: { id: string; name: string };
   taggedStudents: { id: string; name: string }[];
+  upvoteCount: number;
+  downvoteCount: number;
   createdAt: string;
 }
 
@@ -26,6 +29,8 @@ interface PopulatedPending {
     taggedStudents: { _id: Types.ObjectId; name: string }[];
   };
   answeredBy: { _id: Types.ObjectId; name: string };
+  upvoteCount: number;
+  downvoteCount: number;
   createdAt: Date;
 }
 
@@ -40,6 +45,8 @@ function projectPending(a: PopulatedPending): PendingAnswerRow {
       id: s._id.toString(),
       name: s.name,
     })),
+    upvoteCount: a.upvoteCount ?? 0,
+    downvoteCount: a.downvoteCount ?? 0,
     createdAt: a.createdAt.toISOString(),
   };
 }
@@ -225,12 +232,18 @@ export const moderationService = {
       summary: question.description.substring(0, 280),
       categories: question.category ? [question.category] : [],
       tags: question.tags ?? [],
-      status: 'draft',
+      status: 'published',
+      publishedAt: new Date(),
       sourceType: 'community_conversion',
       sourceQuestionId: question._id,
       createdBy: actorId,
       updatedBy: actorId,
     });
+
+    // Generate and store RAG embedding so the FAQ is immediately searchable via semantic search
+    void generateEmbedding(`${question.title} ${answer.body}`)
+      .then((embedding) => faq.updateOne({ embedding }).exec())
+      .catch(() => undefined);
 
     answer.convertedFaqId = faq._id as Types.ObjectId;
     await answer.save();
@@ -280,6 +293,46 @@ export const moderationService = {
     if (answer.status !== 'approved') throw ApiError.badRequest('Only approved answers can be marked for FAQ');
     answer.eligibleForFaqConversion = true;
     await answer.save();
+  },
+
+  /**
+   * Convert a community question directly to a FAQ draft.
+   * The question is marked archived.
+   * If removeAndConvert is true, the question is also archived before conversion.
+   */
+  async convertQuestionToFaq(
+    questionId: string,
+    actorId: string,
+    opts: { removeAndConvert?: boolean; answerBody?: string } = {},
+  ): Promise<{ faqId: string }> {
+    const question = await QuestionModel.findById(questionId);
+    if (!question) throw ApiError.notFound('Question not found');
+    if (question.type !== 'community') throw ApiError.badRequest('Only community questions can be converted to FAQ');
+    if (question.status === 'archived') throw ApiError.conflict('Question is already archived');
+
+    const { FaqModel } = await import('../models/Faq.model.js');
+
+    let faqAnswerBody = opts.answerBody ?? question.description;
+
+    const faq = await FaqModel.create({
+      title: question.title,
+      answer: faqAnswerBody,
+      summary: question.description.substring(0, 280),
+      categories: question.category ? [question.category] : [],
+      tags: question.tags ?? [],
+      status: 'draft',
+      sourceType: 'community_conversion',
+      sourceQuestionId: question._id,
+      createdBy: actorId,
+      updatedBy: actorId,
+    });
+
+    if (opts.removeAndConvert) {
+      question.status = 'archived';
+      await question.save();
+    }
+
+    return { faqId: faq._id.toString() };
   },
 };
 

@@ -82,5 +82,19 @@ export const moderationController = {
     await moderationService.markForFaq(req.params.id!);
     return noContent(res);
   },
+
+  /** Convert a community question to a FAQ draft. */
+  async convertQuestionToFaq(req: Request, res: Response) {
+    if (!req.user) throw ApiError.unauthorized();
+    const { removeAndConvert, answerBody } = (req.body ?? {}) as {
+      removeAndConvert?: boolean;
+      answerBody?: string;
+    };
+    const result = await moderationService.convertQuestionToFaq(req.params.id!, req.user.id, {
+      removeAndConvert,
+      answerBody,
+    });
+    return ok(res, result);
+  },
 };
 

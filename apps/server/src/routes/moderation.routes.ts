@@ -30,7 +30,6 @@ router.patch(
 router.get('/faq-candidates', asyncHandler(moderationController.listFaqCandidates));
 router.post(
   '/faq-candidates/:id/convert',
-  requireRole('admin'),
   asyncHandler(moderationController.convertToFaq),
 );
 router.patch('/answers/:id/mark-for-faq', asyncHandler(moderationController.markForFaq));
@@ -38,6 +37,11 @@ router.patch('/answers/:id/mark-for-faq', asyncHandler(moderationController.mark
 // Bulk operations
 router.post('/bulk-approve', asyncHandler(moderationController.bulkApprove));
 router.post('/bulk-reject', asyncHandler(moderationController.bulkReject));
+
+router.post(
+  '/questions/:id/convert-to-faq',
+  asyncHandler(moderationController.convertQuestionToFaq),
+);
 
 export const moderationRouter = router;
 
