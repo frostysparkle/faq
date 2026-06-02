@@ -54,6 +54,7 @@ export function AppShell() {
   if (!user) return null;
 
   return (
+    <>
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <Sidebar
         role={user.role}
@@ -203,8 +204,9 @@ export function AppShell() {
         </main>
       </div>
 
-      {user.role === 'student' && <ChatbotFab />}
     </div>
+    {user.role === 'student' && <ChatbotFab />}
+    </>
   );
 }
 
