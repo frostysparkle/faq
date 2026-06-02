@@ -200,6 +200,7 @@ export function ChatbotFab() {
         aria-label="Open Yaksha-mini chat"
         data-tooltip="Open Yaksha-mini chat"
         onClick={() => setOpen(true)}
+        style={{ position: 'fixed', right: '1.5rem', bottom: '1.5rem', left: 'auto', top: 'auto', zIndex: 9000 }}
       >
         <span className="ym-launcher-tooltip">Ask Yaksha-mini</span>
         <ChatBubbleIcon />
@@ -215,8 +216,14 @@ export function ChatbotFab() {
       id="ym-panel"
       aria-label="Yaksha-mini chat"
       style={{
+        position: 'fixed',
+        right: '1.5rem',
+        bottom: '1.5rem',
+        left: 'auto',
+        top: 'auto',
+        zIndex: 9100,
         '--ym-width': `${dimensions.width}px`,
-        '--ym-height': `${dimensions.height}px`
+        '--ym-height': `${dimensions.height}px`,
       } as React.CSSProperties}
     >
       <div className="ym-resize-handle top" onPointerDown={(e) => startResize('top', e)} />
