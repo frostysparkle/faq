@@ -100,7 +100,7 @@ export const moderationApi = {
   },
   async approveAnswer(
     id: string,
-    input: { editedBody?: string; note?: string; spurtiPoints?: number } = {},
+    input: { editedBody?: string; note?: string; spurtiPoints?: number; visibilityDays?: 2 | 3 | 7 | null } = {},
   ): Promise<void> {
     await apiClient.patch(`/api/moderation/answers/${id}/approve`, input);
   },
@@ -127,6 +127,33 @@ export const moderationApi = {
     );
     return res.data.data;
   },
+
+  async listTrash(): Promise<TrashedQuestionRow[]> {
+    const res = await apiClient.get<ApiSuccess<TrashedQuestionRow[]>>('/api/moderation/trash');
+    return res.data.data;
+  },
+
+  async restoreQuestion(questionId: string): Promise<void> {
+    await apiClient.patch(`/api/moderation/trash/${questionId}/restore`);
+  },
 };
+
+export interface TrashedQuestionRow {
+  id: string;
+  title: string;
+  description: string;
+  author: { id: string; name: string };
+  answerCount: number;
+  trashedAt: string;
+  visibilityExpiresAt: string | null;
+  answers: Array<{
+    id: string;
+    body: string;
+    author: { id: string; name: string };
+    upvoteCount: number;
+    downvoteCount: number;
+    createdAt: string;
+  }>;
+}
 
 export type { PendingAnswerSummary };

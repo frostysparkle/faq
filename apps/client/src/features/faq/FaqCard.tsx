@@ -9,18 +9,31 @@ const STATUS_COLOR = {
   draft: 'default', published: 'success', outdated: 'warning', archived: 'default',
 } as const;
 
-interface FaqCardProps { faq: PublicFaq; role: UserRole; }
+interface FaqCardProps {
+  faq: PublicFaq;
+  role: UserRole;
+  /** Controlled expanded state — when provided the card uses it instead of internal state. */
+  expanded?: boolean;
+  /** Called when the header is clicked in controlled mode. */
+  onToggle?: () => void;
+}
 
-export function FaqCard({ faq, role }: FaqCardProps) {
-  const [expanded, setExpanded] = useState(false);
+export function FaqCard({ faq, role, expanded: expandedProp, onToggle }: FaqCardProps) {
+  const [expandedInternal, setExpandedInternal] = useState(false);
+  const expanded = expandedProp !== undefined ? expandedProp : expandedInternal;
+
   const [selectedRating, setSelectedRating] = useState<'helpful' | 'unhelpful' | null>(null);
   const recordView = useRecordFaqView();
   const feedback = useFaqFeedback(faq.id);
 
   const toggle = () => {
-    const next = !expanded;
-    setExpanded(next);
-    if (next && role === 'student') recordView.mutate(faq.id);
+    const isOpening = !expanded;
+    if (onToggle) {
+      onToggle();
+    } else {
+      setExpandedInternal(isOpening);
+    }
+    if (isOpening && role === 'student') recordView.mutate(faq.id);
   };
 
   const handleVote = (rating: 'helpful' | 'unhelpful') => {

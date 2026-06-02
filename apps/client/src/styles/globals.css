@@ -17,7 +17,7 @@
   --color-sidebar-section-line: rgba(0, 0, 0, 0.07);
   --color-sidebar-username: #111827;
   --color-sidebar-sub: #9ca3af;
-  --color-sidebar-logout: #d1d5db;
+  --color-sidebar-logout: #6b7280;
   --color-topbar: #ffffff;
   --color-card: #ffffff;
   --color-text: #0f172a;
@@ -70,7 +70,7 @@
   --color-sidebar-section-line: rgba(255, 255, 255, 0.07);
   --color-sidebar-username: #ffffff;
   --color-sidebar-sub: rgba(255, 255, 255, 0.42);
-  --color-sidebar-logout: rgba(255, 255, 255, 0.35);
+  --color-sidebar-logout: rgba(255, 255, 255, 0.65);
   --color-topbar: #131e30;
   --color-card: #131e30;
   --color-text: #f1f5f9;
@@ -466,4 +466,74 @@ main > * { animation: pageIn 0.22s ease-out; }
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ── Tooltip bubbles ─────────────────────────────────────────────────────────
+   Attach a tooltip to any element by setting [data-tooltip="label"].
+   Buttons with aria-label automatically get a tooltip from that attribute.
+   The bubble appears above the element with a small downward arrow.
+────────────────────────────────────────────────────────────────────────────── */
+[data-tooltip],
+button[aria-label] {
+  position: relative;
+}
+
+[data-tooltip]::after,
+button[aria-label]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: #1e293b;
+  color: #f8fafc;
+  padding: 5px 10px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+  z-index: 9999;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+  font-family: inherit;
+  line-height: 1;
+}
+
+button[aria-label]::after {
+  content: attr(aria-label);
+}
+
+/* Override: if an element has BOTH, data-tooltip wins */
+[data-tooltip]::after {
+  content: attr(data-tooltip) !important;
+}
+
+[data-tooltip]::before,
+button[aria-label]::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #1e293b;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.14s ease;
+  z-index: 9999;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before,
+button[aria-label]:hover::after,
+button[aria-label]:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+button[aria-label]:hover::before {
+  transform: translateX(-50%);
 }

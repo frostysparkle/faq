@@ -25,37 +25,36 @@ const STUDENT_EMAILS = [
   'nandini@samagama.test',
 ];
 
-const QUESTIONS = [
-  'I completed my interview but my dashboard still shows "Incomplete". When will it update?',
-  'Yaksha confirmed my interview was completed but the portal shows "Interview Interrupted". Why?',
-  'My NOC was uploaded and validated over 48 hours ago but I still have not received the formal offer letter.',
-  'My NOC shows as validated but my offer letter still says "NOC Pending". Please fix this.',
-  'I registered for the Zoom meeting but it says registration error or wrong passcode.',
-  'The Vicharanashala-Summership WhatsApp group shows as full. How can I join?',
-  'My acceptance email bounced with "address not found". What should I do?',
-  'Do I need to print and sign the offer letter physically, or can I sign it digitally?',
-  'The internship dates on my dashboard are locked. How can I change them?',
-  'My college is refusing to give me an NOC for this unpaid internship. Is there an alternative?',
-  'I have not received any Zoom meeting link for today\'s session. When will I get it?',
-  'I received my offer letter but haven\'t received the Phase 1 / Bronze course link on ViBe.',
-  'My internship started but no mentor has been assigned to me yet.',
-  'I completed all the steps but my portal dashboard is not updating. What should I do?',
-  'My internship start date was 3 days ago but I still have not received any onboarding details.',
-  'Do we get leaves during the internship? What about weekends and emergency situations?',
-  'Is the internship self-paced or are there fixed timings for sessions?',
-  'Will we get a Zoom link every day or are sessions conducted through the Samagama dashboard?',
-  'I missed the orientation session. Can I get the recording or make up for it?',
-  'My Spurti Points are showing as zero even though my internship started.',
-  'My college requires an official selection/confirmation letter before they will sign the NOC.',
-  'I want to cancel or withdraw from the internship. What is the process?',
-  'There is a spelling error in my name on the offer letter. How do I get it corrected?',
-  'I am unable to interact with Yaksha. The chat is not working properly.',
-  'I cannot create an account on ViBe or access the course platform.',
-  'I am an NPTEL Gold/Elite student — am I eligible for the ₹5,000 stipend?',
-  'My internship starts next month but I received a Zoom standup link. Should I attend?',
-  'I signed and sent the acceptance email 3 days ago but received no confirmation.',
-  'I replied with "reply" instead of "reply all" to the acceptance email. Should I resend?',
-  'My college provides NOC in its own format. Will it be accepted by IIT Ropar?',
+const QUESTIONS: { title: string; description: string }[] = [
+  { title: 'Dashboard still shows interview incomplete', description: 'I completed my interview and Yaksha confirmed it, but my dashboard still shows "Incomplete". It has been more than 24 hours. When will the status update?' },
+  { title: 'Portal shows Interview Interrupted after Yaksha', description: 'Yaksha said my interview was completed successfully, but the portal shows "Interview Interrupted". The discrepancy is confusing — which status should I trust?' },
+  { title: 'Offer letter not received after NOC validation', description: 'My NOC was uploaded and validated over 48 hours ago but I still have not received the formal offer letter. Is there a delay or did something go wrong?' },
+  { title: 'Offer letter still says NOC Pending after upload', description: 'My dashboard shows my NOC as validated, but the offer letter still displays "NOC Pending". This mismatch is preventing me from proceeding. Please advise.' },
+  { title: 'Zoom meeting registration error or wrong passcode', description: 'I registered for the orientation Zoom meeting but get a "registration error" or "wrong passcode" message when trying to join. What is the correct link or passcode?' },
+  { title: 'WhatsApp group is full — how to join', description: 'The Vicharanashala-Summership WhatsApp group shows as full when I try to join. I need to be in the group to receive important updates. Is there an alternate channel?' },
+  { title: 'Acceptance email bounced with address not found', description: 'When I tried to send my signed acceptance email, it bounced with an "address not found" error. What is the correct email address I should be sending it to?' },
+  { title: 'Digital vs physical signature on offer letter', description: 'Do I need to print and physically sign the offer letter, or is a digital signature acceptable? Also, which email address should I use to send the signed copy back?' },
+  { title: 'Cannot change locked internship dates on dashboard', description: 'The internship start and end dates on my dashboard appear locked with no edit option. I need to change them due to my college examination schedule. How can I request a date change?' },
+  { title: 'College refusing to give NOC for unpaid internship', description: 'My college administration is refusing to issue an NOC because the internship is unpaid. Is there any alternative document or workaround that Samagama accepts in place of an NOC?' },
+  { title: 'No Zoom meeting link received for today', description: 'I have not received any Zoom meeting link for today\'s scheduled session. My email shows no invite. When will I get the link, or where can I find it on the portal?' },
+  { title: 'No ViBe course link in offer letter email', description: 'My offer letter arrived but there is no link to the Phase 1 / Bronze course on the ViBe platform. When will I receive the course access link, and where should I look for it?' },
+  { title: 'No mentor assigned after internship started', description: 'My internship officially started but I have not been assigned a mentor yet. I need mentor guidance to begin my project work. When will the assignment happen?' },
+  { title: 'Portal dashboard not updating after completing steps', description: 'I have completed all the required onboarding steps but my portal dashboard is still showing them as incomplete. I have waited 24 hours with no change. What should I do?' },
+  { title: 'No onboarding details three days after start date', description: 'My internship start date was three days ago but I have received no onboarding materials, access credentials, or portal instructions. What is the next step?' },
+  { title: 'Leave policy — weekends and emergency situations', description: 'How many leaves are we allowed during the internship? Are weekends counted as working days? Is there any provision for emergency or medical leave without it affecting the stipend?' },
+  { title: 'Is the internship self-paced or fixed schedule', description: 'I want to manage the internship alongside my college timetable. Are there mandatory fixed session timings, or can I complete tasks at my own pace within the day?' },
+  { title: 'Are daily sessions on Zoom or Samagama dashboard', description: 'I am unsure how daily sessions are conducted. Will I receive a Zoom link each day, or are sessions and assignments delivered through the Samagama portal dashboard?' },
+  { title: 'Missed orientation — how to catch up', description: 'I missed the orientation session due to a technical issue on my end. Is there a recording I can access? Will missing orientation affect my internship evaluation or standing?' },
+  { title: 'Need selection letter for college NOC process', description: 'My college requires an official selection or confirmation letter from Samagama before they will issue the NOC. How can I get such a letter, and who should I contact?' },
+  { title: 'How to withdraw or cancel my internship', description: 'I need to cancel my internship due to personal circumstances. What is the official process for withdrawal? Will it affect my academic record or any future Samagama applications?' },
+  { title: 'Name spelling error in offer letter', description: 'There is a spelling mistake in my name on the offer letter I received. I need a corrected copy for submission to my college. How do I request a corrected letter?' },
+  { title: 'Yaksha chat not responding — shows interview timer', description: 'I am unable to interact with Yaksha through the chatbot. The interface shows an interview timer instead of the normal chat UI. How do I access the chat assistant?' },
+  { title: 'Cannot create ViBe account — button does nothing', description: 'I am trying to access the ViBe course platform but the "Create Account" button does nothing when I click it. I have tried different browsers. How do I get access?' },
+  { title: 'NPTEL Gold student stipend eligibility question', description: 'I received an email about a ₹5,000 stipend for NPTEL Gold or Elite students, but my portal dashboard shows "VINS (No Stipend)". Am I eligible, and what do I need to do to claim it?' },
+  { title: 'Received standup link before internship start date', description: 'My internship officially starts next month but I already received a Zoom standup meeting link for next week. Should I attend even though my start date has not arrived yet?' },
+  { title: 'No reply received after sending acceptance email', description: 'I signed and sent my acceptance email three days ago and have received no confirmation or acknowledgement. Is this normal, or should I send it again?' },
+  { title: 'Sent acceptance email with Reply instead of Reply All', description: 'I accidentally used "Reply" instead of "Reply All" when responding to the acceptance email. Will my acceptance still be registered? Should I send the email again?' },
+  { title: 'College NOC in its own format — will it be accepted', description: 'My college provides NOC documents only in their own institutional format rather than a standard template. Will Samagama or IIT Ropar accept a NOC in the college\'s own format?' },
 ];
 
 const ANSWER_BODIES = [
@@ -204,7 +203,7 @@ async function simulate() {
 
   for (let i = 0; i < shuffledQuestions.length; i++) {
     const student = shuffledStudents[i % shuffledStudents.length];
-    const title = shuffledQuestions[i];
+    const { title, description } = shuffledQuestions[i];
 
     const existing = await QuestionModel.findOne({ title, type: 'community' }).lean();
     if (existing) {
@@ -215,7 +214,7 @@ async function simulate() {
 
     const q = await QuestionModel.create({
       title,
-      description: `${title} — please help!`,
+      description,
       type: 'community',
       status: 'open',
       category: defaultCategory._id,

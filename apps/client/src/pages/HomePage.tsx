@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
-  ChevronDown, ChevronRight, ChevronUp,
+  ChevronsUpDown, ChevronDown, ChevronRight, ChevronUp,
   HelpCircle, MessageCircle, MessagesSquare, Sparkles,
   ThumbsDown, ThumbsUp,
 } from 'lucide-react';
@@ -53,9 +53,10 @@ function StudentHome() {
 
   return (
     <>
-      {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1.1fr', gap: 14, marginBottom: 24, alignItems: 'stretch' }}>
+      {/* Stat cards — 3-column layout: left & middle each have 2 stacked cards, right spans both rows */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gridTemplateRows: 'auto auto', gap: 14, marginBottom: 24 }}>
 
+        {/* Col 1 · Row 1 — Open Community Q&A */}
         <div className="mod-card mod-card-blue interactive" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-primary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <MessagesSquare size={20} color="var(--color-primary)" />
@@ -66,6 +67,7 @@ function StudentHome() {
           <MessagesSquare size={80} color="var(--color-primary)" style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06 }} />
         </div>
 
+        {/* Col 2 · Row 1 — Unanswered Q&A */}
         <div className="mod-card mod-card-orange interactive" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-warning-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <HelpCircle size={20} color="var(--color-warning)" />
@@ -76,6 +78,10 @@ function StudentHome() {
           <HelpCircle size={80} color="var(--color-warning)" style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06 }} />
         </div>
 
+        {/* Col 3 · Rows 1–2 — Idle bucket panel spanning full height */}
+        <IdleBucketCards style={{ marginBottom: 0, gridColumn: 3, gridRow: '1 / 3' }} />
+
+        {/* Col 1 · Row 2 — Questions Answered */}
         <div className="mod-card mod-card-green interactive" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <MessageCircle size={20} color="var(--color-success)" />
@@ -86,6 +92,7 @@ function StudentHome() {
           <MessageCircle size={80} color="var(--color-success)" style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06 }} />
         </div>
 
+        {/* Col 2 · Row 2 — Spurti Points */}
         <div className="mod-card mod-card-purple interactive" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-purple-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Sparkles size={20} color="var(--color-purple)" />
@@ -96,7 +103,6 @@ function StudentHome() {
           <Sparkles size={80} color="var(--color-purple)" style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06 }} />
         </div>
 
-        <IdleBucketCards style={{ marginBottom: 0 }} />
       </div>
 
       <ContentTabs />
@@ -153,6 +159,11 @@ const STATUS_COLOR = {
 function RecentFaqsList({ sort }: { sort: 'added' | 'recent' }) {
   const navigate = useNavigate();
   const { data, isLoading } = useFaqList({ sort, pageSize: 5 });
+  const [openIds, setOpenIds] = useState<Set<string>>(new Set());
+
+  const toggleFaq = (id: string) =>
+    setOpenIds((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+  const collapseAll = () => setOpenIds(new Set());
 
   if (isLoading) return <div className="mod-card mod-card-blue" style={{ padding: 20, color: 'var(--color-text-muted)', fontSize: 13 }}>Loading…</div>;
   if (!data || data.items.length === 0) return (
@@ -161,18 +172,44 @@ function RecentFaqsList({ sort }: { sort: 'added' | 'recent' }) {
     </div>
   );
 
+  const items = data.items.slice(0, 5);
+
   return (
     <>
+      {openIds.size >= 2 && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <button
+            onClick={collapseAll}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 8,
+              background: 'var(--color-input)', color: 'var(--color-text-muted)',
+              border: '1px solid var(--color-border)', cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            <ChevronsUpDown size={13} /> Collapse all
+          </button>
+        </div>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 10 }}>
-        {data.items.slice(0, 5).map((faq) => <FaqRowCard key={faq.id} faq={faq} />)}
+        {items.map((faq) => (
+          <FaqRowCard
+            key={faq.id}
+            faq={faq}
+            expanded={openIds.has(faq.id)}
+            onToggle={() => toggleFaq(faq.id)}
+          />
+        ))}
       </div>
       <ViewAll onClick={() => navigate('/faqs')} />
     </>
   );
 }
 
-function FaqRowCard({ faq }: { faq: PublicFaq }) {
-  const [expanded, setExpanded] = useState(false);
+function FaqRowCard({ faq, expanded: expandedProp, onToggle }: { faq: PublicFaq; expanded?: boolean; onToggle?: () => void }) {
+  const [expandedInternal, setExpandedInternal] = useState(false);
+  const expanded = expandedProp !== undefined ? expandedProp : expandedInternal;
+
   const [localVote, setLocalVote] = useState<'helpful' | 'unhelpful' | null>(null);
   const [counts, setCounts] = useState({ helpful: faq.helpfulCount ?? 0, unhelpful: faq.unhelpfulCount ?? 0 });
   const feedback = useFaqFeedback(faq.id);
@@ -195,7 +232,7 @@ function FaqRowCard({ faq }: { faq: PublicFaq }) {
     <div className="mod-card mod-card-blue">
       <div style={{ padding: '14px 18px 14px', display: 'flex', gap: 12, justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <button
-          onClick={() => setExpanded((v) => !v)}
+          onClick={() => { if (onToggle) onToggle(); else setExpandedInternal((v) => !v); }}
           aria-expanded={expanded}
           style={{ flex: 1, background: 'transparent', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: 'inherit', font: 'inherit' }}
         >

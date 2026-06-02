@@ -51,11 +51,13 @@ export interface PublicChatFeedback {
   comment?: string;
   user: { id: string; name: string };
   status: 'open' | 'reviewed' | 'resolved';
+  /** Full conversation snapshot; populated for feedback submitted after Phase 6. */
+  messages?: Array<{ role: 'user' | 'assistant'; content: string }>;
   createdAt: string;
 }
 
 export interface ChatbotFeedbackStats {
   total: number;
   helpful: number;
-  flagged: number;
+  unhelpful: number;
 }

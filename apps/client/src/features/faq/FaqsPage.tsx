@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BookOpen, ChevronDown, ChevronUp, LayoutGrid, RotateCcw, Search, SlidersHorizontal, Tag } from 'lucide-react';
+import { BookOpen, ChevronsUpDown, ChevronDown, ChevronUp, LayoutGrid, RotateCcw, Search, SlidersHorizontal, Tag } from 'lucide-react';
 import type { FaqListQuery, FaqStatus } from '@samagama/shared';
 import { FAQ_STATUSES } from '@samagama/shared';
 import { useAuth } from '../auth/AuthProvider';
@@ -17,9 +17,14 @@ export function FaqsPage() {
   const [categoryId, setCategoryId] = useState<string | undefined>();
   const [tagId, setTagId] = useState<string | undefined>();
   const [status, setStatus] = useState<FaqStatus | undefined>();
-  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [showAllCats, setShowAllCats] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
+  const [openIds, setOpenIds] = useState<Set<string>>(new Set());
+
+  const toggleFaq = (id: string) =>
+    setOpenIds((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+  const collapseAll = () => setOpenIds(new Set());
 
   useEffect(() => {
     const handle = setTimeout(() => setDebouncedSearch(searchInput.trim()), DEBOUNCE_MS);
@@ -181,8 +186,34 @@ export function FaqsPage() {
       )}
 
       {data && data.items.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {data.items.map((faq) => <FaqCard key={faq.id} faq={faq} role={user.role} />)}
+        <div>
+          {openIds.size >= 2 && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+              <button
+                onClick={collapseAll}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 8,
+                  background: 'var(--color-input)', color: 'var(--color-text-muted)',
+                  border: '1px solid var(--color-border)', cursor: 'pointer', fontFamily: 'inherit',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <ChevronsUpDown size={13} /> Collapse all
+              </button>
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {data.items.map((faq) => (
+              <FaqCard
+                key={faq.id}
+                faq={faq}
+                role={user.role}
+                expanded={openIds.has(faq.id)}
+                onToggle={() => toggleFaq(faq.id)}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>

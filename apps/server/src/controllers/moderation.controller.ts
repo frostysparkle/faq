@@ -83,6 +83,17 @@ export const moderationController = {
     return noContent(res);
   },
 
+  /** List all trashed community questions. */
+  async listTrash(_req: Request, res: Response) {
+    return ok(res, await moderationService.listTrashedQuestions());
+  },
+
+  /** Restore a trashed question back to community visibility. */
+  async restoreFromTrash(req: Request, res: Response) {
+    await moderationService.restoreTrashedQuestion(req.params.id!);
+    return noContent(res);
+  },
+
   /** Convert a community question to a FAQ draft. */
   async convertQuestionToFaq(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized();

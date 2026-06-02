@@ -14,6 +14,7 @@ import { auditRouter } from './audit.routes.js';
 import { settingsRouter } from './settings.routes.js';
 import { adminRouter } from './admin.routes.js';
 import { helpRouter } from './help.routes.js';
+import { notificationRouter } from './notification.routes.js';
 
 const router = Router();
 
@@ -35,6 +36,7 @@ router.use('/audit-logs', auditRouter);
 router.use('/settings', settingsRouter);
 router.use('/admin', adminRouter);
 router.use('/help-data', helpRouter);
+router.use('/notifications', notificationRouter);
 
 export const apiRouter = router;
 

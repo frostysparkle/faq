@@ -11,18 +11,21 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Info,
   Columns3,
   Check,
   Search,
+  Sparkles,
   X,
 } from 'lucide-react';
 import type { PublicFaq, FaqCreateInput, FaqStatus } from '@samagama/shared';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { useArchiveFaq, useCategories, useFaqList, useTags } from '../../faq/queries';
+import { useFlagList, useUpdateFlagStatus } from '../../flag/queries';
 import { InlineFaqEditor } from './InlineFaqEditor';
-import { FlagInbox } from './FlagInbox';
 
 type Filter = 'all' | 'helpful' | 'flagged';
 type ColKey = 'details' | 'engagement' | 'flag' | 'actions';
@@ -80,6 +83,7 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [flagExpandedId, setFlagExpandedId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [visibleCols, setVisibleCols] = useState<Record<ColKey, boolean>>(DEFAULT_VISIBLE);
@@ -312,7 +316,6 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
           <InlineFaqEditor categories={categories} tags={tags} onClose={() => setCreating(false)} />
         </div>
       )}
-      {filter === 'flagged' && <FlagInbox />}
 
       {/* ── Table ── */}
       <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,.05)', overflow: 'hidden' }}>
@@ -375,6 +378,8 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
               isLast={isLast}
               expanded={expandedId === faq.id}
               onToggleExpand={() => setExpandedId((id) => (id === faq.id ? null : faq.id))}
+              flagExpanded={flagExpandedId === faq.id}
+              onToggleFlagExpand={() => setFlagExpandedId((id) => (id === faq.id ? null : faq.id))}
               editing={editingId === faq.id}
               onEdit={() => setEditingId(faq.id)}
               onCancelEdit={() => setEditingId(null)}
@@ -447,11 +452,13 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
 
 function FaqRow({
   faq, rowNum, isLast, expanded, onToggleExpand,
+  flagExpanded, onToggleFlagExpand,
   editing, onEdit, onCancelEdit, categories, tags,
   visibleCols, grid,
 }: {
   faq: PublicFaq; rowNum: string; isLast: boolean;
   expanded: boolean; onToggleExpand: () => void;
+  flagExpanded: boolean; onToggleFlagExpand: () => void;
   editing: boolean; onEdit: () => void; onCancelEdit: () => void;
   categories: { _id: string; name: string }[];
   tags: { _id: string; name: string }[];
@@ -459,6 +466,7 @@ function FaqRow({
   grid: string;
 }) {
   const archive   = useArchiveFaq();
+  const [confirmingArchive, setConfirmingArchive] = useState(false);
   const flagCount = faq.flagCount ?? 0;
   const { dotColor, pill } = statusTokens(faq.status);
 
@@ -567,17 +575,24 @@ function FaqRow({
         {visibleCols.flag && (
           <div>
             {flagCount > 0 ? (
-              <div>
+              <button
+                type="button"
+                onClick={onToggleFlagExpand}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', fontFamily: 'inherit' }}
+              >
                 <span style={{
                   fontSize: 12, fontWeight: 700, padding: '2px 10px', borderRadius: 20,
-                  background: C.flagBadge.bg, color: C.flagBadge.fg,
+                  background: flagExpanded ? C.flagBadge.fg : C.flagBadge.bg,
+                  color: flagExpanded ? '#fff' : C.flagBadge.fg,
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
                 }}>
                   Flagged
+                  {flagExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                 </span>
                 <p style={{ margin: '3px 0 0', fontSize: 11, color: C.muted }}>
                   by {flagCount} student{flagCount === 1 ? '' : 's'}
                 </p>
-              </div>
+              </button>
             ) : (
               <span style={{ fontSize: 13, color: C.flagNone }}>—</span>
             )}
@@ -586,25 +601,46 @@ function FaqRow({
 
         {/* Actions */}
         {visibleCols.actions && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <ABtn
-              label={expanded ? 'Hide answer' : 'View answer'}
-              onClick={onToggleExpand}
-              bg={C.actionEye.bg} fg={C.actionEye.fg} border={C.actionEye.border}
-            >
-              <Eye size={15} strokeWidth={1.8} />
-            </ABtn>
-            <ABtn label="Edit" onClick={onEdit} bg={C.actionEdit.bg} fg={C.actionEdit.fg} border={C.actionEdit.border}>
-              <Pencil size={15} strokeWidth={1.8} />
-            </ABtn>
-            <ABtn
-              label="Archive"
-              onClick={() => archive.mutate(faq.id)}
-              disabled={archive.isPending || faq.status === 'archived'}
-              bg={C.actionDel.bg} fg={C.actionDel.fg} border={C.actionDel.border}
-            >
-              <Trash2 size={15} strokeWidth={1.8} />
-            </ABtn>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {!confirmingArchive ? (
+              <>
+                <ABtn
+                  label={expanded ? 'Hide answer' : 'View answer'}
+                  onClick={onToggleExpand}
+                  bg={C.actionEye.bg} fg={C.actionEye.fg} border={C.actionEye.border}
+                >
+                  <Eye size={15} strokeWidth={1.8} />
+                </ABtn>
+                <ABtn label="Edit" onClick={onEdit} bg={C.actionEdit.bg} fg={C.actionEdit.fg} border={C.actionEdit.border}>
+                  <Pencil size={15} strokeWidth={1.8} />
+                </ABtn>
+                <ABtn
+                  label="Archive (click to confirm)"
+                  onClick={() => setConfirmingArchive(true)}
+                  disabled={faq.status === 'archived'}
+                  bg={C.actionDel.bg} fg={C.actionDel.fg} border={C.actionDel.border}
+                >
+                  <Trash2 size={15} strokeWidth={1.8} />
+                </ABtn>
+              </>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff1f2', border: '1px solid #fecaca', borderRadius: 10, padding: '5px 10px' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', whiteSpace: 'nowrap' }}>Archive?</span>
+                <button
+                  onClick={() => { archive.mutate(faq.id); setConfirmingArchive(false); }}
+                  disabled={archive.isPending}
+                  style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => setConfirmingArchive(false)}
+                  style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 6, border: '1px solid #fecaca', background: '#fff', color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -614,14 +650,153 @@ function FaqRow({
         <div style={{
           padding: '16px 20px 16px 80px',
           background: '#f9fafb',
-          borderBottom: isLast ? 'none' : `1px solid ${C.border}`,
+          borderBottom: isLast && !flagExpanded ? 'none' : `1px solid ${C.border}`,
           fontSize: 13, color: '#374151', lineHeight: 1.7, whiteSpace: 'pre-wrap',
         }}>
           {faq.answer}
         </div>
       )}
+
+      {/* Expanded flag feedback */}
+      {flagExpanded && flagCount > 0 && (
+        <FaqFlagPanel
+          faqId={faq.id}
+          isLast={isLast}
+        />
+      )}
     </>
   );
+}
+
+// ─── Flag panel ───────────────────────────────────────────────────────────────
+
+const REASON_COPY: Record<string, string> = {
+  incorrect: 'Incorrect information',
+  outdated: 'Outdated',
+  duplicate: 'Duplicate',
+  unclear: 'Unclear',
+  other: 'Other',
+};
+
+const SPURTI_OPTIONS = [
+  { label: '0 pts', value: 0 },
+  { label: '+1 pt', value: 1 },
+  { label: '+2 pts', value: 2 },
+  { label: '−1 pt', value: -1 },
+];
+
+function FaqFlagPanel({ faqId, isLast }: { faqId: string; isLast: boolean }) {
+  const { data: open } = useFlagList({ entityType: 'faq', status: 'open' });
+  const { data: underReview } = useFlagList({ entityType: 'faq', status: 'under_review' });
+  const update = useUpdateFlagStatus();
+  const [spurtiMap, setSpurtiMap] = useState<Record<string, number>>({});
+
+  const flags = useMemo(() =>
+    [...(open ?? []), ...(underReview ?? [])]
+      .filter((f) => f.entityId === faqId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
+    [open, underReview, faqId],
+  );
+
+  const getSpurti = (id: string) => spurtiMap[id] ?? 0;
+  const setSpurti = (id: string, pts: number) =>
+    setSpurtiMap((m) => ({ ...m, [id]: pts }));
+
+  return (
+    <div style={{
+      padding: '12px 20px 14px 20px',
+      background: '#fff5f5',
+      borderTop: `1px solid #fecaca`,
+      borderBottom: isLast ? 'none' : `1px solid ${C.border}`,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10,
+    }}>
+      {flags.length === 0 && (
+        <div style={{ fontSize: 12, color: C.muted }}>No open flags for this FAQ.</div>
+      )}
+
+      {flags.map((f) => (
+        <div key={f.id} style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto auto',
+          gap: 0,
+          background: '#fff',
+          border: `1px solid #fecaca`,
+          borderRadius: 10,
+          overflow: 'hidden',
+        }}>
+          {/* Left: Student Feedback */}
+          <div style={{ padding: '14px 18px', borderRight: `1px solid #fecaca` }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 6 }}>
+              Student Feedback
+            </div>
+            {f.details && (
+              <div style={{ fontSize: 12, color: C.mutedLabel, fontStyle: 'italic', lineHeight: 1.6, marginBottom: 6 }}>
+                "{f.details}"
+              </div>
+            )}
+            {!f.details && (
+              <div style={{ fontSize: 12, color: C.muted, fontStyle: 'italic', marginBottom: 6 }}>
+                {REASON_COPY[f.reason] ?? f.reason}
+              </div>
+            )}
+            <div style={{ fontSize: 11, color: C.muted }}>
+              Reported by {f.reportedBy.name} · {flagTimeAgo(f.createdAt)}
+            </div>
+          </div>
+
+          {/* Middle: Spurti reward */}
+          <div style={{ padding: '14px 20px', borderRight: `1px solid #fecaca`, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8, minWidth: 260 }}>
+            <span style={{ fontSize: 11, color: '#7c3aed', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Sparkles size={11} /> Spurti reward for {f.reportedBy.name}:
+            </span>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {SPURTI_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setSpurti(f.id, opt.value)}
+                  style={{
+                    fontSize: 12, padding: '4px 12px', borderRadius: 20, fontFamily: 'inherit', fontWeight: 600, cursor: 'pointer',
+                    border: `1.5px solid ${getSpurti(f.id) === opt.value ? '#7c3aed' : C.divider}`,
+                    background: getSpurti(f.id) === opt.value ? '#ede9fe' : '#fff',
+                    color: getSpurti(f.id) === opt.value ? '#7c3aed' : C.muted,
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Actions */}
+          <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Button size="sm" variant="success" disabled={update.isPending}
+              onClick={() => update.mutate({ id: f.id, input: { status: 'resolved', resolutionNote: 'Marked resolved by moderator.', spurtiPoints: getSpurti(f.id) } })}
+            >
+              <Check size={12} /> Resolve
+            </Button>
+            <Button size="sm" variant="ghost" disabled={update.isPending}
+              onClick={() => update.mutate({ id: f.id, input: { status: 'dismissed', resolutionNote: 'Dismissed by moderator.', spurtiPoints: getSpurti(f.id) } })}
+            >
+              <X size={12} /> Dismiss
+            </Button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function flagTimeAgo(iso: string): string {
+  const sec = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (sec < 60) return `${sec}s ago`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  return `${Math.floor(hr / 24)}d ago`;
 }
 
 // ─── Tiny shared components ───────────────────────────────────────────────────
@@ -640,7 +815,7 @@ function ABtn({ children, label, onClick, bg, fg, border, disabled }: {
 }) {
   return (
     <button
-      aria-label={label} onClick={onClick} disabled={disabled}
+      aria-label={label} data-tooltip={label} onClick={onClick} disabled={disabled}
       style={{
         width: 36, height: 36, borderRadius: 9, border: `1px solid ${border}`,
         background: bg, color: fg, cursor: disabled ? 'not-allowed' : 'pointer',

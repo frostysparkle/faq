@@ -117,6 +117,8 @@ export function FlagFaqButton({ faqId, faqUpdatedAt = '' }: Props) {
     return (
       <button
         type="button"
+        aria-label="Flag this FAQ"
+        data-tooltip="Flag this FAQ"
         onClick={() => setOpen(true)}
         style={{
           display: 'inline-flex',

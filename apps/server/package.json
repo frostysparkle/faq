@@ -18,6 +18,7 @@
     "seed:accounts": "tsx src/scripts/seed-real-accounts.ts",
     "seed:faqs": "tsx src/scripts/seed-faqs.ts",
     "seed:chat-feedback": "tsx src/scripts/seed-chat-feedback.ts",
+    "seed:chat-conversations": "tsx src/scripts/seed-extended-chat-conversations.ts",
     "seed:faq-timestamps": "tsx src/scripts/seed-faq-timestamps.ts",
     "seed:student-accounts": "tsx src/scripts/seed-student-accounts.ts",
     "simulate:student-activity": "tsx src/scripts/simulate-student-activity.ts",

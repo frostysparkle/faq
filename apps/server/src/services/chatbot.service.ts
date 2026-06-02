@@ -211,27 +211,39 @@ export const chatbotService = {
     const botMsg = session?.messages[opts.messageIndex];
     const userMsg = session?.messages[opts.messageIndex - 1];
 
-    await ChatFeedbackModel.create({
-      chatSessionId: undefined,
-      messageIndex: opts.messageIndex,
-      query: userMsg?.content ?? '',
-      answer: botMsg?.content ?? '',
-      rating: opts.rating,
-      comment: opts.comment,
-      userId: new Types.ObjectId(opts.userId),
-      status: 'open',
-    });
+    const query = userMsg?.content ?? '';
+    const answer = botMsg?.content ?? '';
+    const messages = session?.messages ?? [];
+
+    // Upsert so re-rating the same message updates the existing record instead of
+    // creating a duplicate. Key on userId + messageIndex (unique per session message).
+    await ChatFeedbackModel.findOneAndUpdate(
+      { userId: new Types.ObjectId(opts.userId), messageIndex: opts.messageIndex },
+      {
+        $set: {
+          rating: opts.rating,
+          comment: opts.comment,
+          status: 'open',
+          query,
+          answer,
+          messages,
+        },
+        $setOnInsert: { chatSessionId: undefined },
+      },
+      { upsert: true, new: true },
+    );
   },
 
   // ── Admin/mod read paths (unchanged) ──────────────────────────────────────
 
-  async listFeedback(filter: 'all' | 'helpful' | 'flagged'): Promise<PublicChatFeedback[]> {
+  async listFeedback(filter: 'all' | 'helpful' | 'unhelpful'): Promise<PublicChatFeedback[]> {
     const q: Record<string, unknown> = {};
     if (filter === 'helpful') q.rating = 'helpful';
-    if (filter === 'flagged') q.rating = 'incorrect';
+    if (filter === 'unhelpful') q.rating = 'incorrect';
 
-    interface PopulatedFeedback extends Omit<ChatFeedbackDocument, 'userId'> {
+    interface PopulatedFeedback extends Omit<ChatFeedbackDocument, 'userId' | 'messages'> {
       userId: { _id: Types.ObjectId; name: string };
+      messages?: Array<{ role: 'user' | 'assistant'; content: string }>;
     }
 
     const rows = await ChatFeedbackModel.find(q)
@@ -248,17 +260,18 @@ export const chatbotService = {
       comment: f.comment ?? undefined,
       user: { id: f.userId._id.toString(), name: f.userId.name },
       status: f.status,
+      messages: f.messages && f.messages.length > 0 ? f.messages : undefined,
       createdAt: f.createdAt.toISOString(),
     }));
   },
 
   async getStats(): Promise<ChatbotFeedbackStats> {
-    const [total, helpful, flagged] = await Promise.all([
+    const [total, helpful, unhelpful] = await Promise.all([
       ChatFeedbackModel.countDocuments({}),
       ChatFeedbackModel.countDocuments({ rating: 'helpful' }),
       ChatFeedbackModel.countDocuments({ rating: 'incorrect' }),
     ]);
-    return { total, helpful, flagged };
+    return { total, helpful, unhelpful };
   },
 };
 

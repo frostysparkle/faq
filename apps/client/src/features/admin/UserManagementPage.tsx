@@ -265,6 +265,8 @@ export function UserManagementPage() {
                   {/* 3-dot menu */}
                   <div style={{ position: 'relative' }}>
                     <button
+                      aria-label="User actions"
+                      data-tooltip="User actions"
                       onClick={() => setOpenMenu(isMenuOpen ? null : user.id)}
                       style={{
                         width: 30, height: 30, borderRadius: 8, border: `1.5px solid ${C.border}`,

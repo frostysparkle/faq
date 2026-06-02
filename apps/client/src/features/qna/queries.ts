@@ -8,6 +8,7 @@ export const qnaKeys = {
   question: (id: string) => [...qnaKeys.all, 'question', id] as const,
   answers: (questionId: string) => [...qnaKeys.all, 'answers', questionId] as const,
   pendingAnswers: ['moderation', 'pending-answers'] as const,
+  trash: ['moderation', 'trash'] as const,
 };
 
 export function useQuestions(params: {
@@ -60,6 +61,29 @@ export function useVoteAnswer(questionId: string) {
   });
 }
 
+export function useApproveAnswer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      editedBody,
+      note,
+      spurtiPoints,
+      visibilityDays,
+    }: {
+      id: string;
+      editedBody?: string;
+      note?: string;
+      spurtiPoints?: number;
+      visibilityDays?: 2 | 3 | 7 | null;
+    }) => moderationApi.approveAnswer(id, { editedBody, note, spurtiPoints, visibilityDays }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qnaKeys.pendingAnswers });
+      void qc.invalidateQueries({ queryKey: qnaKeys.all });
+    },
+  });
+}
+
 // --- Moderation ---
 export function usePendingAnswers() {
   return useQuery({
@@ -73,27 +97,6 @@ export function usePendingAnswersForQuestion(questionId: string, limit: number, 
     queryKey: ['moderation', 'pending-for-question', questionId, limit],
     queryFn: () => moderationApi.listPendingForQuestion(questionId, limit),
     enabled,
-  });
-}
-
-export function useApproveAnswer() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      id,
-      editedBody,
-      note,
-      spurtiPoints,
-    }: {
-      id: string;
-      editedBody?: string;
-      note?: string;
-      spurtiPoints?: number;
-    }) => moderationApi.approveAnswer(id, { editedBody, note, spurtiPoints }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qnaKeys.pendingAnswers });
-      void qc.invalidateQueries({ queryKey: qnaKeys.all });
-    },
   });
 }
 
@@ -146,6 +149,24 @@ export function useConvertAnswerToFaq() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qnaKeys.all });
       void qc.invalidateQueries({ queryKey: qnaKeys.pendingAnswers });
+    },
+  });
+}
+
+export function useTrash() {
+  return useQuery({
+    queryKey: qnaKeys.trash,
+    queryFn: moderationApi.listTrash,
+  });
+}
+
+export function useRestoreQuestion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (questionId: string) => moderationApi.restoreQuestion(questionId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qnaKeys.trash });
+      void qc.invalidateQueries({ queryKey: qnaKeys.all });
     },
   });
 }

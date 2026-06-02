@@ -187,6 +187,7 @@ function projectQuestion(q: PopulatedQuestion, viewerId?: string): PublicQuestio
     screenshotUrl: q.screenshotUrl ?? undefined,
     answerCount: q.answerCount,
     viewCount: q.viewCount,
+    visibilityExpiresAt: (q as unknown as { visibilityExpiresAt?: Date }).visibilityExpiresAt?.toISOString() ?? null,
     createdAt: q.createdAt.toISOString(),
     updatedAt: q.updatedAt.toISOString(),
   };
@@ -461,7 +462,9 @@ export const qnaService = {
     /** Idle bucket filter; only applies to community questions still in `open`/`answered`. */
     idle?: 'last24h' | 'over3days' | 'over1week';
   }): Promise<PublicQuestion[]> {
-    const filter: FilterQuery<QuestionDocument> = {};
+    const filter: FilterQuery<QuestionDocument> = {
+      isTrashed: { $ne: true },
+    };
 
     if (opts.type) filter.type = opts.type;
     if (opts.status) filter.status = opts.status;

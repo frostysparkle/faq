@@ -63,6 +63,19 @@ const questionSchema = new Schema(
     resolvedAt: { type: Date },
 
     /**
+     * When the approved post's community visibility expires.
+     * null / missing = permanent.
+     * Set at first-approval time based on the moderator's chosen period (2 | 3 | 7 days).
+     */
+    visibilityExpiresAt: { type: Date, default: undefined },
+
+    /** True once the trash-expiry job (or a manual action) moves this question to trash. */
+    isTrashed: { type: Boolean, default: false, index: true },
+
+    /** Timestamp when the question was trashed. */
+    trashedAt: { type: Date, default: undefined },
+
+    /**
      * 384-dim embedding of the question title for semantic duplicate detection.
      * Populated asynchronously by the embedding service after creation.
      */

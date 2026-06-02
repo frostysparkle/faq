@@ -5,6 +5,7 @@ import { env } from './config/env.js';
 import { logger } from './config/logger.js';
 import { runEmbeddingBackfill } from './jobs/embedding-backfill.js';
 import { scheduleQualityScoreRecomputation } from './jobs/analytics-jobs.js';
+import { scheduleTrashExpiry } from './jobs/trash-expiry-job.js';
 
 async function start(): Promise<void> {
   await connectDatabase();
@@ -12,6 +13,7 @@ async function start(): Promise<void> {
   // Background jobs — fire-and-forget, never block startup.
   void runEmbeddingBackfill();
   scheduleQualityScoreRecomputation();
+  scheduleTrashExpiry();
 
   const app = createApp();
 

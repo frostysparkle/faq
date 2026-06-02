@@ -8,6 +8,7 @@ import { QuestionModel } from '../models/Question.model.js';
 import { UserModel } from '../models/User.model.js';
 import { ApiError } from '../utils/api-error.js';
 import { generateEmbedding } from './embedding.service.js';
+import { notificationService } from './notification.service.js';
 export interface PendingAnswerRow {
   id: string;
   body: string;
@@ -81,12 +82,29 @@ export const moderationService = {
       { $inc: { spurtiPoints: pts } },
     );
 
-    // Flip the question to resolved on the first approval.
+    // Flip the question to resolved on the first approval and set visibility expiry.
     const question = await QuestionModel.findById(answer.questionId);
     if (question && question.status !== 'resolved') {
       question.status = 'resolved';
+      question.resolvedAt = new Date();
+
+      // visibilityDays: undefined → default 7 days; null → permanent (no expiry).
+      const days = input.visibilityDays === undefined ? 7 : input.visibilityDays;
+      if (days !== null) {
+        question.visibilityExpiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+      }
       await question.save();
     }
+
+    // Notify the answer author (fire-and-forget — never block the approval response).
+    const questionTitle = question?.title ?? 'a community question';
+    void notificationService.create({
+      userId: answer.answeredBy.toString(),
+      type: 'answer_approved',
+      title: 'Your answer was approved!',
+      body: `Your answer to "${questionTitle}" has been approved by a moderator.`,
+      relatedId: answer.questionId.toString(),
+    });
   },
 
   async rejectAnswer(
@@ -102,6 +120,18 @@ export const moderationService = {
     answer.moderatorId = new Types.ObjectId(moderatorId);
     if (input.note) answer.moderationNote = input.note;
     await answer.save();
+
+    const question = await QuestionModel.findById(answer.questionId).select('title').lean<{ title: string }>();
+    const questionTitle = question?.title ?? 'a community question';
+    void notificationService.create({
+      userId: answer.answeredBy.toString(),
+      type: 'answer_rejected',
+      title: 'Your answer was not approved',
+      body: input.note
+        ? `Your answer to "${questionTitle}" was not approved. Moderator note: ${input.note}`
+        : `Your answer to "${questionTitle}" was not approved by the moderator.`,
+      relatedId: answer.questionId.toString(),
+    });
   },
 
   /** Cross-question pending queue (FIFO) used by the global Unresolved Questions screen. */
@@ -295,6 +325,76 @@ export const moderationService = {
     await answer.save();
   },
 
+  /** Return all trashed community questions with their approved answers. */
+  async listTrashedQuestions(): Promise<TrashedQuestionRow[]> {
+    const questions = await QuestionModel.find({ isTrashed: true, type: 'community' })
+      .sort({ trashedAt: -1 })
+      .populate('askedBy', 'name')
+      .lean<Array<{
+        _id: Types.ObjectId;
+        title: string;
+        description: string;
+        askedBy: { _id: Types.ObjectId; name: string };
+        answerCount: number;
+        trashedAt?: Date;
+        visibilityExpiresAt?: Date;
+        createdAt: Date;
+      }>>();
+
+    if (questions.length === 0) return [];
+
+    const questionIds = questions.map((q) => q._id);
+    const answers = await AnswerModel.find({ questionId: { $in: questionIds }, status: 'approved' })
+      .populate('answeredBy', 'name')
+      .lean<Array<{
+        _id: Types.ObjectId;
+        questionId: Types.ObjectId;
+        body: string;
+        answeredBy: { _id: Types.ObjectId; name: string };
+        upvoteCount: number;
+        downvoteCount: number;
+        createdAt: Date;
+      }>>();
+
+    const answersByQuestion = new Map<string, typeof answers>();
+    for (const a of answers) {
+      const key = a.questionId.toString();
+      const list = answersByQuestion.get(key) ?? [];
+      list.push(a);
+      answersByQuestion.set(key, list);
+    }
+
+    return questions.map((q) => ({
+      id: q._id.toString(),
+      title: q.title,
+      description: q.description,
+      author: { id: q.askedBy._id.toString(), name: q.askedBy.name },
+      answerCount: q.answerCount,
+      trashedAt: q.trashedAt?.toISOString() ?? q.createdAt.toISOString(),
+      visibilityExpiresAt: q.visibilityExpiresAt?.toISOString() ?? null,
+      answers: (answersByQuestion.get(q._id.toString()) ?? []).map((a) => ({
+        id: a._id.toString(),
+        body: a.body,
+        author: { id: a.answeredBy._id.toString(), name: a.answeredBy.name },
+        upvoteCount: a.upvoteCount ?? 0,
+        downvoteCount: a.downvoteCount ?? 0,
+        createdAt: a.createdAt.toISOString(),
+      })),
+    }));
+  },
+
+  /** Restore a trashed question back to community visibility. */
+  async restoreTrashedQuestion(questionId: string): Promise<void> {
+    const question = await QuestionModel.findById(questionId);
+    if (!question) throw ApiError.notFound('Question not found');
+    if (!question.isTrashed) return; // idempotent
+    question.isTrashed = false;
+    question.trashedAt = undefined;
+    // Keep visibilityExpiresAt so the original period is preserved but reset to now + 7d
+    question.visibilityExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await question.save();
+  },
+
   /**
    * Convert a community question directly to a FAQ draft.
    * The question is marked archived.
@@ -361,5 +461,23 @@ export interface FaqCandidateRow {
   author: { id: string; name: string };
   moderator?: { id: string; name: string };
   approvedAt: string;
+}
+
+export interface TrashedQuestionRow {
+  id: string;
+  title: string;
+  description: string;
+  author: { id: string; name: string };
+  answerCount: number;
+  trashedAt: string;
+  visibilityExpiresAt: string | null;
+  answers: Array<{
+    id: string;
+    body: string;
+    author: { id: string; name: string };
+    upvoteCount: number;
+    downvoteCount: number;
+    createdAt: string;
+  }>;
 }
 

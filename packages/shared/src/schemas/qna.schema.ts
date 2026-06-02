@@ -41,6 +41,12 @@ export const moderateAnswerSchema = z.object({
   editedBody: z.string().trim().min(10).max(4000).optional(),
   /** Spurti Points to award on approval. Range -1 to 5; defaults to 5. */
   spurtiPoints: z.number().int().min(-1).max(5).optional(),
+  /**
+   * How many days the resolved community post remains visible before being trashed.
+   * null = permanent. Omit to use the server default (7 days).
+   * Valid explicit values: 2 | 3 | 7.
+   */
+  visibilityDays: z.union([z.literal(2), z.literal(3), z.literal(7), z.null()]).optional(),
 });
 
 export type CheckExistingInput = z.infer<typeof checkExistingSchema>;
@@ -87,6 +93,8 @@ export interface PublicQuestion {
   viewCount: number;
   /** Only populated by the personal-question feed for the asker. Derived from `moderatorViewedAt` + answerCount. */
   displayState?: (typeof PERSONAL_QUESTION_DISPLAY_STATES)[number];
+  /** ISO timestamp when the community post expires from public view. null = permanent. */
+  visibilityExpiresAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

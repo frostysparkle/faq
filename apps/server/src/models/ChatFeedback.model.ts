@@ -16,6 +16,12 @@ const chatFeedbackSchema = new Schema(
     query: { type: String, required: true, trim: true },
     answer: { type: String, required: true, trim: true },
 
+    /** Full conversation snapshot captured at the time of rating. */
+    messages: {
+      type: [{ role: { type: String, enum: ['user', 'assistant'] }, content: String }],
+      default: undefined,
+    },
+
     rating: {
       type: String,
       enum: CHAT_FEEDBACK_RATINGS,

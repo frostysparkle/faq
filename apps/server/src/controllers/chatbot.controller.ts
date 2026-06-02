@@ -27,7 +27,7 @@ export const chatbotController = {
   },
 
   async listFeedback(req: Request, res: Response) {
-    const filter = (req.query.filter as 'all' | 'helpful' | 'flagged' | undefined) ?? 'all';
+    const filter = (req.query.filter as 'all' | 'helpful' | 'unhelpful' | undefined) ?? 'all';
     return ok(res, await chatbotService.listFeedback(filter));
   },
 

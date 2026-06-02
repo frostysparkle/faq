@@ -43,5 +43,9 @@ router.post(
   asyncHandler(moderationController.convertQuestionToFaq),
 );
 
+// Trash — expired community posts
+router.get('/trash', asyncHandler(moderationController.listTrash));
+router.patch('/trash/:id/restore', asyncHandler(moderationController.restoreFromTrash));
+
 export const moderationRouter = router;
 

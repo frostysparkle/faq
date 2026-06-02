@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { loginSchema, type LoginInput } from '@samagama/shared';
 import { useAuth } from './AuthProvider';
 
@@ -10,6 +11,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -194,14 +196,33 @@ export function LoginPage() {
                 <label className="field-label">
                   Password
                 </label>
-                <input
-                  type="password"
-                  autoComplete="current-password"
-                  {...register('password')}
-                  aria-invalid={!!errors.password}
-                  className="field-input"
-                  style={errors.password ? { borderColor: 'var(--color-danger)' } : undefined}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    {...register('password')}
+                    aria-invalid={!!errors.password}
+                    className="field-input"
+                    style={{
+                      paddingRight: 40,
+                      ...(errors.password ? { borderColor: 'var(--color-danger)' } : {}),
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    data-tooltip={showPassword ? 'Hide password' : 'Show password'}
+                    style={{
+                      position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                      color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center',
+                      lineHeight: 0,
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
                 {errors.password && (
                   <span style={{ display: 'block', marginTop: 5, fontSize: 12, color: 'var(--color-danger)' }}>
                     {errors.password.message}

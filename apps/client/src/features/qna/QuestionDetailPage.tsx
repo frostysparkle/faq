@@ -41,16 +41,47 @@ export function QuestionDetailPage() {
 
       {/* ── Question card (prominent) ── */}
       <div className="mod-card mod-card-blue" style={{ padding: '16px 18px', marginBottom: 10 }}>
-        {/* Badges row */}
+        {/* Badges row — category, tags, type, status */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
           {question.category && <Badge color="accent">{question.category.name}</Badge>}
+          {question.tags.map((t) => <Badge key={t.id}>#{t.name}</Badge>)}
           <Badge color={question.type === 'personal' ? 'warning' : 'default'}>{question.type}</Badge>
           <Badge color={statusColor(question.status)}>{question.status}</Badge>
         </div>
-        {/* Question text — main focus */}
-        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-text)', lineHeight: 1.65, whiteSpace: 'pre-wrap', marginBottom: 10 }}>
-          {question.description}
-        </div>
+
+        {/* Question title */}
+        {question.title && (
+          <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--color-text)', marginBottom: 8, letterSpacing: '-0.01em' }}>
+            {question.title}
+          </div>
+        )}
+
+        {/* Question description */}
+        {question.description && question.description.trim() && (
+          <div style={{ fontSize: 14, color: 'var(--color-text)', lineHeight: 1.65, whiteSpace: 'pre-wrap', marginBottom: 10 }}>
+            {question.description}
+          </div>
+        )}
+
+        {/* Uploaded screenshot */}
+        {question.screenshotUrl && (
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+              Attached image
+            </div>
+            <img
+              src={question.screenshotUrl}
+              alt="Question attachment"
+              style={{
+                maxWidth: '100%', maxHeight: 360, borderRadius: 10,
+                border: '1px solid var(--color-border)',
+                objectFit: 'contain', display: 'block',
+              }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+            />
+          </div>
+        )}
+
         {/* Meta */}
         <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
           Asked by <strong>{question.author.name}</strong>

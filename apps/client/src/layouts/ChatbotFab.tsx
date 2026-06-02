@@ -180,6 +180,9 @@ export function ChatbotFab() {
     rating: 'helpful' | 'incorrect',
   ) => {
     if (!sessionId) return;
+    // If the user clicks the already-active rating, do nothing (idempotent).
+    const current = messages[displayIdx]?.feedback;
+    if (current === rating) return;
     setMessages((prev) =>
       prev.map((m, i) => (i === displayIdx ? { ...m, feedback: rating } : m)),
     );
@@ -194,6 +197,7 @@ export function ChatbotFab() {
         className="ym-launcher"
         id="ym-launcher"
         aria-label="Open Yaksha-mini chat"
+        data-tooltip="Open Yaksha-mini chat"
         onClick={() => setOpen(true)}
       >
         <span className="ym-launcher-tooltip">Ask Yaksha-mini</span>
@@ -236,6 +240,7 @@ export function ChatbotFab() {
           className="ym-close"
           id="ym-close"
           aria-label="Close chat"
+          data-tooltip="Close chat"
           onClick={() => setOpen(false)}
         >
           &times;
@@ -295,6 +300,7 @@ export function ChatbotFab() {
           className="ym-send-btn"
           id="ym-send-btn"
           aria-label="Send message"
+          data-tooltip="Send message"
           disabled={!input.trim() || sendMutation.isPending}
         >
           <SendIcon />
@@ -328,16 +334,14 @@ function MessageBubble({ msg, displayIndex, sessionId, onFeedback }: MessageBubb
           <div className="ym-feedback-row">
             <button
               type="button"
-              className={`ym-fb-btn${msg.feedback === 'helpful' ? ' active-helpful' : ''}`}
-              disabled={!!msg.feedback}
+              className={`ym-fb-btn${msg.feedback === 'helpful' ? ' active-helpful' : msg.feedback === 'incorrect' ? ' ym-fb-inactive' : ''}`}
               onClick={() => onFeedback(msg.messageIndex!, displayIndex, 'helpful')}
             >
               <ThumbsUp size={10} /> Helpful
             </button>
             <button
               type="button"
-              className={`ym-fb-btn${msg.feedback === 'incorrect' ? ' active-incorrect' : ''}`}
-              disabled={!!msg.feedback}
+              className={`ym-fb-btn${msg.feedback === 'incorrect' ? ' active-incorrect' : msg.feedback === 'helpful' ? ' ym-fb-inactive' : ''}`}
               onClick={() => onFeedback(msg.messageIndex!, displayIndex, 'incorrect')}
             >
               <ThumbsDown size={10} /> Not helpful
