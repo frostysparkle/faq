@@ -104,9 +104,14 @@ export function CommunityPage() {
                 <div className={`mod-card ${cardColor}`} style={{ padding: '16px 18px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 10, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', whiteSpace: 'pre-wrap' }}>
-                        {q.description}
+                      <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.45, marginBottom: q.description ? 6 : 10, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        {q.title}
                       </div>
+                      {q.description && (
+                        <div style={{ fontSize: 12, lineHeight: 1.55, marginBottom: 10, color: 'var(--color-text-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {q.description}
+                        </div>
+                      )}
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                         {q.category && <Badge color="accent">{q.category.name}</Badge>}
                         {q.tags.map((t) => <Badge key={t.id}>#{t.name}</Badge>)}
