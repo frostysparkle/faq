@@ -4,6 +4,7 @@
 // Only rendered for the student role (see AppShell).
 import '../styles/yaksha-mini.css';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ThumbsDown, ThumbsUp, TriangleAlert } from 'lucide-react';
 import type { ChatQueryResponse } from '@samagama/shared';
 import { useSendMessage, useSubmitChatFeedback } from '../features/chatbot/queries';
@@ -191,7 +192,7 @@ export function ChatbotFab() {
 
   /* ── Launcher (visible when panel is closed) ────────────────────────── */
   if (!open) {
-    return (
+    return createPortal(
       <button
         type="button"
         className="ym-launcher"
@@ -202,15 +203,16 @@ export function ChatbotFab() {
       >
         <span className="ym-launcher-tooltip">Ask Yaksha-mini</span>
         <ChatBubbleIcon />
-      </button>
+      </button>,
+      document.body,
     );
   }
 
   /* ── Chat panel (visible when open) ─────────────────────────────────── */
-  return (
-    <section 
-      className="yaksha-mini" 
-      id="ym-panel" 
+  return createPortal(
+    <section
+      className="yaksha-mini"
+      id="ym-panel"
       aria-label="Yaksha-mini chat"
       style={{
         '--ym-width': `${dimensions.width}px`,
@@ -306,7 +308,8 @@ export function ChatbotFab() {
           <SendIcon />
         </button>
       </form>
-    </section>
+    </section>,
+    document.body,
   );
 }
 
