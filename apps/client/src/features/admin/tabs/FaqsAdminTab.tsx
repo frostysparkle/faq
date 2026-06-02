@@ -50,32 +50,32 @@ function buildGrid(vis: Record<ColKey, boolean>): string {
   return cols.join(' ');
 }
 
-// ─── Colours (hardcoded so they work in both themes) ──────────────────────
+// ─── Colours — all resolved from the app's CSS custom properties ──────────
 const C = {
-  badge:     { bg: '#ede9fe', fg: '#7c3aed' },
-  catText:   '#4f46e5',
-  dotPublished: '#16a34a',
-  dotOutdated:  '#d97706',
-  dotDraft:     '#9ca3af',
-  dotArchived:  '#9ca3af',
-  pillPublished: { bg: '#dcfce7', fg: '#15803d' },
-  pillOutdated:  { bg: '#fef9c3', fg: '#92400e' },
-  pillDraft:     { bg: '#f3f4f6', fg: '#6b7280' },
-  pillArchived:  { bg: '#f3f4f6', fg: '#6b7280' },
-  thumbUp:   '#16a34a',
-  thumbDown: '#dc2626',
-  flagBadge: { bg: '#fee2e2', fg: '#dc2626' },
-  flagNone:  '#9ca3af',
-  divider:   '#e5e7eb',
-  header:    '#f9fafb',
-  rowHover:  '#fafafa',
-  border:    '#f0f0f0',
-  muted:     '#9ca3af',
-  mutedLabel:'#6b7280',
-  text:      '#111827',
-  actionEye:  { bg: '#f3f4f6', fg: '#374151', border: '#e5e7eb' },
-  actionEdit: { bg: '#eff6ff', fg: '#2563eb', border: '#bfdbfe' },
-  actionDel:  { bg: '#fff1f2', fg: '#dc2626', border: '#fecaca' },
+  badge:     { bg: 'var(--color-primary-bg)', fg: 'var(--color-primary)' },
+  catText:   'var(--color-primary)',
+  dotPublished: 'var(--color-success)',
+  dotOutdated:  'var(--color-warning)',
+  dotDraft:     'var(--color-text-muted)',
+  dotArchived:  'var(--color-text-muted)',
+  pillPublished: { bg: 'var(--color-success-bg)', fg: 'var(--color-success)' },
+  pillOutdated:  { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning)' },
+  pillDraft:     { bg: 'var(--color-pill)',        fg: 'var(--color-pill-text)' },
+  pillArchived:  { bg: 'var(--color-pill)',        fg: 'var(--color-pill-text)' },
+  thumbUp:   'var(--color-success)',
+  thumbDown: 'var(--color-danger)',
+  flagBadge: { bg: 'var(--color-danger-bg)', fg: 'var(--color-danger)' },
+  flagNone:  'var(--color-text-muted)',
+  divider:   'var(--color-border)',
+  header:    'var(--color-bg)',
+  rowHover:  'var(--color-sidebar-hover)',
+  border:    'var(--color-border)',
+  muted:     'var(--color-text-muted)',
+  mutedLabel:'var(--color-text-muted)',
+  text:      'var(--color-text)',
+  actionEye:  { bg: 'var(--color-pill)',       fg: 'var(--color-text)',    border: 'var(--color-border)' },
+  actionEdit: { bg: 'var(--color-primary-bg)', fg: 'var(--color-primary)', border: 'var(--color-primary-bg)' },
+  actionDel:  { bg: 'var(--color-danger-bg)',  fg: 'var(--color-danger)',  border: 'var(--color-danger-bg)' },
 };
 
 export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
@@ -170,7 +170,7 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
         <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: 340 }}>
           <Search
             size={15}
-            color={searchInput ? '#6366f1' : C.muted}
+            color={searchInput ? 'var(--color-primary)' : 'var(--color-text-muted)'}
             style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
           />
           <input
@@ -182,17 +182,17 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
               width: '100%',
               padding: '8px 36px 8px 36px',
               fontSize: 13,
-              border: `1px solid ${searchInput ? '#6366f1' : '#e5e7eb'}`,
+              border: `1px solid ${searchInput ? 'var(--color-primary)' : 'var(--color-border)'}`,
               borderRadius: 8,
               outline: 'none',
-              background: '#fff',
-              color: C.text,
+              background: 'var(--color-input)',
+              color: 'var(--color-text)',
               fontFamily: 'inherit',
               boxSizing: 'border-box',
               transition: 'border-color .15s',
             }}
-            onFocus={(e) => (e.target.style.borderColor = '#6366f1')}
-            onBlur={(e) => (e.target.style.borderColor = searchInput ? '#6366f1' : '#e5e7eb')}
+            onFocus={(e) => (e.target.style.borderColor = 'var(--color-primary)')}
+            onBlur={(e) => (e.target.style.borderColor = searchInput ? 'var(--color-primary)' : 'var(--color-border)')}
           />
           {searchInput && (
             <button
@@ -215,16 +215,16 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 fontSize: 13, fontWeight: 500, padding: '7px 14px', borderRadius: 8,
-                border: `1px solid ${colMenuOpen ? '#6366f1' : '#e5e7eb'}`,
-                background: colMenuOpen ? '#f0f0ff' : '#fff',
-                color: colMenuOpen ? '#6366f1' : '#374151',
+                border: `1px solid ${colMenuOpen ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                background: colMenuOpen ? 'var(--color-primary-bg)' : 'var(--color-card)',
+                color: colMenuOpen ? 'var(--color-primary)' : 'var(--color-text)',
                 cursor: 'pointer', fontFamily: 'inherit',
               }}
             >
               <Columns3 size={14} /> Columns
               {Object.values(visibleCols).some((v) => !v) && (
                 <span style={{
-                  background: '#6366f1', color: '#fff',
+                  background: 'var(--color-primary)', color: '#fff',
                   borderRadius: 10, padding: '0 5px', fontSize: 10, fontWeight: 700,
                 }}>
                   {Object.values(visibleCols).filter((v) => !v).length}
@@ -235,7 +235,7 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
             {colMenuOpen && (
               <div style={{
                 position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 50,
-                background: '#fff', border: '1px solid #e5e7eb',
+                background: 'var(--color-card)', border: '1px solid var(--color-border)',
                 borderRadius: 10, boxShadow: '0 4px 16px rgba(0,0,0,.10)',
                 minWidth: 180, padding: '6px 0',
               }}>
@@ -243,8 +243,8 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
                 <div style={{
                   padding: '8px 14px 6px',
                   fontSize: 10, fontWeight: 700, letterSpacing: '.5px',
-                  color: '#9ca3af', textTransform: 'uppercase',
-                  borderBottom: '1px solid #f3f4f6',
+                  color: 'var(--color-text-muted)', textTransform: 'uppercase',
+                  borderBottom: '1px solid var(--color-border)',
                 }}>
                   Toggle columns
                 </div>
@@ -253,15 +253,15 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   padding: '9px 14px', opacity: 0.45,
                 }}>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: '#111827' }}>Question</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text)' }}>Question</span>
                   <div style={{
-                    width: 18, height: 18, borderRadius: 5, background: '#6366f1',
+                    width: 18, height: 18, borderRadius: 5, background: 'var(--color-primary)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     <Check size={11} color="#fff" strokeWidth={3} />
                   </div>
                 </div>
-                <div style={{ borderBottom: '1px solid #f3f4f6' }} />
+                <div style={{ borderBottom: '1px solid var(--color-border)' }} />
                 {/* Toggleable columns */}
                 {(Object.keys(COL_LABELS) as ColKey[]).map((col) => (
                   <button
@@ -272,16 +272,16 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
                       width: '100%', padding: '9px 14px', background: 'none', border: 'none',
                       cursor: 'pointer', fontFamily: 'inherit',
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f9fafb')}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-sidebar-hover)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
                   >
-                    <span style={{ fontSize: 13, fontWeight: 500, color: visibleCols[col] ? '#111827' : '#9ca3af' }}>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: visibleCols[col] ? 'var(--color-text)' : 'var(--color-text-muted)' }}>
                       {COL_LABELS[col]}
                     </span>
                     <div style={{
                       width: 18, height: 18, borderRadius: 5,
-                      background: visibleCols[col] ? '#6366f1' : '#f3f4f6',
-                      border: visibleCols[col] ? 'none' : '1px solid #e5e7eb',
+                      background: visibleCols[col] ? 'var(--color-primary)' : 'var(--color-pill)',
+                      border: visibleCols[col] ? 'none' : '1px solid var(--color-border)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       flexShrink: 0,
                     }}>
@@ -290,11 +290,11 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
                   </button>
                 ))}
                 {/* Reset link */}
-                <div style={{ borderTop: '1px solid #f3f4f6', padding: '6px 14px' }}>
+                <div style={{ borderTop: '1px solid var(--color-border)', padding: '6px 14px' }}>
                   <button
                     onClick={() => setVisibleCols(DEFAULT_VISIBLE)}
                     style={{
-                      fontSize: 12, color: '#6366f1', background: 'none', border: 'none',
+                      fontSize: 12, color: 'var(--color-primary)', background: 'none', border: 'none',
                       cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500, padding: 0,
                     }}
                   >
@@ -318,7 +318,7 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
       )}
 
       {/* ── Table ── */}
-      <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,.05)', overflow: 'hidden' }}>
+      <div className="mod-card mod-card-blue" style={{ overflow: 'hidden', borderRadius: 14 }}>
 
         {/* Header */}
         <div style={{
@@ -402,7 +402,7 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
           {searchQuery && total > 0 && (
             <span style={{
               marginLeft: 8, fontSize: 12, fontWeight: 600,
-              background: '#ede9fe', color: '#6366f1',
+              background: 'var(--color-primary-bg)', color: 'var(--color-primary)',
               borderRadius: 6, padding: '2px 8px',
             }}>
               "{searchQuery}"
@@ -418,8 +418,8 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
               onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
               style={{
                 fontSize: 13, padding: '7px 32px 7px 12px', borderRadius: 8,
-                border: '1px solid #e5e7eb', background: '#fff',
-                color: C.text, fontFamily: 'inherit', cursor: 'pointer',
+                border: '1px solid var(--color-border)', background: 'var(--color-input)',
+                color: 'var(--color-text)', fontFamily: 'inherit', cursor: 'pointer',
                 appearance: 'none', outline: 'none',
               }}
             >
@@ -624,18 +624,18 @@ function FaqRow({
                 </ABtn>
               </>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff1f2', border: '1px solid #fecaca', borderRadius: 10, padding: '5px 10px' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', whiteSpace: 'nowrap' }}>Archive?</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger)', borderRadius: 10, padding: '5px 10px' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-danger)', whiteSpace: 'nowrap' }}>Archive?</span>
                 <button
                   onClick={() => { archive.mutate(faq.id); setConfirmingArchive(false); }}
                   disabled={archive.isPending}
-                  style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: 'none', background: 'var(--color-danger)', color: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   Yes
                 </button>
                 <button
                   onClick={() => setConfirmingArchive(false)}
-                  style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 6, border: '1px solid #fecaca', background: '#fff', color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-card)', color: 'var(--color-text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   Cancel
                 </button>
@@ -649,9 +649,9 @@ function FaqRow({
       {expanded && (
         <div style={{
           padding: '16px 20px 16px 80px',
-          background: '#f9fafb',
+          background: 'var(--color-bg)',
           borderBottom: isLast && !flagExpanded ? 'none' : `1px solid ${C.border}`,
-          fontSize: 13, color: '#374151', lineHeight: 1.7, whiteSpace: 'pre-wrap',
+          fontSize: 13, color: 'var(--color-text)', lineHeight: 1.7, whiteSpace: 'pre-wrap',
         }}>
           {faq.answer}
         </div>
@@ -705,8 +705,8 @@ function FaqFlagPanel({ faqId, isLast }: { faqId: string; isLast: boolean }) {
   return (
     <div style={{
       padding: '12px 20px 14px 20px',
-      background: '#fff5f5',
-      borderTop: `1px solid #fecaca`,
+      background: 'var(--color-danger-bg)',
+      borderTop: `1px solid var(--color-danger)`,
       borderBottom: isLast ? 'none' : `1px solid ${C.border}`,
       display: 'flex',
       flexDirection: 'column',
@@ -721,13 +721,13 @@ function FaqFlagPanel({ faqId, isLast }: { faqId: string; isLast: boolean }) {
           display: 'grid',
           gridTemplateColumns: '1fr auto auto',
           gap: 0,
-          background: '#fff',
-          border: `1px solid #fecaca`,
+          background: 'var(--color-card)',
+          border: `1px solid var(--color-border)`,
           borderRadius: 10,
           overflow: 'hidden',
         }}>
           {/* Left: Student Feedback */}
-          <div style={{ padding: '14px 18px', borderRight: `1px solid #fecaca` }}>
+          <div style={{ padding: '14px 18px', borderRight: `1px solid var(--color-border)` }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 6 }}>
               Student Feedback
             </div>
@@ -747,8 +747,8 @@ function FaqFlagPanel({ faqId, isLast }: { faqId: string; isLast: boolean }) {
           </div>
 
           {/* Middle: Spurti reward */}
-          <div style={{ padding: '14px 20px', borderRight: `1px solid #fecaca`, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8, minWidth: 260 }}>
-            <span style={{ fontSize: 11, color: '#7c3aed', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div style={{ padding: '14px 20px', borderRight: `1px solid var(--color-border)`, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8, minWidth: 260 }}>
+            <span style={{ fontSize: 11, color: 'var(--color-primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
               <Sparkles size={11} /> Spurti reward for {f.reportedBy.name}:
             </span>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -803,7 +803,7 @@ function flagTimeAgo(iso: string): string {
 
 function ColHead({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center' }}>
+    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', display: 'flex', alignItems: 'center' }}>
       {children}
     </div>
   );
@@ -836,9 +836,9 @@ function FilterChip({ active, onClick, children }: {
       onClick={onClick}
       style={{
         fontSize: 12, fontWeight: 500, padding: '7px 16px', borderRadius: 20,
-        border: `1px solid ${active ? '#6366f1' : '#e5e7eb'}`,
-        background: active ? '#6366f1' : '#fff',
-        color: active ? '#fff' : '#6b7280',
+        border: `1px solid ${active ? 'var(--color-primary)' : 'var(--color-border)'}`,
+        background: active ? 'var(--color-primary)' : 'var(--color-card)',
+        color: active ? '#fff' : 'var(--color-text-muted)',
         cursor: 'pointer', fontFamily: 'inherit',
         display: 'inline-flex', alignItems: 'center',
       }}
@@ -856,9 +856,9 @@ function PgBtn({ children, onClick, active, disabled }: {
       onClick={onClick} disabled={disabled}
       style={{
         minWidth: 36, height: 36, padding: '0 8px', borderRadius: 8,
-        border: `1px solid ${active ? '#6366f1' : '#e5e7eb'}`,
-        background: active ? '#6366f1' : '#fff',
-        color: active ? '#fff' : disabled ? '#d1d5db' : '#374151',
+        border: `1px solid ${active ? 'var(--color-primary)' : 'var(--color-border)'}`,
+        background: active ? 'var(--color-primary)' : 'var(--color-card)',
+        color: active ? '#fff' : disabled ? 'var(--color-text-muted)' : 'var(--color-text)',
         fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 700 : 400,
         cursor: disabled ? 'not-allowed' : 'pointer',
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -904,13 +904,13 @@ function timeAgo(iso: string) {
 }
 
 const labelStyle: React.CSSProperties = {
-  margin: 0, fontSize: 10, color: C.muted, marginBottom: 3, letterSpacing: '.2px',
+  margin: 0, fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 3, letterSpacing: '.2px',
 };
 const valueStyle: React.CSSProperties = {
-  margin: 0, fontSize: 13, fontWeight: 600, color: C.text,
+  margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--color-text)',
 };
 const vDivider: React.CSSProperties = {
-  width: 1, alignSelf: 'stretch', background: C.divider, margin: '0 0',
+  width: 1, alignSelf: 'stretch', background: 'var(--color-border)', margin: '0 0',
 };
 
 export type { FaqCreateInput };
