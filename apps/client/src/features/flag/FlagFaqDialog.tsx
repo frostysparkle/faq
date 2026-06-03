@@ -117,24 +117,34 @@ export function FlagFaqButton({ faqId, faqUpdatedAt = '' }: Props) {
     return (
       <button
         type="button"
-        aria-label="Flag this FAQ"
-        data-tooltip="Flag this FAQ"
         onClick={() => setOpen(true)}
         style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: 4,
-          padding: '4px 10px',
-          borderRadius: 16,
-          background: 'transparent',
+          gap: 6,
+          padding: '6px 16px',
+          borderRadius: 24,
+          background: 'var(--color-input)',
           color: 'var(--color-text-muted)',
-          border: '1px solid var(--color-border)',
-          fontSize: 11,
+          border: '1.5px solid var(--color-border)',
+          fontSize: 13,
+          fontWeight: 600,
           cursor: 'pointer',
           fontFamily: 'inherit',
+          transition: 'background 0.18s ease, color 0.18s ease',
+          outline: 'none',
+          whiteSpace: 'nowrap',
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-card)';
+          (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text)';
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-input)';
+          (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-muted)';
         }}
       >
-        <Flag size={11} /> Flag this FAQ
+        <Flag size={14} strokeWidth={1.8} /> Flag this FAQ
       </button>
     );
   }

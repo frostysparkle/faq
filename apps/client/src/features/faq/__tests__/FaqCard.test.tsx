@@ -1,7 +1,7 @@
 // Locks Dashboard Spec into regression tests:
-//  - students NEVER see raw helpful/unhelpful counts (Change Spec §7.3)
 //  - students NEVER see viewCount (Dashboard Spec)
-//  - moderators DO see all of them
+//  - moderators DO see viewCount
+//  - YouTube-style vote bar renders in expanded section
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -15,7 +15,6 @@ vi.mock('../api', () => ({
   },
 }));
 
-// Mirrors the role-aware projection: students get no counts on the wire.
 const studentFaq: PublicFaq = {
   id: 'f1',
   title: 'How do I download my NOC?',
@@ -24,6 +23,8 @@ const studentFaq: PublicFaq = {
   tags: [{ id: 't1', name: 'noc', slug: 'noc' }],
   status: 'published',
   userVote: null,
+  helpfulCount: 5,
+  unhelpfulCount: 1,
   updatedAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),
 };
@@ -31,8 +32,6 @@ const studentFaq: PublicFaq = {
 const moderatorFaq: PublicFaq = {
   ...studentFaq,
   viewCount: 42,
-  helpfulCount: 91,
-  unhelpfulCount: 9,
 };
 
 function renderWithClient(ui: React.ReactElement) {
@@ -41,45 +40,41 @@ function renderWithClient(ui: React.ReactElement) {
 }
 
 describe('<FaqCard>', () => {
-  it('hides raw helpful/unhelpful counts from students', () => {
-    renderWithClient(<FaqCard faq={studentFaq} role="student" />);
-    expect(screen.queryByText(/91 helpful/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/9 unhelpful/i)).not.toBeInTheDocument();
-  });
-
   it('hides viewCount from students', () => {
-    // Even if the server projection ever leaks viewCount on a student row, the UI must not
-    // render it. Use a fixture WITH viewCount and confirm the number 42 is not on screen.
     renderWithClient(<FaqCard faq={{ ...studentFaq, viewCount: 42 }} role="student" />);
-    // The "42" appearing in any text node would be a regression. Look for the eye icon's number.
-    expect(screen.queryByText('42')).not.toBeInTheDocument();
+    expect(screen.queryByText(/42/)).not.toBeInTheDocument();
   });
 
-  it('shows raw counts to moderators', () => {
+  it('shows viewCount to moderators in the header', () => {
     renderWithClient(<FaqCard faq={moderatorFaq} role="moderator" />);
-    expect(screen.getByText(/91 helpful/i)).toBeInTheDocument();
-    expect(screen.getByText(/9 unhelpful/i)).toBeInTheDocument();
+    expect(screen.getByText(/42/)).toBeInTheDocument();
   });
 
-  it('shows viewCount to moderators', () => {
-    renderWithClient(<FaqCard faq={moderatorFaq} role="moderator" />);
-    expect(screen.getByText('42')).toBeInTheDocument();
+  it('does not show vote counts in the collapsed header', () => {
+    renderWithClient(<FaqCard faq={studentFaq} role="student" />);
+    // Counts must not appear in the header — only in the expanded vote bar.
+    expect(screen.queryByLabelText(/helpful/i)).not.toBeInTheDocument();
   });
 
-  it('reveals helpful/unhelpful buttons for students after expanding', () => {
+  it('reveals YouTube-style vote bar for students after expanding', () => {
     renderWithClient(<FaqCard faq={studentFaq} role="student" />);
     fireEvent.click(screen.getByRole('button', { name: /how do i download my noc/i }));
     expect(screen.getByRole('button', { name: /helpful/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /not helpful/i })).toBeInTheDocument();
   });
 
-  it('keeps vote buttons visible after a vote was already cast so user can change or undo', () => {
-    // userVote: 'helpful' means the user has already voted — buttons should still be shown
-    // (selected state) so the user can toggle off or switch to Not Helpful.
-    renderWithClient(<FaqCard faq={{ ...studentFaq, userVote: 'helpful', helpfulCount: 3 }} role="student" />);
+  it('shows read-only vote bar for moderators after expanding', () => {
+    renderWithClient(<FaqCard faq={moderatorFaq} role="moderator" />);
+    fireEvent.click(screen.getByRole('button', { name: /how do i download my noc/i }));
+    // Buttons are present but disabled (read-only).
+    const likeBtn = screen.getByRole('button', { name: /helpful/i });
+    expect(likeBtn).toBeDisabled();
+  });
+
+  it('keeps vote buttons visible when user has already voted so they can undo', () => {
+    renderWithClient(<FaqCard faq={{ ...studentFaq, userVote: 'helpful' }} role="student" />);
     fireEvent.click(screen.getByRole('button', { name: /how do i download my noc/i }));
     expect(screen.getByRole('button', { name: /helpful/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /not helpful/i })).toBeInTheDocument();
-    expect(screen.queryByText(/thanks for your feedback/i)).not.toBeInTheDocument();
   });
 });

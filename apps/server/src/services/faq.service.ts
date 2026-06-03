@@ -383,7 +383,9 @@ export const faqService = {
     }
     update.$inc = inc;
 
-    await FaqModel.updateOne({ _id: faqId }, update);
+    // timestamps: false prevents Mongoose from bumping updatedAt on a vote —
+    // a reaction should never change the "last edited" time shown to students.
+    await FaqModel.updateOne({ _id: faqId }, update, { timestamps: false });
 
     // Fire-and-forget analytics event.
     void analyticsService.track(rating === 'helpful' ? 'faq_helpful' : 'faq_unhelpful', {

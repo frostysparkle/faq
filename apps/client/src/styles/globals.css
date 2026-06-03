@@ -470,16 +470,15 @@ main > * { animation: pageIn 0.22s ease-out; }
 
 /* ── Tooltip bubbles ─────────────────────────────────────────────────────────
    Attach a tooltip to any element by setting [data-tooltip="label"].
-   Buttons with aria-label automatically get a tooltip from that attribute.
-   The bubble appears above the element with a small downward arrow.
+   Only elements with an explicit [data-tooltip] attribute get a tooltip.
+   aria-label is intentionally excluded — it exists for screen-reader
+   accessibility only and must never produce a visible rendered label.
 ────────────────────────────────────────────────────────────────────────────── */
-[data-tooltip],
-button[aria-label] {
+[data-tooltip] {
   position: relative;
 }
 
-[data-tooltip]::after,
-button[aria-label]::after {
+[data-tooltip]::after {
   content: attr(data-tooltip);
   position: absolute;
   bottom: calc(100% + 8px);
@@ -494,7 +493,8 @@ button[aria-label]::after {
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.14s ease, transform 0.14s ease;
+  visibility: hidden;
+  transition: opacity 0.14s ease, transform 0.14s ease, visibility 0s linear 0.14s;
   z-index: 9999;
   letter-spacing: 0.01em;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
@@ -502,17 +502,7 @@ button[aria-label]::after {
   line-height: 1;
 }
 
-button[aria-label]::after {
-  content: attr(aria-label);
-}
-
-/* Override: if an element has BOTH, data-tooltip wins */
-[data-tooltip]::after {
-  content: attr(data-tooltip) !important;
-}
-
-[data-tooltip]::before,
-button[aria-label]::before {
+[data-tooltip]::before {
   content: '';
   position: absolute;
   bottom: calc(100% + 3px);
@@ -522,18 +512,19 @@ button[aria-label]::before {
   border-top-color: #1e293b;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.14s ease;
+  visibility: hidden;
+  transition: opacity 0.14s ease, visibility 0s linear 0.14s;
   z-index: 9999;
 }
 
 [data-tooltip]:hover::after,
-[data-tooltip]:hover::before,
-button[aria-label]:hover::after,
-button[aria-label]:hover::before {
+[data-tooltip]:hover::before {
   opacity: 1;
+  visibility: visible;
+  transition: opacity 0.14s ease, transform 0.14s ease, visibility 0s linear 0s;
   transform: translateX(-50%) scale(1);
 }
 
-button[aria-label]:hover::before {
+[data-tooltip]:hover::before {
   transform: translateX(-50%);
 }

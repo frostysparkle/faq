@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle,
+  Check,
   CheckCircle2,
   ChevronDown,
   Circle,
@@ -10,6 +11,7 @@ import {
   Folder,
   MessageSquare,
   RotateCcw,
+  Search,
   User,
   Users,
 } from 'lucide-react';
@@ -103,6 +105,15 @@ export function CommunityPage() {
   // applied = what actually drives the query
   const [applied, setApplied] = useState<PendingFilters>({ ...DEFAULT_FILTERS, activity: initialActivity });
 
+  // ── Search ───────────────────────────────────────────────────────────────────
+  const [searchInput, setSearchInput]       = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const h = setTimeout(() => setDebouncedSearch(searchInput.trim()), 300);
+    return () => clearTimeout(h);
+  }, [searchInput]);
+
   // Sync ?idle= URL param whenever applied.activity changes
   useEffect(() => {
     const idle = activityToIdle(applied.activity);
@@ -144,15 +155,31 @@ export function CommunityPage() {
 
   const { data: rawData, isLoading } = useQuestions(queryParams);
 
-  // Category is filtered client-side (API doesn't expose a category param)
+  // Category + text search are both filtered client-side.
   const data = useMemo(() => {
     if (!rawData) return [];
-    if (applied.category === 'All') return rawData;
-    return rawData.filter(q => q.category?.id === applied.category);
-  }, [rawData, applied.category]);
+    let result = applied.category === 'All'
+      ? rawData
+      : rawData.filter(q => q.category?.id === applied.category);
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      result = result.filter(q =>
+        q.title.toLowerCase().includes(lower) ||
+        (q.description && q.description.toLowerCase().includes(lower)) ||
+        q.category?.name.toLowerCase().includes(lower) ||
+        q.author.name.toLowerCase().includes(lower),
+      );
+    }
+    return result;
+  }, [rawData, applied.category, debouncedSearch]);
 
   const handleApply = () => setApplied({ ...pending });
-  const handleClear = () => { setPending(DEFAULT_FILTERS); setApplied(DEFAULT_FILTERS); };
+  const handleClear = () => {
+    setPending(DEFAULT_FILTERS);
+    setApplied(DEFAULT_FILTERS);
+    setSearchInput('');
+    setDebouncedSearch('');
+  };
 
   const hasApplied = applied.status !== 'All' || applied.category !== 'All' || applied.activity !== 'all';
   const hasPendingChanges = JSON.stringify(pending) !== JSON.stringify(applied);
@@ -160,17 +187,22 @@ export function CommunityPage() {
   return (
     <div>
       {/* ── Page heading ──────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
         <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--color-card)', boxShadow: '0 2px 8px rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <Users size={18} color="var(--color-success)" />
         </div>
-        <div>
-          <div style={{ fontSize: 19, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>Community Q&A</div>
-          <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>Student questions · Peer answers · Moderator approved</div>
-        </div>
+        <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>
+          Community Q&amp;A
+          {!isLoading && (
+            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-muted)', marginLeft: 8 }}>
+              {data.length} question{data.length === 1 ? '' : 's'}
+              {debouncedSearch && ` for "${debouncedSearch}"`}
+            </span>
+          )}
+        </span>
       </div>
 
-      {/* ── Filter bar ────────────────────────────────────────────────── */}
+      {/* ── Search + Filter bar (single row) ─────────────────────────── */}
       <FilterBar
         pending={pending}
         setPending={setPending}
@@ -179,12 +211,17 @@ export function CommunityPage() {
         activeCategories={activeCategories}
         idle={idle ?? null}
         hasPendingChanges={hasPendingChanges}
+        searchInput={searchInput}
+        onSearchChange={setSearchInput}
       />
 
-      {/* ── Active filter chips ──────────────────────────────────────── */}
-      {hasApplied && (
+      {/* ── Active filter / search chips ────────────────────────────── */}
+      {(hasApplied || debouncedSearch) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Active:</span>
+          {debouncedSearch && (
+            <ActiveChip label={`"${debouncedSearch}"`} />
+          )}
           {applied.status !== 'All' && (
             <ActiveChip label={applied.status.charAt(0).toUpperCase() + applied.status.slice(1)} />
           )}
@@ -215,10 +252,23 @@ export function CommunityPage() {
           <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--color-success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
             <MessageSquare size={26} color="var(--color-success)" />
           </div>
-          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>No questions match the selected filters</div>
-          <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 16 }}>Try adjusting your filters or clearing them.</div>
+          {debouncedSearch ? (
+            <>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>
+                No questions found for &ldquo;{debouncedSearch}&rdquo;
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 16 }}>
+                Try a different keyword or clear the search.
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>No questions match the selected filters</div>
+              <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 16 }}>Try adjusting your filters or clearing them.</div>
+            </>
+          )}
           <button onClick={handleClear} style={{ fontSize: 13, fontWeight: 600, padding: '8px 20px', borderRadius: 10, border: 'none', background: T.purple, color: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>
-            Clear filters
+            {debouncedSearch ? 'Clear search' : 'Clear filters'}
           </button>
         </div>
       )}
@@ -275,16 +325,22 @@ export function CommunityPage() {
 // ─── FilterBar ────────────────────────────────────────────────────────────────
 
 interface FilterBarProps {
-  pending:          PendingFilters;
-  setPending:       React.Dispatch<React.SetStateAction<PendingFilters>>;
-  onApply:          () => void;
-  onClear:          () => void;
-  activeCategories: { id: string; name: string }[];
-  idle:             IdleBuckets | null;
+  pending:           PendingFilters;
+  setPending:        React.Dispatch<React.SetStateAction<PendingFilters>>;
+  onApply:           () => void;
+  onClear:           () => void;
+  activeCategories:  { id: string; name: string }[];
+  idle:              IdleBuckets | null;
   hasPendingChanges: boolean;
+  searchInput:       string;
+  onSearchChange:    (v: string) => void;
 }
 
-function FilterBar({ pending, setPending, onApply, onClear, activeCategories, idle, hasPendingChanges }: FilterBarProps) {
+function FilterBar({
+  pending, setPending, onApply, onClear,
+  activeCategories, idle, hasPendingChanges,
+  searchInput, onSearchChange,
+}: FilterBarProps) {
   const statusOptions: SelectOption[] = [
     { value: 'All',      label: 'All Status' },
     { value: 'open',     label: 'Open',     icon: <Circle size={13} />,       color: T.purple },
@@ -305,11 +361,30 @@ function FilterBar({ pending, setPending, onApply, onClear, activeCategories, id
   ];
 
   return (
-    <div style={{ width: '70%', marginBottom: 16 }}>
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
 
+      {/* Search — grows to fill available space */}
+      <div className="topbar-search" style={{ flex: '1 1 200px', minWidth: 0 }}>
+        <Search
+          size={15}
+          color={searchInput ? 'var(--color-primary)' : 'var(--color-text-muted)'}
+          style={{ flexShrink: 0 }}
+        />
+        <input
+          value={searchInput}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Search questions…"
+          aria-label="Search community questions"
+          style={{
+            border: 'none', background: 'none', outline: 'none',
+            color: 'var(--color-text)', fontSize: 14, flex: 1,
+            fontFamily: 'inherit', minWidth: 0,
+          }}
+        />
+      </div>
+
+      {/* Filter dropdowns — no labels, placeholders carry the context */}
       <FilterSelect
-        label="STATUS"
         value={pending.status}
         options={statusOptions}
         onChange={(v) => setPending(p => ({ ...p, status: v as StatusOption }))}
@@ -317,7 +392,6 @@ function FilterBar({ pending, setPending, onApply, onClear, activeCategories, id
       />
 
       <FilterSelect
-        label="CATEGORY"
         value={pending.category}
         options={categoryOptions}
         onChange={(v) => setPending(p => ({ ...p, category: v }))}
@@ -325,7 +399,6 @@ function FilterBar({ pending, setPending, onApply, onClear, activeCategories, id
       />
 
       <FilterSelect
-        label="ACTIVITY WINDOW"
         value={pending.activity}
         options={activityOptions}
         onChange={(v) => setPending(p => ({ ...p, activity: v }))}
@@ -337,7 +410,7 @@ function FilterBar({ pending, setPending, onApply, onClear, activeCategories, id
         onClick={onApply}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          height: 34, padding: '0 16px', borderRadius: 8,
+          height: 36, padding: '0 16px', borderRadius: 8,
           border: `1.5px solid ${T.purple}`,
           background: T.purple, color: 'white',
           fontSize: 13, fontWeight: 600,
@@ -359,7 +432,7 @@ function FilterBar({ pending, setPending, onApply, onClear, activeCategories, id
         onClick={onClear}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-          height: 34, padding: '0 12px', borderRadius: 8,
+          height: 36, padding: '0 12px', borderRadius: 8,
           border: `1.5px solid ${T.border}`, background: 'var(--color-card)',
           color: T.gray, fontSize: 13, fontWeight: 500,
           cursor: 'pointer', fontFamily: 'inherit',
@@ -373,7 +446,6 @@ function FilterBar({ pending, setPending, onApply, onClear, activeCategories, id
         <RotateCcw size={12} />
         Clear
       </button>
-    </div>
     </div>
   );
 }
@@ -391,7 +463,7 @@ interface SelectOption {
 function FilterSelect({
   label, value, options, onChange, style,
 }: {
-  label:    string;
+  label?:   string;
   value:    string;
   options:  SelectOption[];
   onChange: (v: string) => void;
@@ -421,11 +493,6 @@ function FilterSelect({
 
   return (
     <div ref={ref} style={{ position: 'relative', ...style }}>
-      {/* Label sits outside the card */}
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase' as const, color: T.gray, marginBottom: 4 }}>
-        {label}
-      </div>
-
       {/* Card trigger — value + chevron only */}
       <button
         type="button"
@@ -434,7 +501,7 @@ function FilterSelect({
         aria-expanded={open}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          width: '100%', height: 34, padding: '0 10px',
+          width: '100%', height: 36, padding: '0 10px',
           background: isActive ? T.purpleLight : 'var(--color-card)',
           border: `1.5px solid ${isActive ? T.purple : T.border}`,
           borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
@@ -456,7 +523,7 @@ function FilterSelect({
         <ChevronDown size={13} style={{ flexShrink: 0, transition: 'transform 0.18s', transform: open ? 'rotate(180deg)' : 'none', color: T.gray }} />
       </button>
 
-      {/* Dropdown panel */}
+      {/* Dropdown panel — capped at 5 rows with internal scroll */}
       {open && (
         <div
           role="listbox"
@@ -465,10 +532,11 @@ function FilterSelect({
             minWidth: '100%', zIndex: 1200,
             background: T.panelBg,
             border: `1px solid ${T.border}`,
-            borderRadius: 12,
+            borderRadius: 10,
             boxShadow: '0 8px 24px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)',
-            padding: '6px 0',
-            animation: 'ym-slide-up 0.14s ease-out',
+            padding: '4px 0',
+            maxHeight: 188,   // 5 × 36 px rows + 8 px padding
+            overflowY: 'auto',
           }}
         >
           {options.map((opt) => {
@@ -483,7 +551,7 @@ function FilterSelect({
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(opt.value); setOpen(false); } }}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '10px 14px', cursor: 'pointer', outline: 'none',
+                  padding: '0 14px', height: 36, cursor: 'pointer', outline: 'none',
                   background: sel ? T.purpleLight : 'transparent',
                   transition: 'background 0.1s',
                 }}
@@ -492,28 +560,22 @@ function FilterSelect({
                 onFocus={(e)      => { (e.currentTarget as HTMLElement).style.background = T.rowHover; }}
                 onBlur={(e)       => { (e.currentTarget as HTMLElement).style.background = sel ? T.purpleLight : 'transparent'; }}
               >
-                {/* Radio + icon + label */}
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-                  {/* Radio indicator */}
-                  <span style={{
-                    width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
-                    border: `2px solid ${sel ? T.purple : '#D1D5DB'}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'border-color 0.15s',
-                  }}>
-                    {sel && <span style={{ width: 8, height: 8, borderRadius: '50%', background: T.purple }} />}
-                  </span>
+                {/* Icon + label */}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, overflow: 'hidden' }}>
                   {opt.icon && <span style={{ color: opt.color, flexShrink: 0 }}>{opt.icon}</span>}
-                  <span style={{ fontSize: 13, fontWeight: sel ? 600 : 400, color: sel ? T.purple : T.dark }}>
+                  <span style={{ fontSize: 13, fontWeight: sel ? 600 : 400, color: sel ? T.purple : T.dark, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {opt.label}
                   </span>
                 </span>
-                {/* Count badge */}
-                {opt.count !== undefined && (
-                  <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: T.countBg, color: T.gray, flexShrink: 0, marginLeft: 8 }}>
-                    {opt.count}
-                  </span>
-                )}
+                {/* Count badge + check mark */}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginLeft: 8 }}>
+                  {opt.count !== undefined && (
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: T.countBg, color: T.gray }}>
+                      {opt.count}
+                    </span>
+                  )}
+                  {sel && <Check size={13} color={T.purple} strokeWidth={2.5} />}
+                </span>
               </div>
             );
           })}
