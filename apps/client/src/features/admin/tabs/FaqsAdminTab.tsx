@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   Eye,
   Plus,
@@ -14,7 +14,6 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
-  Columns3,
   Check,
   Search,
   Sparkles,
@@ -29,27 +28,10 @@ import { InlineFaqEditor } from './InlineFaqEditor';
 import { FlagInbox } from './FlagInbox';
 
 type Filter = 'all' | 'helpful' | 'flagged';
-type ColKey = 'details' | 'engagement' | 'flag' | 'actions';
 const PAGE_SIZES = [5, 10, 20, 50];
 
-const COL_LABELS: Record<ColKey, string> = {
-  details:    'Details',
-  engagement: 'Engagement',
-  flag:       'Flag',
-  actions:    'Actions',
-};
-const DEFAULT_VISIBLE: Record<ColKey, boolean> = {
-  details: true, engagement: true, flag: true, actions: true,
-};
-
-function buildGrid(vis: Record<ColKey, boolean>): string {
-  const cols = ['52px', 'minmax(0,2.5fr)'];
-  if (vis.details)    cols.push('minmax(0,1fr)');
-  if (vis.engagement) cols.push('120px');
-  if (vis.flag)       cols.push('100px');
-  if (vis.actions)    cols.push('110px');
-  return cols.join(' ');
-}
+// Fixed grid — all columns always visible: # | Question | Details | Engagement | Flag | Actions
+const GRID = '52px minmax(0,2.5fr) minmax(0,1fr) 120px 100px 110px';
 
 // ─── Colours — all resolved from the app's CSS custom properties ──────────
 const C = {
@@ -77,35 +59,17 @@ const C = {
   actionDel:  { bg: 'var(--color-danger-bg)',  fg: 'var(--color-danger)',  border: 'var(--color-danger-bg)' },
 };
 
-export function FaqsAdminTab({ filter }: { filter: Filter }) {
+export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
+  const [filter, setFilter] = useState<Filter>('all');
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [flagExpandedId, setFlagExpandedId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [visibleCols, setVisibleCols] = useState<Record<ColKey, boolean>>(DEFAULT_VISIBLE);
-  const [colMenuOpen, setColMenuOpen] = useState(false);
-  const colMenuRef = useRef<HTMLDivElement>(null);
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const toggleCol = (col: ColKey) =>
-    setVisibleCols((v) => ({ ...v, [col]: !v[col] }));
-
-  const grid = buildGrid(visibleCols);
-
-  // Close column menu on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (colMenuRef.current && !colMenuRef.current.contains(e.target as Node)) {
-        setColMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   const handleSearchChange = (value: string) => {
     setSearchInput(value);
@@ -141,13 +105,29 @@ export function FaqsAdminTab({ filter }: { filter: Filter }) {
   const startItem = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const endItem   = Math.min(page * pageSize, total);
 
-  // Reset to page 1 whenever the parent changes the active filter.
-  useEffect(() => { setPage(1); }, [filter]);
+  const switchFilter = (f: Filter) => { setFilter(f); setPage(1); };
 
   return (
     <div>
       {/* ── Toolbar ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {(['all', 'helpful', 'flagged'] as Filter[]).map((f) => (
+            <FilterChip key={f} active={filter === f} onClick={() => switchFilter(f)}>
+              {f === 'all' ? 'All' : f === 'helpful' ? 'Helpful FAQs' : (
+                <>
+                  Flagged FAQs
+                  {flaggedCount > 0 && (
+                    <span style={{ background: C.thumbDown, color: '#fff', borderRadius: 10, padding: '0 6px', fontSize: 10, fontWeight: 700, marginLeft: 5 }}>
+                      {flaggedCount}
+                    </span>
+                  )}
+                </>
+              )}
+            </FilterChip>
+          ))}
+        </div>
+
         {/* Search bar */}
         <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: 340 }}>
           <Search
@@ -189,108 +169,9 @@ export function FaqsAdminTab({ filter }: { filter: Filter }) {
             </button>
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* Column visibility picker */}
-          <div ref={colMenuRef} style={{ position: 'relative' }}>
-            <button
-              onClick={() => setColMenuOpen((v) => !v)}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                fontSize: 13, fontWeight: 500, padding: '7px 14px', borderRadius: 8,
-                border: `1px solid ${colMenuOpen ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                background: colMenuOpen ? 'var(--color-primary-bg)' : 'var(--color-card)',
-                color: colMenuOpen ? 'var(--color-primary)' : 'var(--color-text)',
-                cursor: 'pointer', fontFamily: 'inherit',
-              }}
-            >
-              <Columns3 size={14} /> Columns
-              {Object.values(visibleCols).some((v) => !v) && (
-                <span style={{
-                  background: 'var(--color-primary)', color: '#fff',
-                  borderRadius: 10, padding: '0 5px', fontSize: 10, fontWeight: 700,
-                }}>
-                  {Object.values(visibleCols).filter((v) => !v).length}
-                </span>
-              )}
-            </button>
-
-            {colMenuOpen && (
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 50,
-                background: 'var(--color-card)', border: '1px solid var(--color-border)',
-                borderRadius: 10, boxShadow: '0 4px 16px rgba(0,0,0,.10)',
-                minWidth: 180, padding: '6px 0',
-              }}>
-                {/* header */}
-                <div style={{
-                  padding: '8px 14px 6px',
-                  fontSize: 10, fontWeight: 700, letterSpacing: '.5px',
-                  color: 'var(--color-text-muted)', textTransform: 'uppercase',
-                  borderBottom: '1px solid var(--color-border)',
-                }}>
-                  Toggle columns
-                </div>
-                {/* Question — always locked */}
-                <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '9px 14px', opacity: 0.45,
-                }}>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text)' }}>Question</span>
-                  <div style={{
-                    width: 18, height: 18, borderRadius: 5, background: 'var(--color-primary)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <Check size={11} color="#fff" strokeWidth={3} />
-                  </div>
-                </div>
-                <div style={{ borderBottom: '1px solid var(--color-border)' }} />
-                {/* Toggleable columns */}
-                {(Object.keys(COL_LABELS) as ColKey[]).map((col) => (
-                  <button
-                    key={col}
-                    onClick={() => toggleCol(col)}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      width: '100%', padding: '9px 14px', background: 'none', border: 'none',
-                      cursor: 'pointer', fontFamily: 'inherit',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-sidebar-hover)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
-                  >
-                    <span style={{ fontSize: 13, fontWeight: 500, color: visibleCols[col] ? 'var(--color-text)' : 'var(--color-text-muted)' }}>
-                      {COL_LABELS[col]}
-                    </span>
-                    <div style={{
-                      width: 18, height: 18, borderRadius: 5,
-                      background: visibleCols[col] ? 'var(--color-primary)' : 'var(--color-pill)',
-                      border: visibleCols[col] ? 'none' : '1px solid var(--color-border)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      flexShrink: 0,
-                    }}>
-                      {visibleCols[col] && <Check size={11} color="#fff" strokeWidth={3} />}
-                    </div>
-                  </button>
-                ))}
-                {/* Reset link */}
-                <div style={{ borderTop: '1px solid var(--color-border)', padding: '6px 14px' }}>
-                  <button
-                    onClick={() => setVisibleCols(DEFAULT_VISIBLE)}
-                    style={{
-                      fontSize: 12, color: 'var(--color-primary)', background: 'none', border: 'none',
-                      cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500, padding: 0,
-                    }}
-                  >
-                    Reset to default
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <Button onClick={() => setCreating((v) => !v)}>
-            <Plus size={14} /> {creating ? 'Cancel' : 'New FAQ'}
-          </Button>
-        </div>
+        <Button onClick={() => setCreating((v) => !v)}>
+          <Plus size={14} /> {creating ? 'Cancel' : 'New FAQ'}
+        </Button>
       </div>
 
       {creating && categories && tags && (
@@ -308,7 +189,7 @@ export function FaqsAdminTab({ filter }: { filter: Filter }) {
         {/* Header */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: grid,
+          gridTemplateColumns: GRID,
           alignItems: 'center',
           padding: '14px 20px',
           background: C.header,
@@ -317,27 +198,21 @@ export function FaqsAdminTab({ filter }: { filter: Filter }) {
         }}>
           <ColHead>#</ColHead>
           <ColHead>Question</ColHead>
-          {visibleCols.details && (
-            <ColHead>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <span>Details</span>
-                <span style={{ fontSize: 10, fontWeight: 400, color: C.muted }}>
-                  Category · Status · Updated
-                </span>
-              </div>
-            </ColHead>
-          )}
-          {visibleCols.engagement && (
-            <ColHead>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                Engagement <Info size={13} color={C.muted} />
+          <ColHead>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span>Details</span>
+              <span style={{ fontSize: 10, fontWeight: 400, color: C.muted }}>
+                Category · Status · Updated
               </span>
-            </ColHead>
-          )}
-          {visibleCols.flag && (
-            <ColHead>Flag</ColHead>
-          )}
-          {visibleCols.actions && <ColHead>Actions</ColHead>}
+            </div>
+          </ColHead>
+          <ColHead>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              Engagement <Info size={13} color={C.muted} />
+            </span>
+          </ColHead>
+          <ColHead>Flag</ColHead>
+          <ColHead>Actions</ColHead>
         </div>
 
         {/* Body */}
@@ -370,8 +245,6 @@ export function FaqsAdminTab({ filter }: { filter: Filter }) {
               onCancelEdit={() => setEditingId(null)}
               categories={categories ?? []}
               tags={tags ?? []}
-              visibleCols={visibleCols}
-              grid={grid}
             />
           );
         })}
@@ -439,7 +312,6 @@ function FaqRow({
   faq, rowNum, isLast, expanded, onToggleExpand,
   flagExpanded, onToggleFlagExpand,
   editing, onEdit, onCancelEdit, categories, tags,
-  visibleCols, grid,
 }: {
   faq: PublicFaq; rowNum: string; isLast: boolean;
   expanded: boolean; onToggleExpand: () => void;
@@ -447,8 +319,6 @@ function FaqRow({
   editing: boolean; onEdit: () => void; onCancelEdit: () => void;
   categories: { _id: string; name: string }[];
   tags: { _id: string; name: string }[];
-  visibleCols: Record<ColKey, boolean>;
-  grid: string;
 }) {
   const deleteFaq = useDeleteFaq();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -480,7 +350,7 @@ function FaqRow({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: grid,
+          gridTemplateColumns: GRID,
           alignItems: 'center',
           padding: '20px 20px',
           borderBottom: isLast && !expanded ? 'none' : `1px solid ${C.border}`,
@@ -510,123 +380,115 @@ function FaqRow({
         </div>
 
         {/* Details — stacked: Category on top, Status + Updated below */}
-        {visibleCols.details && (
-          <div style={{ paddingRight: 20, minWidth: 0 }}>
-            {/* Row 1: Category */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, minWidth: 0 }}>
-              <Folder size={13} color={C.muted} strokeWidth={1.5} style={{ flexShrink: 0 }} />
-              <span style={{ fontSize: 10, color: C.muted, fontWeight: 500, flexShrink: 0 }}>Category</span>
-              <span style={{
-                fontSize: 13, fontWeight: 600, color: C.catText,
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                marginLeft: 4,
-              }}>
-                {faq.categories[0]?.name ?? '—'}
-              </span>
-            </div>
-            {/* Row 2: Status + Updated */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
-              <span style={{
-                fontSize: 11, fontWeight: 600, padding: '2px 9px', borderRadius: 20,
-                background: pill.bg, color: pill.fg, whiteSpace: 'nowrap',
-              }}>
-                {faq.status.charAt(0).toUpperCase() + faq.status.slice(1)}
-              </span>
-              <span style={{ width: 1, height: 14, background: C.divider, flexShrink: 0 }} />
-              <CalendarDays size={13} color={C.muted} strokeWidth={1.5} style={{ flexShrink: 0 }} />
-              <span style={{ fontSize: 12, fontWeight: 500, color: C.mutedLabel, whiteSpace: 'nowrap' }}>
-                {timeAgo(faq.updatedAt)}
-              </span>
-            </div>
+        <div style={{ paddingRight: 20, minWidth: 0 }}>
+          {/* Row 1: Category */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, minWidth: 0 }}>
+            <Folder size={13} color={C.muted} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 10, color: C.muted, fontWeight: 500, flexShrink: 0 }}>Category</span>
+            <span style={{
+              fontSize: 13, fontWeight: 600, color: C.catText,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              marginLeft: 4,
+            }}>
+              {faq.categories[0]?.name ?? '—'}
+            </span>
           </div>
-        )}
+          {/* Row 2: Status + Updated */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+            <span style={{
+              fontSize: 11, fontWeight: 600, padding: '2px 9px', borderRadius: 20,
+              background: pill.bg, color: pill.fg, whiteSpace: 'nowrap',
+            }}>
+              {faq.status.charAt(0).toUpperCase() + faq.status.slice(1)}
+            </span>
+            <span style={{ width: 1, height: 14, background: C.divider, flexShrink: 0 }} />
+            <CalendarDays size={13} color={C.muted} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 12, fontWeight: 500, color: C.mutedLabel, whiteSpace: 'nowrap' }}>
+              {timeAgo(faq.updatedAt)}
+            </span>
+          </div>
+        </div>
 
         {/* Engagement */}
-        {visibleCols.engagement && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <ThumbsUp size={20} color={C.thumbUp} strokeWidth={1.8} />
-              <span style={{ fontSize: 15, fontWeight: 700, color: C.thumbUp }}>{faq.helpfulCount ?? 0}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <ThumbsDown size={20} color={C.thumbDown} strokeWidth={1.8} />
-              <span style={{ fontSize: 15, fontWeight: 700, color: C.thumbDown }}>{faq.unhelpfulCount ?? 0}</span>
-            </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <ThumbsUp size={20} color={C.thumbUp} strokeWidth={1.8} />
+            <span style={{ fontSize: 15, fontWeight: 700, color: C.thumbUp }}>{faq.helpfulCount ?? 0}</span>
           </div>
-        )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <ThumbsDown size={20} color={C.thumbDown} strokeWidth={1.8} />
+            <span style={{ fontSize: 15, fontWeight: 700, color: C.thumbDown }}>{faq.unhelpfulCount ?? 0}</span>
+          </div>
+        </div>
 
         {/* Flag */}
-        {visibleCols.flag && (
-          <div>
-            {flagCount > 0 ? (
-              <button
-                type="button"
-                onClick={onToggleFlagExpand}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', fontFamily: 'inherit' }}
-              >
-                <span style={{
-                  fontSize: 12, fontWeight: 700, padding: '2px 10px', borderRadius: 20,
-                  background: flagExpanded ? C.flagBadge.fg : C.flagBadge.bg,
-                  color: flagExpanded ? '#fff' : C.flagBadge.fg,
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                }}>
-                  Flagged
-                  {flagExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-                </span>
-                <p style={{ margin: '3px 0 0', fontSize: 11, color: C.muted }}>
-                  by {flagCount} student{flagCount === 1 ? '' : 's'}
-                </p>
-              </button>
-            ) : (
-              <span style={{ fontSize: 13, color: C.flagNone }}>—</span>
-            )}
-          </div>
-        )}
+        <div>
+          {flagCount > 0 ? (
+            <button
+              type="button"
+              onClick={onToggleFlagExpand}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', fontFamily: 'inherit' }}
+            >
+              <span style={{
+                fontSize: 12, fontWeight: 700, padding: '2px 10px', borderRadius: 20,
+                background: flagExpanded ? C.flagBadge.fg : C.flagBadge.bg,
+                color: flagExpanded ? '#fff' : C.flagBadge.fg,
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+              }}>
+                Flagged
+                {flagExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+              </span>
+              <p style={{ margin: '3px 0 0', fontSize: 11, color: C.muted }}>
+                by {flagCount} student{flagCount === 1 ? '' : 's'}
+              </p>
+            </button>
+          ) : (
+            <span style={{ fontSize: 13, color: C.flagNone }}>—</span>
+          )}
+        </div>
 
         {/* Actions */}
-        {visibleCols.actions && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {!confirmingDelete ? (
-              <>
-                <ABtn
-                  label={expanded ? 'Hide answer' : 'View answer'}
-                  onClick={onToggleExpand}
-                  bg={C.actionEye.bg} fg={C.actionEye.fg} border={C.actionEye.border}
-                >
-                  <Eye size={15} strokeWidth={1.8} />
-                </ABtn>
-                <ABtn label="Edit" onClick={onEdit} bg={C.actionEdit.bg} fg={C.actionEdit.fg} border={C.actionEdit.border}>
-                  <Pencil size={15} strokeWidth={1.8} />
-                </ABtn>
-                <ABtn
-                  label="Delete (click to confirm)"
-                  onClick={() => setConfirmingDelete(true)}
-                  bg={C.actionDel.bg} fg={C.actionDel.fg} border={C.actionDel.border}
-                >
-                  <Trash2 size={15} strokeWidth={1.8} />
-                </ABtn>
-              </>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger)', borderRadius: 10, padding: '5px 10px' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-danger)', whiteSpace: 'nowrap' }}>Delete?</span>
-                <button
-                  onClick={() => { deleteFaq.mutate(faq.id); setConfirmingDelete(false); }}
-                  disabled={deleteFaq.isPending}
-                  style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: 'none', background: 'var(--color-danger)', color: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
-                >
-                  Yes
-                </button>
-                <button
-                  onClick={() => setConfirmingDelete(false)}
-                  style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-card)', color: 'var(--color-text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {!confirmingDelete ? (
+            <>
+              <ABtn
+                label={expanded ? 'Hide answer' : 'View answer'}
+                onClick={onToggleExpand}
+                bg={C.actionEye.bg} fg={C.actionEye.fg} border={C.actionEye.border}
+              >
+                <Eye size={15} strokeWidth={1.8} />
+              </ABtn>
+              <ABtn label="Edit" onClick={onEdit} bg={C.actionEdit.bg} fg={C.actionEdit.fg} border={C.actionEdit.border}>
+                <Pencil size={15} strokeWidth={1.8} />
+              </ABtn>
+              <ABtn
+                label="Delete (click to confirm)"
+                onClick={() => setConfirmingDelete(true)}
+                bg={C.actionDel.bg} fg={C.actionDel.fg} border={C.actionDel.border}
+              >
+                <Trash2 size={15} strokeWidth={1.8} />
+              </ABtn>
+            </>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger)', borderRadius: 10, padding: '5px 10px' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-danger)', whiteSpace: 'nowrap' }}>Delete?</span>
+              <button
+                onClick={() => { deleteFaq.mutate(faq.id); setConfirmingDelete(false); }}
+                disabled={deleteFaq.isPending}
+                style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: 'none', background: 'var(--color-danger)', color: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => setConfirmingDelete(false)}
+                style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-card)', color: 'var(--color-text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Expanded answer */}
