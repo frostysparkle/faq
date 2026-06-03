@@ -32,6 +32,7 @@ const answerSchema = new Schema(
 );
 
 answerSchema.index({ questionId: 1, status: 1, upvoteCount: -1, createdAt: -1 });
+answerSchema.index({ questionId: 1, answeredBy: 1 }, { unique: true });
 
 export type AnswerDocument = HydratedDocument<InferSchemaType<typeof answerSchema>>;
 export const AnswerModel = model('Answer', answerSchema);

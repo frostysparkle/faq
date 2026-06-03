@@ -585,6 +585,12 @@ export const qnaService = {
       throw ApiError.forbidden('You cannot answer your own question');
     }
 
+    // Prevent duplicate submissions — one answer per student per question.
+    const alreadyAnswered = await AnswerModel.exists({ questionId, answeredBy: userId });
+    if (alreadyAnswered) {
+      throw ApiError.conflict('You have already submitted an answer for this question');
+    }
+
     const answer = await AnswerModel.create({
       questionId,
       body: input.body,

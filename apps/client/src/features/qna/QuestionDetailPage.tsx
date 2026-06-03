@@ -75,6 +75,7 @@ export function QuestionDetailPage() {
   const totalPages = Math.max(1, Math.ceil(totalAnswers / ANSWERS_PER_PAGE));
   const pagedAnswers = (answers ?? []).slice((page - 1) * ANSWERS_PER_PAGE, page * ANSWERS_PER_PAGE);
   const capReached = totalAnswers >= COMMUNITY_ANSWER_CAP;
+  const alreadyAnswered = answers?.some((a) => a.author.id === user?.id) ?? false;
 
   // Reset to page 1 whenever answers list changes
   useEffect(() => { setPage(1); }, [totalAnswers]);
@@ -247,7 +248,12 @@ export function QuestionDetailPage() {
 
           {/* ── Submit answer ── */}
           {!isOwnQuestion && question.status !== 'resolved' && question.status !== 'archived' && (
-            capReached ? (
+            alreadyAnswered ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--color-success)', padding: '10px 14px', background: 'var(--color-success-bg, #f0fdf4)', borderRadius: 8, border: '1px solid var(--color-success)', marginBottom: 8, fontWeight: 600 }}>
+                <Clock size={14} />
+                You've already submitted an answer — it's pending moderation.
+              </div>
+            ) : capReached ? (
               <div style={{ fontSize: 12, color: 'var(--color-text-muted)', padding: '8px 12px', background: 'var(--color-input)', borderRadius: 8, border: '1px solid var(--color-border)', marginBottom: 8 }}>
                 Max {COMMUNITY_ANSWER_CAP} answers reached — you can still vote on existing answers.
               </div>
