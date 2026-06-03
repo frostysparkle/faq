@@ -501,7 +501,8 @@ export const qnaService = {
     if (opts.role === 'student') {
       const ownObjectId = new Types.ObjectId(opts.userId);
       if (opts.mineOnly) {
-        filter.askedBy = ownObjectId;
+        // Show questions the student asked OR questions they tagged themselves onto.
+        filter.$or = [{ askedBy: ownObjectId }, { taggedStudents: ownObjectId }];
       } else if (!opts.idle) {
         // Don't OR back to non-community when idle is set — idle implies community-only.
         filter.$or = [{ type: 'community' }, { askedBy: ownObjectId }];

@@ -12,7 +12,7 @@
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, ChevronRight, HelpCircle, ImagePlus, X } from 'lucide-react';
 import { z } from 'zod';
@@ -21,6 +21,7 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { useCategories } from '../faq/queries';
 import { qnaApi } from './api';
+import { qnaKeys } from './queries';
 
 // Step 1 form. Local schema (not in shared) because this is a UI-only intermediate state.
 const draftSchema = z.object({
@@ -33,6 +34,7 @@ type Step = 'write' | 'faq-match' | 'question-match' | 'submit' | 'done';
 
 export function AskQuestionPage() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [step, setStep] = useState<Step>('write');
   const [draft, setDraft] = useState<Draft | null>(null);
   const [check, setCheck] = useState<ExistingAnswerCheckResult | null>(null);
@@ -69,7 +71,10 @@ export function AskQuestionPage() {
       if (!check) throw new Error('No check token');
       return qnaApi.tagMe(questionId, check.token);
     },
-    onSuccess: () => setStep('done'),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qnaKeys.questions({ type: 'community', mine: true }) });
+      setStep('done');
+    },
   });
 
   const createMutation = useMutation({
