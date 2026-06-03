@@ -27,8 +27,9 @@ interface PopulatedPending {
   questionId: {
     _id: Types.ObjectId;
     title: string;
+    isTrashed: boolean;
     taggedStudents: { _id: Types.ObjectId; name: string }[];
-  };
+  } | null;
   answeredBy: { _id: Types.ObjectId; name: string };
   upvoteCount: number;
   downvoteCount: number;
@@ -39,10 +40,10 @@ function projectPending(a: PopulatedPending): PendingAnswerRow {
   return {
     id: a._id.toString(),
     body: a.body,
-    questionId: a.questionId._id.toString(),
-    questionTitle: a.questionId.title,
+    questionId: a.questionId?._id.toString() ?? '',
+    questionTitle: a.questionId?.title ?? 'Deleted question',
     author: { id: a.answeredBy._id.toString(), name: a.answeredBy.name },
-    taggedStudents: (a.questionId.taggedStudents ?? []).map((s) => ({
+    taggedStudents: (a.questionId?.taggedStudents ?? []).map((s) => ({
       id: s._id.toString(),
       name: s.name,
     })),
@@ -141,11 +142,11 @@ export const moderationService = {
       .populate('answeredBy', 'name')
       .populate({
         path: 'questionId',
-        select: 'title taggedStudents',
+        select: 'title taggedStudents isTrashed',
         populate: { path: 'taggedStudents', select: 'name' },
       })
       .lean<PopulatedPending[]>();
-    return pending.map(projectPending);
+    return pending.filter((a) => a.questionId && !a.questionId.isTrashed).map(projectPending);
   },
 
   /**
@@ -164,11 +165,11 @@ export const moderationService = {
       .populate('answeredBy', 'name')
       .populate({
         path: 'questionId',
-        select: 'title taggedStudents',
+        select: 'title taggedStudents isTrashed',
         populate: { path: 'taggedStudents', select: 'name' },
       })
       .lean<PopulatedPending[]>();
-    return pending.map(projectPending);
+    return pending.filter((a) => a.questionId && !a.questionId.isTrashed).map(projectPending);
   },
 
   /**

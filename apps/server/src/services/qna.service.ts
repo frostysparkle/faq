@@ -195,7 +195,7 @@ function projectQuestion(q: PopulatedQuestion, viewerId?: string): PublicQuestio
   };
 
   // Personal question display state — only emitted when the requester is the asker (Change Spec §5.3).
-  if (q.type === 'personal' && viewerId && q.askedBy._id.toString() === viewerId) {
+  if (q.type === 'personal' && viewerId && q.askedBy?._id.toString() === viewerId) {
     if (q.answerCount > 0 || q.status === 'answered' || q.status === 'resolved') {
       result.displayState = 'responded';
     } else if (q.moderatorViewedAt) {
@@ -671,7 +671,10 @@ export const qnaService = {
       }
     }
 
-    await AnswerModel.updateOne({ _id: answerId }, update);
+    const updated = await AnswerModel.findOneAndUpdate({ _id: answerId }, update, {
+      new: true,
+      lean: true,
+    });
 
     // Spurti Points: a *new* upvote on an approved answer rewards the answer's author.
     // Pulling an upvote (cancelling) does NOT subtract points — the answer was helpful at
@@ -683,10 +686,9 @@ export const qnaService = {
       );
     }
 
-    const fresh = await AnswerModel.findById(answerId).lean();
     return {
-      upvoteCount: fresh?.upvoteCount ?? 0,
-      downvoteCount: fresh?.downvoteCount ?? 0,
+      upvoteCount: updated?.upvoteCount ?? 0,
+      downvoteCount: updated?.downvoteCount ?? 0,
       myVote,
     };
   },

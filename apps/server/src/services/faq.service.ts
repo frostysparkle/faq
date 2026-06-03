@@ -295,23 +295,19 @@ export const faqService = {
 
   /** Hard-delete an FAQ with full cascade cleanup. */
   async delete(id: string): Promise<void> {
-    const faq = await FaqModel.findById(id);
-    if (!faq) throw ApiError.notFound('FAQ not found');
+    // Delete the document first so a cleanup failure never leaves a live-but-orphaned FAQ.
+    const deleted = await FaqModel.findByIdAndDelete(id);
+    if (!deleted) throw ApiError.notFound('FAQ not found');
 
-    // Run cascade cleanup and the delete itself in parallel where safe.
+    // Best-effort cascade cleanup — partial failure leaves orphaned refs but the FAQ is gone.
     await Promise.all([
-      // Remove all flags raised against this FAQ.
       FlagModel.deleteMany({ entityType: 'faq', entityId: id }),
-      // Unset duplicateOf pointer on any FAQ that referenced this one.
       FaqModel.updateMany({ duplicateOf: id }, { $unset: { duplicateOf: '' } }),
-      // Remove this FAQ from every user's recently-viewed list.
       UserModel.updateMany(
         { 'recentlyViewedFaqs.faqId': id },
         { $pull: { recentlyViewedFaqs: { faqId: id } } },
       ),
     ]);
-
-    await FaqModel.findByIdAndDelete(id);
   },
 
   /** Idempotent view recording: increments counter and prepends to user's recent list. */

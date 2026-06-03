@@ -11,6 +11,7 @@ export function useFlagList(query: FlagListQuery = {}) {
   return useQuery({
     queryKey: flagKeys.list(query),
     queryFn: () => flagApi.list(query),
+    refetchInterval: 30_000,
   });
 }
 

@@ -38,7 +38,12 @@ function buildAuthPayload(user: UserDocument): AuthTokenPayload {
 export const authService = {
   async register(input: RegisterInput, requesterRole?: UserRole): Promise<AuthTokenPayload> {
     const existing = await UserModel.findOne({ email: input.email }).lean();
-    if (existing) throw ApiError.conflict('An account with this email already exists');
+    if (existing) {
+      if (existing.status === 'suspended' || existing.status === 'banned') {
+        throw ApiError.forbidden('This account has been suspended and cannot be re-registered');
+      }
+      throw ApiError.conflict('An account with this email already exists');
+    }
 
     // Only admins may assign a role at registration time. Otherwise default to student.
     const role: UserRole = requesterRole === 'admin' && input.role ? input.role : 'student';

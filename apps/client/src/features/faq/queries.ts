@@ -155,6 +155,7 @@ export function useFaqStats() {
   return useQuery({
     queryKey: ['stats', 'faqs'],
     queryFn: faqApi.getFaqStats,
+    refetchInterval: 30_000,
   });
 }
 
@@ -230,8 +231,8 @@ export function useDeleteCategory() {
     mutationFn: (id: string) => faqApi.deleteCategory(id),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: faqKeys.categories });
-      // Cascade pulls refs from FAQs — refresh list so stale category badges disappear.
-      void qc.invalidateQueries({ queryKey: faqKeys.lists() });
+      // Cascade pulls refs from FAQs — refresh list and detail views so stale category data disappears.
+      void qc.invalidateQueries({ queryKey: faqKeys.all });
     },
   });
 }
@@ -258,8 +259,8 @@ export function useDeleteTag() {
     mutationFn: (id: string) => faqApi.deleteTag(id),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: faqKeys.tags });
-      // Cascade pulls refs from FAQs — refresh list so stale tag badges disappear.
-      void qc.invalidateQueries({ queryKey: faqKeys.lists() });
+      // Cascade pulls refs from FAQs — refresh list and detail views so stale tag data disappears.
+      void qc.invalidateQueries({ queryKey: faqKeys.all });
     },
   });
 }

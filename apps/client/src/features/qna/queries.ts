@@ -57,6 +57,7 @@ export function useVoteAnswer(questionId: string) {
       qnaApi.voteAnswer(answerId, direction),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qnaKeys.answers(questionId) });
+      void qc.invalidateQueries({ queryKey: ['stats', 'leaderboard'] });
     },
   });
 }
@@ -80,6 +81,7 @@ export function useApproveAnswer() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qnaKeys.pendingAnswers });
       void qc.invalidateQueries({ queryKey: qnaKeys.all });
+      void qc.invalidateQueries({ queryKey: ['stats', 'leaderboard'] });
     },
   });
 }
