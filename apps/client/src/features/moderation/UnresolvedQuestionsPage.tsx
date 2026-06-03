@@ -328,36 +328,36 @@ function CardHeader({
   extra?: React.ReactNode;
 }) {
   return (
-    <div style={{ padding: '13px 18px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-      {/* Title */}
-      <button
-        onClick={onToggle}
-        style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: 'inherit', font: 'inherit' }}
-      >
-        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.45 }}>
-          {title}
-        </span>
-      </button>
+    <div style={{ padding: '13px 18px 11px' }}>
+      {/* Row 1 — question title (full width) + optional action + chevron */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+        <button
+          onClick={onToggle}
+          style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: 'inherit', font: 'inherit' }}
+        >
+          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.45 }}>
+            {title}
+          </span>
+        </button>
 
-      {/* Metadata */}
-      <div style={{ display: 'flex', alignItems: 'center', fontSize: 12, color: 'var(--color-text-muted)', flexShrink: 0 }}>
-        {meta}
+        {extra}
+
+        <button
+          onClick={onToggle}
+          style={{ flexShrink: 0, background: 'transparent', border: 'none', borderRadius: 8, padding: '4px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'background 0.13s' }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-input)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+        >
+          {expanded
+            ? <ChevronUp size={15} color="var(--color-text-muted)" />
+            : <ChevronDown size={15} color="var(--color-text-muted)" />}
+        </button>
       </div>
 
-      {/* Optional right-side slot (e.g. restore button) */}
-      {extra}
-
-      {/* Chevron */}
-      <button
-        onClick={onToggle}
-        style={{ flexShrink: 0, background: 'transparent', border: 'none', borderRadius: 8, padding: '4px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'background 0.13s' }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-input)'; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-      >
-        {expanded
-          ? <ChevronUp size={15} color="var(--color-text-muted)" />
-          : <ChevronDown size={15} color="var(--color-text-muted)" />}
-      </button>
+      {/* Row 2 — metadata strip */}
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', fontSize: 12, color: 'var(--color-text-muted)' }}>
+        {meta}
+      </div>
     </div>
   );
 }
