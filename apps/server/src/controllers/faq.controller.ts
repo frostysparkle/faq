@@ -15,6 +15,7 @@ export const faqController = {
     const result = await faqService.list({
       query: req.query as unknown as FaqListQuery,
       role: req.user.role,
+      userId: req.user.id,
     });
     return ok(res, result.items, {
       page: result.page,
@@ -61,9 +62,9 @@ export const faqController = {
     return ok(res, { id: faq.id, statsReset });
   },
 
-  async archive(req: Request, res: Response) {
+  async delete(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized();
-    await faqService.archive(req.params.id!, req.user.id);
+    await faqService.delete(req.params.id!);
     return noContent(res);
   },
 
@@ -76,8 +77,8 @@ export const faqController = {
   async submitFeedback(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized();
     const { rating } = req.body as FaqFeedbackInput;
-    await faqService.submitFeedback(req.params.id!, req.user.id, rating);
-    return noContent(res);
+    const result = await faqService.submitFeedback(req.params.id!, req.user.id, rating);
+    return ok(res, result);
   },
 
   async recentlyViewed(req: Request, res: Response) {

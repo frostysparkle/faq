@@ -11,7 +11,7 @@ import { FaqCard } from '../FaqCard';
 vi.mock('../api', () => ({
   faqApi: {
     recordView: vi.fn().mockResolvedValue(undefined),
-    submitFeedback: vi.fn().mockResolvedValue(undefined),
+    submitFeedback: vi.fn().mockResolvedValue({ helpfulCount: 1, unhelpfulCount: 0, userVote: 'helpful' }),
   },
 }));
 
@@ -23,7 +23,7 @@ const studentFaq: PublicFaq = {
   categories: [{ id: 'c1', name: 'NOC', slug: 'noc' }],
   tags: [{ id: 't1', name: 'noc', slug: 'noc' }],
   status: 'published',
-  hasUserFeedback: false,
+  userVote: null,
   updatedAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),
 };
@@ -69,14 +69,17 @@ describe('<FaqCard>', () => {
   it('reveals helpful/unhelpful buttons for students after expanding', () => {
     renderWithClient(<FaqCard faq={studentFaq} role="student" />);
     fireEvent.click(screen.getByRole('button', { name: /how do i download my noc/i }));
-    expect(screen.getByRole('button', { name: /^helpful$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /helpful/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /not helpful/i })).toBeInTheDocument();
   });
 
-  it('replaces feedback buttons with thanks message after a vote was already cast', () => {
-    renderWithClient(<FaqCard faq={{ ...studentFaq, hasUserFeedback: true }} role="student" />);
+  it('keeps vote buttons visible after a vote was already cast so user can change or undo', () => {
+    // userVote: 'helpful' means the user has already voted — buttons should still be shown
+    // (selected state) so the user can toggle off or switch to Not Helpful.
+    renderWithClient(<FaqCard faq={{ ...studentFaq, userVote: 'helpful', helpfulCount: 3 }} role="student" />);
     fireEvent.click(screen.getByRole('button', { name: /how do i download my noc/i }));
-    expect(screen.getByText(/thanks for your feedback/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^helpful$/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /helpful/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /not helpful/i })).toBeInTheDocument();
+    expect(screen.queryByText(/thanks for your feedback/i)).not.toBeInTheDocument();
   });
 });

@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronDown, ChevronLeft, ChevronUp, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronUp, ThumbsDown, ThumbsUp, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { COMMUNITY_ANSWER_CAP } from '@samagama/shared';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -16,6 +16,8 @@ export function QuestionDetailPage() {
   const [reveal, setReveal] = useState<'top' | 'three' | 'all'>('top');
   const [showAnswerForm, setShowAnswerForm] = useState(false);
   const [answersOpen, setAnswersOpen] = useState(true);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [zoom, setZoom] = useState(1);
 
   const visibleAnswers = useMemo(() => {
     if (!answers) return [];
@@ -65,23 +67,27 @@ export function QuestionDetailPage() {
           </div>
         )}
 
-        {/* Uploaded screenshot */}
+        {/* Uploaded screenshot — thumbnail → lightbox */}
         {question.screenshotUrl && (
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
               Attached image
             </div>
-            <img
+            <ImageThumbnail
               src={question.screenshotUrl}
-              alt="Question attachment"
-              style={{
-                maxWidth: '100%', maxHeight: 360, borderRadius: 10,
-                border: '1px solid var(--color-border)',
-                objectFit: 'contain', display: 'block',
-              }}
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              onClick={() => { setZoom(1); setLightboxOpen(true); }}
             />
           </div>
+        )}
+
+        {lightboxOpen && question.screenshotUrl && (
+          <ImageLightbox
+            src={question.screenshotUrl}
+            zoom={zoom}
+            onZoomIn={() => setZoom(z => Math.min(+(z + 0.25).toFixed(2), 3))}
+            onZoomOut={() => setZoom(z => Math.max(+(z - 0.25).toFixed(2), 0.25))}
+            onClose={() => { setLightboxOpen(false); setZoom(1); }}
+          />
         )}
 
         {/* Meta */}
@@ -275,4 +281,149 @@ function statusColor(status: import('@samagama/shared').QuestionStatus): 'accent
     case 'resolved': return 'success';
     default: return 'default';
   }
+}
+
+// ─── Image thumbnail ──────────────────────────────────────────────────────────
+
+function ImageThumbnail({ src, onClick }: { src: string; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        position: 'relative', display: 'inline-block', cursor: 'zoom-in',
+        borderRadius: 10, overflow: 'hidden',
+        border: '1.5px solid var(--color-border)',
+        boxShadow: hovered ? '0 4px 16px rgba(0,0,0,0.14)' : '0 1px 4px rgba(0,0,0,0.07)',
+        transition: 'box-shadow 0.15s',
+      }}
+    >
+      <img
+        src={src}
+        alt="Question attachment"
+        style={{
+          display: 'block', width: 'auto', height: 110, maxWidth: 180,
+          objectFit: 'cover',
+          transition: 'opacity 0.15s',
+          opacity: hovered ? 0.85 : 1,
+        }}
+        onError={(e) => { (e.currentTarget as HTMLImageElement).closest('div')!.style.display = 'none'; }}
+      />
+      {/* Zoom hint overlay */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.28)',
+        opacity: hovered ? 1 : 0,
+        transition: 'opacity 0.15s',
+        pointerEvents: 'none',
+      }}>
+        <ZoomIn size={22} color="white" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Image lightbox ───────────────────────────────────────────────────────────
+
+function ImageLightbox({
+  src, zoom, onZoomIn, onZoomOut, onClose,
+}: {
+  src: string; zoom: number;
+  onZoomIn: () => void; onZoomOut: () => void; onClose: () => void;
+}) {
+  // Keyboard: Escape → close, + → zoom in, - → zoom out
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === '+' || e.key === '=') onZoomIn();
+      if (e.key === '-') onZoomOut();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose, onZoomIn, onZoomOut]);
+
+  const btnStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    width: 38, height: 38, borderRadius: 10,
+    background: 'rgba(255,255,255,0.15)',
+    border: '1px solid rgba(255,255,255,0.25)',
+    color: 'white', cursor: 'pointer',
+    backdropFilter: 'blur(4px)',
+    transition: 'background 0.15s',
+  };
+
+  return (
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9000,
+        background: 'rgba(0,0,0,0.65)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      {/* Control bar */}
+      <div style={{
+        position: 'fixed', top: 18, right: 20,
+        display: 'flex', alignItems: 'center', gap: 8, zIndex: 9001,
+      }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)', minWidth: 36, textAlign: 'center' }}>
+          {Math.round(zoom * 100)}%
+        </span>
+        <button
+          style={btnStyle}
+          title="Zoom out (−)"
+          onClick={onZoomOut}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.28)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.15)'; }}
+        >
+          <ZoomOut size={17} />
+        </button>
+        <button
+          style={btnStyle}
+          title="Zoom in (+)"
+          onClick={onZoomIn}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.28)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.15)'; }}
+        >
+          <ZoomIn size={17} />
+        </button>
+        <button
+          style={{ ...btnStyle, background: 'rgba(220,38,38,0.5)', border: '1px solid rgba(220,38,38,0.6)' }}
+          title="Close (Esc)"
+          onClick={onClose}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(220,38,38,0.75)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(220,38,38,0.5)'; }}
+        >
+          <X size={17} />
+        </button>
+      </div>
+
+      {/* Image */}
+      <div style={{ overflow: 'auto', maxWidth: '90vw', maxHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <img
+          src={src}
+          alt="Attachment preview"
+          style={{
+            display: 'block',
+            maxWidth: '85vw',
+            maxHeight: '85vh',
+            borderRadius: 12,
+            boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
+            transform: `scale(${zoom})`,
+            transformOrigin: 'center center',
+            transition: 'transform 0.2s ease',
+          }}
+          draggable={false}
+        />
+      </div>
+    </div>
+  );
 }

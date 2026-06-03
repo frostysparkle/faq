@@ -3,14 +3,14 @@ import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { useArchiveTag, useCreateTag, useTags } from '../../faq/queries';
+import { useDeleteTag, useCreateTag, useTags } from '../../faq/queries';
 
 export function TagsAdminTab() {
   const { data, isLoading } = useTags();
   const [creating, setCreating] = useState(false);
   const [newTag, setNewTag] = useState('');
   const create = useCreateTag();
-  const archive = useArchiveTag();
+  const deleteTag = useDeleteTag();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,20 +81,19 @@ export function TagsAdminTab() {
                   border: '1px solid var(--color-border)',
                   borderRadius: 8,
                   padding: '6px 10px',
-                  opacity: tag.isActive ? 1 : 0.5,
                 }}
               >
                 <span style={{ fontSize: 13, color: 'var(--color-primary-text)', fontWeight: 500 }}>
                   #{tag.name}
                 </span>
                 <button
-                  onClick={() => archive.mutate(tag._id)}
-                  aria-label={`Archive tag ${tag.name}`}
-                  disabled={!tag.isActive || archive.isPending}
+                  onClick={() => deleteTag.mutate(tag._id)}
+                  aria-label={`Delete tag ${tag.name}`}
+                  disabled={deleteTag.isPending}
                   style={{
                     background: 'none',
                     border: 'none',
-                    cursor: tag.isActive ? 'pointer' : 'not-allowed',
+                    cursor: 'pointer',
                     color: 'var(--color-text-muted)',
                     padding: 0,
                     display: 'inline-flex',

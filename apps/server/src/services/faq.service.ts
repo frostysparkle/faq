@@ -1,7 +1,7 @@
 // FAQ domain service.
 //
 // Responsibilities:
-//  - CRUD with status transitions (draft -> published -> outdated -> archived)
+//  - CRUD with status transitions (draft -> published -> outdated)
 //  - List/search with hybrid sort (text relevance OR recency/popularity/helpfulness)
 //  - Default sort when no query: updatedAt desc, then viewCount desc (Change Spec §7.1)
 //  - View count + recently-viewed list per user
@@ -23,6 +23,7 @@ import type {
 import { RECENT_FAQS_LIMIT } from '@samagama/shared';
 import { FaqModel, type FaqDocument } from '../models/Faq.model.js';
 import { UserModel } from '../models/User.model.js';
+import { FlagModel } from '../models/Flag.model.js';
 import { ApiError } from '../utils/api-error.js';
 import { generateEmbedding, cosineSimilarity } from './embedding.service.js';
 import { analyticsService } from './analytics.service.js';
@@ -31,6 +32,7 @@ import { invalidateFaqEmbeddingCache } from './qna.service.js';
 interface ListOptions {
   query: FaqListQuery;
   role: UserRole;
+  userId?: string;
 }
 
 interface ListResult {
@@ -45,7 +47,11 @@ interface PopulatedFaq extends Omit<FaqDocument, 'categories' | 'tags'> {
   tags: { _id: Types.ObjectId; name: string; slug: string }[];
 }
 
-function projectFaq(faq: PopulatedFaq, role: UserRole, hasUserFeedback?: boolean): PublicFaq {
+function projectFaq(
+  faq: PopulatedFaq,
+  role: UserRole,
+  userVote?: 'helpful' | 'unhelpful' | null,
+): PublicFaq {
   const base: PublicFaq = {
     id: faq._id.toString(),
     title: faq.title,
@@ -73,7 +79,8 @@ function projectFaq(faq: PopulatedFaq, role: UserRole, hasUserFeedback?: boolean
     base.viewCount = faq.viewCount;
     base.flagCount = faq.flagCount;
   }
-  if (hasUserFeedback !== undefined) base.hasUserFeedback = hasUserFeedback;
+  // userVote is only set for students (undefined signals "not applicable").
+  if (userVote !== undefined) base.userVote = userVote;
   return base;
 }
 
@@ -85,10 +92,8 @@ function buildFilter(query: FaqListQuery, role: UserRole): FilterQuery<FaqDocume
     filter.status = 'published';
   } else if (query.status) {
     filter.status = query.status;
-  } else {
-    // Mod/admin default — exclude archived from main listings.
-    filter.status = { $ne: 'archived' };
   }
+  // No default status filter for mods/admins — they see draft/published/outdated.
 
   if (query.category && Types.ObjectId.isValid(query.category)) {
     filter.categories = new Types.ObjectId(query.category);
@@ -109,7 +114,7 @@ function buildFilter(query: FaqListQuery, role: UserRole): FilterQuery<FaqDocume
 }
 
 export const faqService = {
-  async list({ query, role }: ListOptions): Promise<ListResult> {
+  async list({ query, role, userId }: ListOptions): Promise<ListResult> {
     const filter = buildFilter(query, role);
     const skip = (query.page - 1) * query.pageSize;
 
@@ -156,8 +161,39 @@ export const faqService = {
       void analyticsService.logSearch({ query: query.q, resultCount: total });
     }
 
+    // Build per-user vote map for this page in a single query.
+    // Only relevant for students; mods/admins don't vote.
+    const voteMap = new Map<string, 'helpful' | 'unhelpful'>();
+    if (userId && items.length > 0 && role === 'student') {
+      const userObjectId = new Types.ObjectId(userId);
+      const pageIds = items.map((f) => f._id);
+      const voted = await FaqModel.find(
+        {
+          _id: { $in: pageIds },
+          $or: [{ helpfulVotes: userObjectId }, { unhelpfulVotes: userObjectId }],
+        },
+        { _id: 1 },
+      )
+        .select('+helpfulVotes +unhelpfulVotes')
+        .lean<{ _id: Types.ObjectId; helpfulVotes?: Types.ObjectId[]; unhelpfulVotes?: Types.ObjectId[] }[]>();
+
+      for (const f of voted) {
+        if (f.helpfulVotes?.some((v) => v.equals(userObjectId))) {
+          voteMap.set(f._id.toString(), 'helpful');
+        } else if (f.unhelpfulVotes?.some((v) => v.equals(userObjectId))) {
+          voteMap.set(f._id.toString(), 'unhelpful');
+        }
+      }
+    }
+
     return {
-      items: items.map((faq) => projectFaq(faq, role)),
+      items: items.map((faq) => {
+        const userVote =
+          userId && role === 'student'
+            ? (voteMap.get(faq._id.toString()) ?? null)
+            : undefined;
+        return projectFaq(faq, role, userVote);
+      }),
       total,
       page: query.page,
       pageSize: query.pageSize,
@@ -179,13 +215,17 @@ export const faqService = {
     if (role === 'student' && faq.status !== 'published') {
       throw ApiError.notFound('FAQ not found');
     }
-    const hasUserFeedback = userId
-      ? Boolean(
-          faq.helpfulVotes?.some((v) => v.toString() === userId) ||
-          faq.unhelpfulVotes?.some((v) => v.toString() === userId),
-        )
-      : undefined;
-    return projectFaq(faq, role, hasUserFeedback);
+    let userVote: 'helpful' | 'unhelpful' | null | undefined;
+    if (userId && role === 'student') {
+      if (faq.helpfulVotes?.some((v) => v.toString() === userId)) {
+        userVote = 'helpful';
+      } else if (faq.unhelpfulVotes?.some((v) => v.toString() === userId)) {
+        userVote = 'unhelpful';
+      } else {
+        userVote = null;
+      }
+    }
+    return projectFaq(faq, role, userVote);
   },
 
   async create(input: FaqCreateInput, actorId: string) {
@@ -253,14 +293,25 @@ export const faqService = {
     return { faq: current, statsReset: answerChanged };
   },
 
-  async archive(id: string, actorId: string) {
-    const updated = await FaqModel.findByIdAndUpdate(
-      id,
-      { status: 'archived', updatedBy: actorId },
-      { new: true },
-    );
-    if (!updated) throw ApiError.notFound('FAQ not found');
-    return updated;
+  /** Hard-delete an FAQ with full cascade cleanup. */
+  async delete(id: string): Promise<void> {
+    const faq = await FaqModel.findById(id);
+    if (!faq) throw ApiError.notFound('FAQ not found');
+
+    // Run cascade cleanup and the delete itself in parallel where safe.
+    await Promise.all([
+      // Remove all flags raised against this FAQ.
+      FlagModel.deleteMany({ entityType: 'faq', entityId: id }),
+      // Unset duplicateOf pointer on any FAQ that referenced this one.
+      FaqModel.updateMany({ duplicateOf: id }, { $unset: { duplicateOf: '' } }),
+      // Remove this FAQ from every user's recently-viewed list.
+      UserModel.updateMany(
+        { 'recentlyViewedFaqs.faqId': id },
+        { $pull: { recentlyViewedFaqs: { faqId: id } } },
+      ),
+    ]);
+
+    await FaqModel.findByIdAndDelete(id);
   },
 
   /** Idempotent view recording: increments counter and prepends to user's recent list. */
@@ -289,12 +340,12 @@ export const faqService = {
     void analyticsService.track('faq_viewed', { userId, entityType: 'faq', entityId: faqId });
   },
 
-  /** One vote per user. Switching from helpful -> unhelpful is allowed. */
+  /** One vote per user. Switching and toggling off are allowed. Returns updated counts. */
   async submitFeedback(
     faqId: string,
     userId: string,
     rating: 'helpful' | 'unhelpful',
-  ): Promise<void> {
+  ): Promise<{ helpfulCount: number; unhelpfulCount: number; userVote: 'helpful' | 'unhelpful' | null }> {
     const userObjectId = new Types.ObjectId(userId);
     const faq = await FaqModel.findById(faqId).select('+helpfulVotes +unhelpfulVotes');
     if (!faq) throw ApiError.notFound('FAQ not found');
@@ -306,27 +357,31 @@ export const faqService = {
     };
 
     const update: Record<string, unknown> = {};
+    const inc: { helpfulCount?: number; unhelpfulCount?: number } = {};
 
     if (had[rating]) {
       // Toggle OFF — user clicked the same rating again, remove their vote.
       if (rating === 'helpful') {
         update.$pull = { helpfulVotes: userObjectId };
-        update.$inc = { helpfulCount: -1 };
+        inc.helpfulCount = -1;
       } else {
         update.$pull = { unhelpfulVotes: userObjectId };
-        update.$inc = { unhelpfulCount: -1 };
+        inc.unhelpfulCount = -1;
       }
     } else if (rating === 'helpful') {
       // Switch to helpful (and remove any previous unhelpful vote).
       update.$addToSet = { helpfulVotes: userObjectId };
       update.$pull = { unhelpfulVotes: userObjectId };
-      update.$inc = { helpfulCount: 1, ...(had.unhelpful ? { unhelpfulCount: -1 } : {}) };
+      inc.helpfulCount = 1;
+      if (had.unhelpful) inc.unhelpfulCount = -1;
     } else {
       // Switch to unhelpful (and remove any previous helpful vote).
       update.$addToSet = { unhelpfulVotes: userObjectId };
       update.$pull = { helpfulVotes: userObjectId };
-      update.$inc = { unhelpfulCount: 1, ...(had.helpful ? { helpfulCount: -1 } : {}) };
+      inc.unhelpfulCount = 1;
+      if (had.helpful) inc.helpfulCount = -1;
     }
+    update.$inc = inc;
 
     await FaqModel.updateOne({ _id: faqId }, update);
 
@@ -339,6 +394,12 @@ export const faqService = {
 
     // Recompute quality score after feedback changes helpfulness ratio.
     void FaqModel.calculateQualityScore(faqId);
+
+    return {
+      helpfulCount: Math.max(0, (faq.helpfulCount ?? 0) + (inc.helpfulCount ?? 0)),
+      unhelpfulCount: Math.max(0, (faq.unhelpfulCount ?? 0) + (inc.unhelpfulCount ?? 0)),
+      userVote: had[rating] ? null : rating,
+    };
   },
 
   /**

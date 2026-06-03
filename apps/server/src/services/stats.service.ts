@@ -19,7 +19,6 @@ export interface FaqStats {
   helpfulPercentage: number;
   flaggedPercentage: number;
   flaggedCount: number;
-  archivedCount: number;
 }
 
 export interface StudentHomeStats {
@@ -68,10 +67,9 @@ export interface IdleBuckets {
 
 export const statsService = {
   async getFaqStats(): Promise<FaqStats> {
-    const [totalFaqs, publishedFaqs, archivedCount, votedAgg, flaggedFaqIds] = await Promise.all([
+    const [totalFaqs, publishedFaqs, votedAgg, flaggedFaqIds] = await Promise.all([
       FaqModel.countDocuments({}),
       FaqModel.countDocuments({ status: 'published' }),
-      FaqModel.countDocuments({ status: 'archived' }),
       FaqModel.aggregate<{ ratio: number }>([
         { $match: { status: 'published' } },
         {
@@ -104,7 +102,6 @@ export const statsService = {
       helpfulPercentage,
       flaggedPercentage,
       flaggedCount,
-      archivedCount,
     };
   },
 

@@ -502,7 +502,6 @@ function ReviewPanel({ answers }: { answers: PendingAnswerSummary[] }) {
     setSelectedId(id);
     setEditing(false);
     setEditedBody('');
-    setNote('');
   };
 
   const startEditing = () => { setEditedBody(selected?.body ?? ''); setEditing(true); };
@@ -510,9 +509,9 @@ function ReviewPanel({ answers }: { answers: PendingAnswerSummary[] }) {
 
   if (!selected) return null;
 
-  const firstGroup  = answers.slice(0, 1);
+  const firstGroup = answers.slice(0, 1);
   const secondGroup = answers.slice(1, 3);
-  const restGroup   = answers.slice(3);
+  const restGroup = answers.slice(3);
 
   const renderRow = (a: PendingAnswerSummary) => {
     const isSelected = a.id === selected.id;

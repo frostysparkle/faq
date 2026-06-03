@@ -21,6 +21,6 @@ router.patch(
   validate(categoryUpdateSchema),
   asyncHandler(categoryController.update),
 );
-router.delete('/:id', requireRole('admin', 'moderator'), asyncHandler(categoryController.archive));
+router.delete('/:id', requireRole('admin', 'moderator'), asyncHandler(categoryController.delete));
 
 export const categoryRouter = router;

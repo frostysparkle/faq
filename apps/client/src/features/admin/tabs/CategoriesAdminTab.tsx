@@ -1,10 +1,10 @@
 // Inline category management embedded inside FAQ Management.
 import { useState } from 'react';
-import { Plus, Edit, Archive } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import {
-  useArchiveCategory,
+  useDeleteCategory,
   useCategories,
   useCreateCategory,
   useUpdateCategory,
@@ -49,21 +49,19 @@ export function CategoriesAdminTab() {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '14px 16px',
-                opacity: c.isActive ? 1 : 0.5,
               }}
             >
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>{c.name}</div>
                 <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
                   {c.slug}
-                  {c.isActive ? '' : ' · archived'}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
                 <IconBtn ariaLabel="Edit" onClick={() => setEditingId(c._id)}>
                   <Edit size={12} />
                 </IconBtn>
-                <ArchiveBtn id={c._id} disabled={!c.isActive} />
+                <DeleteBtn id={c._id} />
               </div>
             </Card>
           ),
@@ -137,16 +135,16 @@ function CategoryForm({
   );
 }
 
-function ArchiveBtn({ id, disabled }: { id: string; disabled: boolean }) {
-  const archive = useArchiveCategory();
+function DeleteBtn({ id }: { id: string }) {
+  const deleteCat = useDeleteCategory();
   return (
     <IconBtn
-      ariaLabel="Archive"
+      ariaLabel="Delete"
       danger
-      disabled={disabled || archive.isPending}
-      onClick={() => archive.mutate(id)}
+      disabled={deleteCat.isPending}
+      onClick={() => deleteCat.mutate(id)}
     >
-      <Archive size={12} />
+      <Trash2 size={12} />
     </IconBtn>
   );
 }

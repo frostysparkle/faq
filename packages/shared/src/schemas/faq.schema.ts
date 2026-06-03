@@ -56,8 +56,11 @@ export interface PublicFaq {
   helpfulCount?: number;
   /** Visible to all roles. */
   unhelpfulCount?: number;
-  /** True when the requesting student already left feedback on this FAQ. */
-  hasUserFeedback?: boolean;
+  /**
+   * The current user's active vote. null = authenticated but no vote yet.
+   * undefined = not provided (moderator/admin context where voting is not applicable).
+   */
+  userVote?: 'helpful' | 'unhelpful' | null;
   /** Present for moderator/admin only — live open flag count. */
   flagCount?: number;
   updatedAt: string;

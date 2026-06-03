@@ -335,13 +335,13 @@ async function simulate() {
   }
 
   await disconnectDatabase();
-  logger.info('✅ Full simulation complete.', {
+  logger.info({
     questionsCreated: createdQuestionIds.length,
     totalQuestions: openQuestions.length,
     topQuestionIds: topQuestions.map((q) => q.id),
     totalAnswers: allAnswersForVoting.length,
     votingStudents: votingStudents.length,
-  });
+  }, '✅ Full simulation complete.');
 }
 
 simulate().catch(async (err) => {

@@ -263,7 +263,6 @@ export const analyticsService = {
     if (cached) return cached;
 
     const faqs = await FaqModel.aggregate([
-      { $match: { status: { $ne: 'archived' } } },
       {
         $addFields: {
           helpfulnessRatio: {

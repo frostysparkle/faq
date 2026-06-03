@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import type { CategoryCreateInput, CategoryUpdateInput } from '@samagama/shared';
 import { categoryService } from '../services/category.service.js';
-import { created, ok } from '../utils/api-response.js';
+import { created, noContent, ok } from '../utils/api-response.js';
 
 export const categoryController = {
   async list(req: Request, res: Response) {
@@ -14,7 +14,8 @@ export const categoryController = {
   async update(req: Request, res: Response) {
     return ok(res, await categoryService.update(req.params.id!, req.body as CategoryUpdateInput));
   },
-  async archive(req: Request, res: Response) {
-    return ok(res, await categoryService.archive(req.params.id!));
+  async delete(req: Request, res: Response) {
+    await categoryService.delete(req.params.id!);
+    return noContent(res);
   },
 };

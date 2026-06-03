@@ -17,6 +17,7 @@ export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [searchValue, setSearchValue] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const searchRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -35,6 +36,28 @@ export function AppShell() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  // ⌘K / Ctrl+K — focus search from anywhere on the page
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchFocused(true);
+        searchRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  // Reset keyboard focus position whenever the query changes
+  useEffect(() => { setFocusedIndex(-1); }, [searchValue]);
+
+  // Scroll the focused result row into view when navigating with arrow keys
+  useEffect(() => {
+    if (focusedIndex < 0) return;
+    document.getElementById(`search-result-${focusedIndex}`)?.scrollIntoView({ block: 'nearest' });
+  }, [focusedIndex]);
+
   const handleInput = (value: string) => {
     setSearchValue(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -49,6 +72,7 @@ export function AppShell() {
   };
 
   const totalResults = results.faqs.length + results.community.length;
+  const flatResults = [...results.faqs, ...results.community];
   const showDropdown = searchFocused && searchValue.trim().length > 0;
 
   if (!user) return null;
@@ -100,7 +124,36 @@ export function AppShell() {
                 onChange={(e) => handleInput(e.target.value)}
                 onFocus={() => setSearchFocused(true)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Escape') { clearSearch(); searchRef.current?.blur(); }
+                  if (e.key === 'Escape') {
+                    clearSearch(); searchRef.current?.blur(); setFocusedIndex(-1);
+                  }
+                  if (e.key === 'ArrowDown' && showDropdown) {
+                    e.preventDefault();
+                    setFocusedIndex(i => Math.min(i + 1, flatResults.length - 1));
+                  }
+                  if (e.key === 'ArrowUp' && showDropdown) {
+                    e.preventDefault();
+                    setFocusedIndex(i => Math.max(i - 1, -1));
+                  }
+                  if (e.key === 'Enter' && searchValue.trim() && isReady) {
+                    if (debounceRef.current) {
+                      clearTimeout(debounceRef.current);
+                      debounceRef.current = null;
+                      search(searchValue);
+                    }
+                    // Use keyboard-focused item; fall back to first result
+                    const target = focusedIndex >= 0
+                      ? flatResults[focusedIndex]
+                      : (results.faqs[0] ?? results.community[0]);
+                    if (target) {
+                      if (target.type === 'faq') {
+                        navigate(`/faqs?q=${encodeURIComponent(searchValue)}`);
+                      } else {
+                        navigate(`/community/${target.id.replace('com_', '')}`);
+                      }
+                      clearSearch();
+                    }
+                  }
                 }}
                 placeholder={isReady ? 'Search FAQs & Community Q&A…  ⌘K' : 'Loading search index…'}
                 aria-label="Search FAQs and Community Q&A"
@@ -159,8 +212,14 @@ export function AppShell() {
                           <BookOpen size={11} color="var(--color-success)" />
                           <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-success)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Official FAQs</span>
                         </div>
-                        {results.faqs.map((doc) => (
-                          <DropdownRow key={doc.id} doc={doc} onClick={() => { navigate('/faqs'); clearSearch(); }} />
+                        {results.faqs.map((doc, i) => (
+                          <DropdownRow
+                            key={doc.id}
+                            id={`search-result-${i}`}
+                            doc={doc}
+                            focused={focusedIndex === i}
+                            onClick={() => { navigate(`/faqs?q=${encodeURIComponent(searchValue)}`); clearSearch(); }}
+                          />
                         ))}
                       </div>
                     )}
@@ -171,11 +230,17 @@ export function AppShell() {
                           <MessageSquare size={11} color="var(--color-primary)" />
                           <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Community Q&A</span>
                         </div>
-                        {results.community.map((doc) => (
-                          <DropdownRow key={doc.id} doc={doc} onClick={() => {
-                            navigate(`/community/${doc.id.replace('com_', '')}`);
-                            clearSearch();
-                          }} />
+                        {results.community.map((doc, i) => (
+                          <DropdownRow
+                            key={doc.id}
+                            id={`search-result-${results.faqs.length + i}`}
+                            doc={doc}
+                            focused={focusedIndex === results.faqs.length + i}
+                            onClick={() => {
+                              navigate(`/community/${doc.id.replace('com_', '')}`);
+                              clearSearch();
+                            }}
+                          />
                         ))}
                       </div>
                     )}
@@ -367,18 +432,22 @@ function NotificationBell() {
 
 // ─── Compact dropdown result row ──────────────────────────────────────────────
 
-function DropdownRow({ doc, onClick }: { doc: SearchDoc; onClick: () => void }) {
+function DropdownRow({ doc, onClick, focused, id }: { doc: SearchDoc; onClick: () => void; focused: boolean; id: string }) {
   const isFaq = doc.type === 'faq';
   return (
     <button
+      id={id}
       type="button"
       onClick={onClick}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-pill)'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}
+      onMouseEnter={(e) => { if (!focused) (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-pill)'; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = focused ? 'var(--color-purple-bg)' : 'none'; }}
       style={{
         display: 'flex', alignItems: 'flex-start', gap: 10, width: '100%',
-        background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+        background: focused ? 'var(--color-purple-bg)' : 'none',
+        border: 'none', cursor: 'pointer', textAlign: 'left',
         padding: '7px 8px', borderRadius: 8, transition: 'background 0.1s',
+        outline: focused ? '2px solid var(--color-purple)' : 'none',
+        outlineOffset: '-2px',
       }}
     >
       <span style={{

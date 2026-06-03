@@ -32,10 +32,10 @@ router.patch(
   validate(faqUpdateSchema),
   asyncHandler(faqController.update),
 );
-router.patch(
-  '/:id/archive',
+router.delete(
+  '/:id',
   requireRole('admin', 'moderator'),
-  asyncHandler(faqController.archive),
+  asyncHandler(faqController.delete),
 );
 
 // Authenticated student/mod/admin can record a view or leave feedback.

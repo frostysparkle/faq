@@ -7,7 +7,7 @@ export type UserRole = (typeof USER_ROLES)[number];
 export const USER_STATUSES = ['active', 'suspended', 'deleted'] as const;
 export type UserStatus = (typeof USER_STATUSES)[number];
 
-export const FAQ_STATUSES = ['draft', 'published', 'outdated', 'archived'] as const;
+export const FAQ_STATUSES = ['draft', 'published', 'outdated'] as const;
 export type FaqStatus = (typeof FAQ_STATUSES)[number];
 
 export const QUESTION_STATUSES = ['open', 'answered', 'resolved', 'duplicate', 'archived'] as const;

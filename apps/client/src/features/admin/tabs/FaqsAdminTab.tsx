@@ -23,7 +23,7 @@ import {
 import type { PublicFaq, FaqCreateInput, FaqStatus } from '@samagama/shared';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
-import { useArchiveFaq, useCategories, useFaqList, useTags } from '../../faq/queries';
+import { useDeleteFaq, useCategories, useFaqList, useTags } from '../../faq/queries';
 import { useFlagList, useUpdateFlagStatus } from '../../flag/queries';
 import { InlineFaqEditor } from './InlineFaqEditor';
 
@@ -57,11 +57,9 @@ const C = {
   dotPublished: 'var(--color-success)',
   dotOutdated:  'var(--color-warning)',
   dotDraft:     'var(--color-text-muted)',
-  dotArchived:  'var(--color-text-muted)',
   pillPublished: { bg: 'var(--color-success-bg)', fg: 'var(--color-success)' },
   pillOutdated:  { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning)' },
   pillDraft:     { bg: 'var(--color-pill)',        fg: 'var(--color-pill-text)' },
-  pillArchived:  { bg: 'var(--color-pill)',        fg: 'var(--color-pill-text)' },
   thumbUp:   'var(--color-success)',
   thumbDown: 'var(--color-danger)',
   flagBadge: { bg: 'var(--color-danger-bg)', fg: 'var(--color-danger)' },
@@ -465,8 +463,8 @@ function FaqRow({
   visibleCols: Record<ColKey, boolean>;
   grid: string;
 }) {
-  const archive   = useArchiveFaq();
-  const [confirmingArchive, setConfirmingArchive] = useState(false);
+  const deleteFaq = useDeleteFaq();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const flagCount = faq.flagCount ?? 0;
   const { dotColor, pill } = statusTokens(faq.status);
 
@@ -602,7 +600,7 @@ function FaqRow({
         {/* Actions */}
         {visibleCols.actions && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {!confirmingArchive ? (
+            {!confirmingDelete ? (
               <>
                 <ABtn
                   label={expanded ? 'Hide answer' : 'View answer'}
@@ -615,9 +613,8 @@ function FaqRow({
                   <Pencil size={15} strokeWidth={1.8} />
                 </ABtn>
                 <ABtn
-                  label="Archive (click to confirm)"
-                  onClick={() => setConfirmingArchive(true)}
-                  disabled={faq.status === 'archived'}
+                  label="Delete (click to confirm)"
+                  onClick={() => setConfirmingDelete(true)}
                   bg={C.actionDel.bg} fg={C.actionDel.fg} border={C.actionDel.border}
                 >
                   <Trash2 size={15} strokeWidth={1.8} />
@@ -625,16 +622,16 @@ function FaqRow({
               </>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger)', borderRadius: 10, padding: '5px 10px' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-danger)', whiteSpace: 'nowrap' }}>Archive?</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-danger)', whiteSpace: 'nowrap' }}>Delete?</span>
                 <button
-                  onClick={() => { archive.mutate(faq.id); setConfirmingArchive(false); }}
-                  disabled={archive.isPending}
+                  onClick={() => { deleteFaq.mutate(faq.id); setConfirmingDelete(false); }}
+                  disabled={deleteFaq.isPending}
                   style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: 'none', background: 'var(--color-danger)', color: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   Yes
                 </button>
                 <button
-                  onClick={() => setConfirmingArchive(false)}
+                  onClick={() => setConfirmingDelete(false)}
                   style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-card)', color: 'var(--color-text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   Cancel
@@ -876,7 +873,6 @@ function statusTokens(status: FaqStatus) {
     published: { dotColor: C.dotPublished, pill: C.pillPublished },
     outdated:  { dotColor: C.dotOutdated,  pill: C.pillOutdated  },
     draft:     { dotColor: C.dotDraft,     pill: C.pillDraft     },
-    archived:  { dotColor: C.dotArchived,  pill: C.pillArchived  },
   };
   return map[status] ?? map.draft;
 }

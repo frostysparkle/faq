@@ -5,7 +5,7 @@ import {
   Circle, Clock, Folder, HelpCircle, MessageCircle, MessageSquare,
   MessagesSquare, Sparkles, ThumbsDown, ThumbsUp, User,
 } from 'lucide-react';
-import { Badge } from '../components/ui/Badge';
+import type React from 'react';
 import type { PublicFaq } from '@samagama/shared';
 import { useAuth } from '../features/auth/AuthProvider';
 import { useStudentHomeStats } from '../features/stats/queries';
@@ -48,59 +48,116 @@ export function HomePage() {
 }
 
 function StudentHome() {
+  const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading } = useStudentHomeStats();
   const v = (n: number | undefined) => statsLoading ? '…' : (n ?? 0);
+
+  const statCardBase: React.CSSProperties = {
+    padding: '20px 20px 16px',
+    display: 'flex', flexDirection: 'column', gap: 10,
+    position: 'relative', overflow: 'hidden', minHeight: 130,
+    cursor: 'pointer',
+    transition: 'transform 0.15s, box-shadow 0.15s',
+    userSelect: 'none',
+    outline: 'none',
+  };
+
+  const onHover = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.style.transform = 'translateY(-3px)';
+    el.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
+  };
+  const onLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.style.transform = 'none';
+    el.style.boxShadow = '';
+  };
+  const onKeyNav = (e: React.KeyboardEvent<HTMLDivElement>, dest: string) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(dest); }
+  };
 
   return (
     <>
       {/* Stat cards — 3-column layout: left & middle each have 2 stacked cards, right spans both rows */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gridTemplateRows: 'auto auto', gap: 14, marginBottom: 24 }}>
 
-        {/* Col 1 · Row 1 — Open Community Q&A */}
-        <div className="mod-card mod-card-blue interactive" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
+        {/* Col 1 · Row 1 — Open Community Q&A → /community */}
+        <div
+          className="mod-card mod-card-blue interactive"
+          style={statCardBase}
+          role="button" tabIndex={0}
+          onClick={() => navigate('/community')}
+          onKeyDown={(e) => onKeyNav(e, '/community')}
+          onMouseEnter={onHover} onMouseLeave={onLeave}
+        >
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-primary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <MessagesSquare size={20} color="var(--color-primary)" />
           </div>
           <div style={{ fontSize: 36, fontWeight: 900, color: 'var(--color-text)', letterSpacing: '-0.04em', lineHeight: 1 }}>{v(stats?.openCommunityQuestions)}</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.2 }}>Open Community Q&A</div>
           <div style={{ fontSize: 11, color: 'var(--color-primary-text)', fontWeight: 600 }}>Answered + unanswered</div>
-          <MessagesSquare size={80} color="var(--color-primary)" style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06 }} />
+          <MessagesSquare size={80} color="var(--color-primary)" style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06, pointerEvents: 'none' }} />
+          <ChevronRight size={14} color="var(--color-primary)" style={{ position: 'absolute', top: 14, right: 14, opacity: 0.5 }} />
         </div>
 
-        {/* Col 2 · Row 1 — Unanswered Q&A */}
-        <div className="mod-card mod-card-orange interactive" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
+        {/* Col 2 · Row 1 — Unanswered Q&A → /community (open, no answers) */}
+        <div
+          className="mod-card mod-card-orange interactive"
+          style={statCardBase}
+          role="button" tabIndex={0}
+          onClick={() => navigate('/community')}
+          onKeyDown={(e) => onKeyNav(e, '/community')}
+          onMouseEnter={onHover} onMouseLeave={onLeave}
+        >
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-warning-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <HelpCircle size={20} color="var(--color-warning)" />
           </div>
           <div style={{ fontSize: 36, fontWeight: 900, color: 'var(--color-text)', letterSpacing: '-0.04em', lineHeight: 1 }}>{v(stats?.unansweredCommunityQuestions)}</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.2 }}>Unanswered Q&A</div>
           <div style={{ fontSize: 11, color: 'var(--color-warning)', fontWeight: 600 }}>No answer yet</div>
-          <HelpCircle size={80} color="var(--color-warning)" style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06 }} />
+          <HelpCircle size={80} color="var(--color-warning)" style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06, pointerEvents: 'none' }} />
+          <ChevronRight size={14} color="var(--color-warning)" style={{ position: 'absolute', top: 14, right: 14, opacity: 0.5 }} />
         </div>
 
         {/* Col 3 · Rows 1–2 — Idle bucket panel spanning full height */}
         <IdleBucketCards style={{ marginBottom: 0, gridColumn: 3, gridRow: '1 / 3' }} />
 
-        {/* Col 1 · Row 2 — Questions Answered */}
-        <div className="mod-card mod-card-green interactive" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
+        {/* Col 1 · Row 2 — Questions Answered → /my-questions */}
+        <div
+          className="mod-card mod-card-green interactive"
+          style={statCardBase}
+          role="button" tabIndex={0}
+          onClick={() => navigate('/my-questions')}
+          onKeyDown={(e) => onKeyNav(e, '/my-questions')}
+          onMouseEnter={onHover} onMouseLeave={onLeave}
+        >
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <MessageCircle size={20} color="var(--color-success)" />
           </div>
           <div style={{ fontSize: 36, fontWeight: 900, color: 'var(--color-text)', letterSpacing: '-0.04em', lineHeight: 1 }}>{v(stats?.questionsYouAnswered)}</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.2 }}>Questions Answered</div>
           <div style={{ fontSize: 11, color: 'var(--color-success)', fontWeight: 600 }}>Approved answers, all-time</div>
-          <MessageCircle size={80} color="var(--color-success)" style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06 }} />
+          <MessageCircle size={80} color="var(--color-success)" style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06, pointerEvents: 'none' }} />
+          <ChevronRight size={14} color="var(--color-success)" style={{ position: 'absolute', top: 14, right: 14, opacity: 0.5 }} />
         </div>
 
-        {/* Col 2 · Row 2 — Spurti Points */}
-        <div className="mod-card mod-card-purple interactive" style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden', minHeight: 130 }}>
+        {/* Col 2 · Row 2 — Spurti Points → /analytics */}
+        <div
+          className="mod-card mod-card-purple interactive"
+          style={statCardBase}
+          role="button" tabIndex={0}
+          onClick={() => navigate('/analytics')}
+          onKeyDown={(e) => onKeyNav(e, '/analytics')}
+          onMouseEnter={onHover} onMouseLeave={onLeave}
+        >
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-purple-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Sparkles size={20} color="var(--color-purple)" />
           </div>
           <div style={{ fontSize: 36, fontWeight: 900, color: 'var(--color-text)', letterSpacing: '-0.04em', lineHeight: 1 }}>{v(stats?.spurtiPoints)}</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.2 }}>Spurti Points</div>
           <div style={{ fontSize: 11, color: 'var(--color-purple)', fontWeight: 600 }}>Earned via Community Q&A</div>
-          <Sparkles size={80} color="var(--color-purple)" style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06 }} />
+          <Sparkles size={80} color="var(--color-purple)" style={{ position: 'absolute', bottom: -16, right: -16, opacity: 0.06, pointerEvents: 'none' }} />
+          <ChevronRight size={14} color="var(--color-purple)" style={{ position: 'absolute', top: 14, right: 14, opacity: 0.5 }} />
         </div>
 
       </div>
@@ -152,9 +209,6 @@ function ContentTabs() {
   );
 }
 
-const STATUS_COLOR = {
-  draft: 'default', published: 'success', outdated: 'warning', archived: 'default',
-} as const;
 
 function RecentFaqsList({ sort }: { sort: 'added' | 'recent' }) {
   const navigate = useNavigate();
@@ -206,6 +260,10 @@ function RecentFaqsList({ sort }: { sort: 'added' | 'recent' }) {
   );
 }
 
+const STATUS_DOT_HOME: Record<string, string> = {
+  published: '#16a34a', draft: '#6b7280', outdated: '#d97706',
+};
+
 function FaqRowCard({ faq, expanded: expandedProp, onToggle }: { faq: PublicFaq; expanded?: boolean; onToggle?: () => void }) {
   const [expandedInternal, setExpandedInternal] = useState(false);
   const expanded = expandedProp !== undefined ? expandedProp : expandedInternal;
@@ -213,6 +271,8 @@ function FaqRowCard({ faq, expanded: expandedProp, onToggle }: { faq: PublicFaq;
   const [localVote, setLocalVote] = useState<'helpful' | 'unhelpful' | null>(null);
   const [counts, setCounts] = useState({ helpful: faq.helpfulCount ?? 0, unhelpful: faq.unhelpfulCount ?? 0 });
   const feedback = useFaqFeedback(faq.id);
+
+  const toggle = () => { if (onToggle) onToggle(); else setExpandedInternal((v) => !v); };
 
   const handleVote = (rating: 'helpful' | 'unhelpful') => {
     if (feedback.isPending) return;
@@ -228,44 +288,73 @@ function FaqRowCard({ faq, expanded: expandedProp, onToggle }: { faq: PublicFaq;
     feedback.mutate(rating);
   };
 
+  const dotColor = STATUS_DOT_HOME[faq.status] ?? '#6b7280';
+  const firstCat = faq.categories[0];
+
   return (
     <div className="mod-card mod-card-blue">
-      <div style={{ padding: '14px 18px 14px', display: 'flex', gap: 12, justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <button
-          onClick={() => { if (onToggle) onToggle(); else setExpandedInternal((v) => !v); }}
-          aria-expanded={expanded}
-          style={{ flex: 1, background: 'transparent', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: 'inherit', font: 'inherit' }}
-        >
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', marginBottom: 6, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-            <span style={{ flex: 1 }}>{faq.title}</span>
-            {expanded ? <ChevronUp size={16} color="var(--color-text-muted)" /> : <ChevronDown size={16} color="var(--color-text-muted)" />}
-          </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {faq.categories.slice(0, 1).map((c) => <Badge key={c.id} color="accent">{c.name}</Badge>)}
-          </div>
-        </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, color: localVote === 'helpful' ? 'var(--color-success)' : 'var(--color-text-muted)', fontWeight: localVote === 'helpful' ? 700 : 400 }}>
-            <ThumbsUp size={12} /> {counts.helpful}
-          </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, color: localVote === 'unhelpful' ? 'var(--color-danger)' : 'var(--color-text-muted)', fontWeight: localVote === 'unhelpful' ? 700 : 400 }}>
-            <ThumbsDown size={12} /> {counts.unhelpful}
-          </span>
+      {/* ── Header ── */}
+      <div style={{ padding: '14px 18px 12px' }}>
+        {/* Title + chevron */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 9 }}>
+          <button
+            onClick={toggle}
+            aria-expanded={expanded}
+            style={{ flex: 1, background: 'transparent', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: 'inherit', font: 'inherit' }}
+          >
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.45 }}>{faq.title}</span>
+          </button>
+          <button
+            onClick={toggle}
+            aria-label={expanded ? 'Collapse' : 'Expand'}
+            style={{ flexShrink: 0, background: 'transparent', border: 'none', borderRadius: 8, padding: '4px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.13s' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-input)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+          >
+            {expanded ? <ChevronUp size={15} color="var(--color-text-muted)" /> : <ChevronDown size={15} color="var(--color-text-muted)" />}
+          </button>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
-          <Badge color={STATUS_COLOR[faq.status as keyof typeof STATUS_COLOR] ?? 'default'}>{faq.status}</Badge>
-          <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Updated {timeAgo(faq.updatedAt)}</div>
+
+        {/* Metadata row */}
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', fontSize: 12, color: 'var(--color-text-muted)', rowGap: 4 }}>
+          {firstCat && (
+            <>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-primary)', fontWeight: 600 }}>
+                <Folder size={12} />{firstCat.name}
+              </span>
+              <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span>
+            </>
+          )}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+            <span style={{ color: dotColor, fontWeight: 600, textTransform: 'capitalize' as const }}>{faq.status}</span>
+          </span>
+          <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <Clock size={12} />{timeAgo(faq.updatedAt)}
+          </span>
+          <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+            <ThumbsUp size={12} />{counts.helpful}
+          </span>
+          <span style={{ margin: '0 6px', opacity: 0.35 }}>·</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+            <ThumbsDown size={12} />{counts.unhelpful}
+          </span>
         </div>
       </div>
 
+      {/* ── Expanded ── */}
       {expanded && (
-        <div style={{ padding: '0 18px 18px', borderTop: '1px solid var(--color-border)', paddingTop: 14, fontSize: 13, color: 'var(--color-text)', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
-          {faq.answer}
-          <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: 'var(--color-text-muted)', flexWrap: 'wrap' }}>
-            <span>Was this helpful?</span>
-            <VoteButton rating="helpful" selected={localVote === 'helpful'} disabled={feedback.isPending} count={counts.helpful} onClick={() => handleVote('helpful')} />
+        <div>
+          <div style={{ borderTop: '1px solid var(--color-border)', margin: '0 18px' }} />
+          <div style={{ padding: '14px 18px 12px', fontSize: 13, color: 'var(--color-text)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+            {faq.answer}
+          </div>
+          <div style={{ borderTop: '1px solid var(--color-border)', margin: '0 18px' }} />
+          <div style={{ padding: '10px 18px 14px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <VoteButton rating="helpful"   selected={localVote === 'helpful'}   disabled={feedback.isPending} count={counts.helpful}   onClick={() => handleVote('helpful')} />
             <VoteButton rating="unhelpful" selected={localVote === 'unhelpful'} disabled={feedback.isPending} count={counts.unhelpful} onClick={() => handleVote('unhelpful')} />
-            <span style={{ flex: 1 }} />
             <FlagFaqButton faqId={faq.id} faqUpdatedAt={faq.updatedAt} />
           </div>
         </div>
@@ -315,29 +404,43 @@ function RecentQuestionsList() {
           const hrsSince = Math.floor((Date.now() - new Date(q.updatedAt).getTime()) / 3600000);
           const ago = hrsSince < 1 ? 'just now' : hrsSince < 24 ? `${hrsSince}hr${hrsSince === 1 ? '' : 's'} ago` : `${Math.floor(hrsSince / 24)}d ago`;
           return (
-            <button key={q.id} onClick={() => navigate(`/community/${q.id}`)} style={{ display: 'block', textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer', width: '100%' }}>
-              <div
-                style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 12, padding: '14px 18px', transition: 'box-shadow 0.15s, border-color 0.15s' }}
-                onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = 'var(--shadow-md)'; el.style.borderColor = 'var(--color-primary)'; }}
-                onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = 'none'; el.style.borderColor = 'var(--color-border)'; }}
-              >
-                <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.5, marginBottom: 10, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                  {qText}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', rowGap: 4 }}>
-                  {q.category && (
-                    <><span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-primary)', fontSize: 12, fontWeight: 500 }}><Folder size={12} /><span>{q.category.name}</span></span><span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span></>
-                  )}
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: smColor, fontSize: 12, fontWeight: 500 }}>{smIcon}<span>{smLabel}</span></span>
-                  <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: 12, fontWeight: 500 }}><MessageSquare size={12} /><span>{q.answerCount} response{q.answerCount === 1 ? '' : 's'}</span></span>
-                  <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: 12, fontWeight: 500 }}><User size={12} /><span>by {q.author.name}</span></span>
-                  <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: 12, fontWeight: 500 }}><Clock size={12} /><span>{ago}</span></span>
-                </div>
+            <div
+              key={q.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate(`/community/${q.id}`)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/community/${q.id}`); } }}
+              onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = 'var(--shadow-md)'; el.style.borderColor = 'var(--color-primary)'; el.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = 'none'; el.style.borderColor = 'var(--color-border)'; el.style.transform = 'none'; }}
+              style={{
+                background: 'var(--color-card)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 12,
+                padding: '14px 18px',
+                cursor: 'pointer',
+                transition: 'box-shadow 0.15s, border-color 0.15s, transform 0.15s',
+                outline: 'none',
+                userSelect: 'none',
+              }}
+              onFocus={(e) => { (e.currentTarget as HTMLElement).style.outline = '2px solid var(--color-primary)'; }}
+              onBlur={(e) => { (e.currentTarget as HTMLElement).style.outline = 'none'; }}
+            >
+              <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.5, marginBottom: 10, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {qText}
               </div>
-            </button>
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', rowGap: 4 }}>
+                {q.category && (
+                  <><span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-primary)', fontSize: 12, fontWeight: 500 }}><Folder size={12} /><span>{q.category.name}</span></span><span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span></>
+                )}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: smColor, fontSize: 12, fontWeight: 500 }}>{smIcon}<span>{smLabel}</span></span>
+                <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: 12, fontWeight: 500 }}><MessageSquare size={12} /><span>{q.answerCount} response{q.answerCount === 1 ? '' : 's'}</span></span>
+                <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: 12, fontWeight: 500 }}><User size={12} /><span>by {q.author.name}</span></span>
+                <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: 12, fontWeight: 500 }}><Clock size={12} /><span>{ago}</span></span>
+              </div>
+            </div>
           );
         })}
       </div>

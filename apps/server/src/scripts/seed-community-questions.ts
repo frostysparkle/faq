@@ -122,7 +122,7 @@ async function seedCommunityQuestions() {
   }
 
   logger.info({ created: createdIds.length }, 'Community questions seeded');
-  logger.info('Question IDs for reference:', createdIds);
+  logger.info({ createdIds }, 'Question IDs for reference');
 
   await disconnectDatabase();
   logger.info('✅ Community questions seeded.');

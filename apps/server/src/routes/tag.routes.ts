@@ -21,6 +21,6 @@ router.patch(
   validate(tagUpdateSchema),
   asyncHandler(tagController.update),
 );
-router.delete('/:id', requireRole('admin', 'moderator'), asyncHandler(tagController.archive));
+router.delete('/:id', requireRole('admin', 'moderator'), asyncHandler(tagController.delete));
 
 export const tagRouter = router;

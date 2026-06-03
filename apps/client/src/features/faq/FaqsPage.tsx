@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { BookOpen, ChevronsUpDown, ChevronDown, ChevronUp, LayoutGrid, RotateCcw, Search, SlidersHorizontal, Tag } from 'lucide-react';
 import type { FaqListQuery, FaqStatus } from '@samagama/shared';
 import { FAQ_STATUSES } from '@samagama/shared';
@@ -12,8 +13,10 @@ const TAG_SHOW_DEFAULT = 8;
 
 export function FaqsPage() {
   const { user } = useAuth();
-  const [searchInput, setSearchInput] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [searchParams] = useSearchParams();
+  const initialQ = searchParams.get('q') ?? '';
+  const [searchInput, setSearchInput] = useState(initialQ);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialQ.trim());
   const [categoryId, setCategoryId] = useState<string | undefined>();
   const [tagId, setTagId] = useState<string | undefined>();
   const [status, setStatus] = useState<FaqStatus | undefined>();
@@ -42,7 +45,8 @@ export function FaqsPage() {
 
   const { data: categories } = useCategories();
   const { data: tags } = useTags();
-  const { data, isLoading, isError, error } = useFaqList(query);
+  // 30-second polling keeps counts in sync across browser tabs and other connected users.
+  const { data, isLoading, isError, error } = useFaqList(query, { refetchInterval: 30_000 });
 
   const activeCount = [categoryId, tagId, status].filter(Boolean).length;
   const resetAll = () => { setCategoryId(undefined); setTagId(undefined); setStatus(undefined); };

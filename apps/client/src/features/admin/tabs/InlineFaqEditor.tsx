@@ -168,7 +168,6 @@ export function InlineFaqEditor({ categories, tags, existing, onClose }: Props) 
             <option value="draft">Draft</option>
             <option value="published">Published</option>
             <option value="outdated">Outdated</option>
-            <option value="archived">Archived</option>
           </select>
         </Field>
 

@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import type { TagCreateInput, TagUpdateInput } from '@samagama/shared';
 import { tagService } from '../services/tag.service.js';
-import { created, ok } from '../utils/api-response.js';
+import { created, noContent, ok } from '../utils/api-response.js';
 
 export const tagController = {
   async list(req: Request, res: Response) {
@@ -14,7 +14,8 @@ export const tagController = {
   async update(req: Request, res: Response) {
     return ok(res, await tagService.update(req.params.id!, req.body as TagUpdateInput));
   },
-  async archive(req: Request, res: Response) {
-    return ok(res, await tagService.archive(req.params.id!));
+  async delete(req: Request, res: Response) {
+    await tagService.delete(req.params.id!);
+    return noContent(res);
   },
 };

@@ -35,7 +35,6 @@ export interface FaqStatsResponse {
   helpfulPercentage: number;
   flaggedPercentage: number;
   flaggedCount: number;
-  archivedCount: number;
 }
 
 export interface ModeratorDashboardStats {
@@ -68,14 +67,20 @@ export const faqApi = {
     );
     return res.data.data;
   },
-  async archive(id: string): Promise<void> {
-    await apiClient.patch(`/api/faqs/${id}/archive`);
+  async delete(id: string): Promise<void> {
+    await apiClient.delete(`/api/faqs/${id}`);
   },
   async recordView(id: string): Promise<void> {
     await apiClient.post(`/api/faqs/${id}/view`);
   },
-  async submitFeedback(id: string, rating: 'helpful' | 'unhelpful'): Promise<void> {
-    await apiClient.post(`/api/faqs/${id}/feedback`, { rating });
+  async submitFeedback(
+    id: string,
+    rating: 'helpful' | 'unhelpful',
+  ): Promise<{ helpfulCount: number; unhelpfulCount: number; userVote: 'helpful' | 'unhelpful' | null }> {
+    const res = await apiClient.post<
+      ApiSuccess<{ helpfulCount: number; unhelpfulCount: number; userVote: 'helpful' | 'unhelpful' | null }>
+    >(`/api/faqs/${id}/feedback`, { rating });
+    return res.data.data;
   },
 
   async listCategories(): Promise<Category[]> {
@@ -90,7 +95,7 @@ export const faqApi = {
     const res = await apiClient.patch<ApiSuccess<Category>>(`/api/categories/${id}`, input);
     return res.data.data;
   },
-  async archiveCategory(id: string): Promise<void> {
+  async deleteCategory(id: string): Promise<void> {
     await apiClient.delete(`/api/categories/${id}`);
   },
 
@@ -106,7 +111,7 @@ export const faqApi = {
     const res = await apiClient.patch<ApiSuccess<Tag>>(`/api/tags/${id}`, input);
     return res.data.data;
   },
-  async archiveTag(id: string): Promise<void> {
+  async deleteTag(id: string): Promise<void> {
     await apiClient.delete(`/api/tags/${id}`);
   },
 
