@@ -47,19 +47,21 @@ const FAQ_MATCH_LIMIT = 3;
  *
  * Tuning guide (applies to both FAQ and community-question scans):
  *   0.35 — original value; catches broad associations but risks irrelevant results.
- *   0.50 — recommended: requires moderate semantic overlap; filters noise well.
- *   0.65 — strict: only very close paraphrases pass; fewer false positives but may miss valid matches.
+ *   0.50 — recommended for all-minilm / Ollama; their cosine scores spread widely.
+ *   0.65 — strict for all-minilm: only close paraphrases pass.
+ *   0.80 — recommended for Gemini gemini-embedding-001: the model's cosine floor
+ *           for unrelated text sits at ~0.76, so 0.80 is the practical noise cutoff.
  *
- * With the all-minilm (Ollama) or text-embedding-004 (Gemini) models,
- * 0.50 reliably catches paraphrased questions that share no keywords.
+ * Current provider: gemini → threshold set to 0.80.
  */
-const SEMANTIC_THRESHOLD = 0.50;
+const SEMANTIC_THRESHOLD = 0.80;
 
 /**
  * Minimum cosine similarity for community-question duplicate detection (Option C).
+ * Same provider-aware calibration as SEMANTIC_THRESHOLD.
  * Slightly lower than FAQ threshold because student-written questions vary more in phrasing.
  */
-const QUESTION_SEMANTIC_THRESHOLD = 0.50;
+const QUESTION_SEMANTIC_THRESHOLD = 0.78;
 
 /**
  * Server-wide cache of published FAQ embeddings (title + 384-dim vector).
