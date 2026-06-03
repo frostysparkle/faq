@@ -60,11 +60,14 @@ function triggerLabel(status: StatusOption, idle: IdleBucket | null): string {
   return 'All';
 }
 
-/** Returns the description only when it's non-empty and meaningfully different from the title.
- *  Prevents the same text appearing twice when a user submits description === title. */
-function descriptionToShow(title: string, description: string | undefined): string | null {
-  if (!description || !description.trim()) return null;
-  if (description.trim().toLowerCase() === title.trim().toLowerCase()) return null;
+/** Returns the best single text to show for a community question card.
+ *  Prefers the description when it's non-empty and meaningfully different
+ *  from the title; falls back to the title. This prevents short label-style
+ *  titles like "Spurti Points" from appearing while hiding the actual
+ *  question, and avoids duplicating text when title === description. */
+function questionText(title: string, description?: string): string {
+  if (!description || !description.trim()) return title;
+  if (description.trim().toLowerCase() === title.trim().toLowerCase()) return title;
   return description;
 }
 
@@ -223,14 +226,9 @@ export function CommunityPage() {
                 <div className={`mod-card ${cardColor}`} style={{ padding: '16px 18px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.45, marginBottom: descriptionToShow(q.title, q.description) ? 6 : 10, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                        {q.title}
+                      <div style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 10, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        {questionText(q.title, q.description)}
                       </div>
-                      {descriptionToShow(q.title, q.description) && (
-                        <div style={{ fontSize: 12, lineHeight: 1.55, marginBottom: 10, color: 'var(--color-text-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                          {q.description}
-                        </div>
-                      )}
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                         {q.category && <Badge color="accent">{q.category.name}</Badge>}
                         {q.tags.map((t) => <Badge key={t.id}>#{t.name}</Badge>)}

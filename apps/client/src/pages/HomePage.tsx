@@ -310,7 +310,9 @@ function RecentQuestionsList() {
         {data.slice(0, 5).map((q) => (
           <button key={q.id} onClick={() => navigate(`/community/${q.id}`)} style={{ display: 'block', textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer', width: '100%' }}>
             <div className="mod-card mod-card-green" style={{ padding: '14px 18px' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6, color: 'var(--color-text)' }}>{q.title}</div>
+              <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 6, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {(!q.description || q.description.trim() === '' || q.description.trim().toLowerCase() === q.title.trim().toLowerCase()) ? q.title : q.description}
+                </div>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                 {q.category && <Badge color="accent">{q.category.name}</Badge>}
                 <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
