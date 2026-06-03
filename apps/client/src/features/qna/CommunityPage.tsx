@@ -7,13 +7,14 @@ import {
   Circle,
   Clock,
   Flame,
+  Folder,
   MessageSquare,
+  User,
   Users,
   X,
 } from 'lucide-react';
 import { QUESTION_STATUSES } from '@samagama/shared';
 import type { QuestionStatus } from '@samagama/shared';
-import { Badge } from '../../components/ui/Badge';
 import { useCommunityIdleBuckets } from '../stats/queries';
 import type { IdleBucket, IdleBuckets } from '../stats/api';
 import { useQuestions } from './queries';
@@ -34,13 +35,25 @@ function readIdleParam(raw: string | null): IdleBucket | null {
   return null;
 }
 
-function statusColor(status: QuestionStatus): 'accent' | 'warning' | 'success' | 'default' {
+function getStatusMeta(status: QuestionStatus): { icon: React.ReactNode; color: string; label: string } {
   switch (status) {
-    case 'open':     return 'accent';
-    case 'answered': return 'warning';
-    case 'resolved': return 'success';
-    default:         return 'default';
+    case 'open':     return { icon: <Circle size={13} />,       color: 'var(--color-primary)', label: 'Open' };
+    case 'answered': return { icon: <CheckCircle2 size={13} />, color: 'var(--color-success)', label: 'Answered' };
+    case 'resolved': return { icon: <CheckCircle2 size={13} />, color: 'var(--color-success)', label: 'Resolved' };
+    default:         return { icon: <Circle size={13} />,       color: 'var(--color-text-muted)', label: status };
   }
+}
+
+function timeAgo(iso: string): string {
+  const sec = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (sec < 60) return `${sec}s ago`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}min ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}hr${hr === 1 ? '' : 's'} ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 30) return `${day}d ago`;
+  return new Date(iso).toLocaleDateString();
 }
 
 /** Human-readable summary shown inside the trigger button. */
@@ -211,36 +224,42 @@ export function CommunityPage() {
 
       {/* ── Question list ────────────────────────────────────────────── */}
       {!isLoading && data && data.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {data.map((q) => {
-            const cardColor =
-              q.status === 'resolved' ? 'mod-card-green' :
-              q.status === 'answered' ? 'mod-card-blue' :
-              'mod-card-green';
+            const sm = getStatusMeta(q.status);
             return (
               <button
                 key={q.id}
                 onClick={() => navigate(`/community/${q.id}`)}
                 style={{ display: 'block', textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer', width: '100%' }}
               >
-                <div className={`mod-card ${cardColor}`} style={{ padding: '16px 18px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 10, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                        {questionText(q.title, q.description)}
-                      </div>
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                        {q.category && <Badge color="accent">{q.category.name}</Badge>}
-                        {q.tags.map((t) => <Badge key={t.id}>#{t.name}</Badge>)}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-                      <Badge color={statusColor(q.status)}>{q.status}</Badge>
-                      <div style={{ fontSize: 11, color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <MessageSquare size={10} /> {q.answerCount}
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>by {q.author.name}</div>
-                    </div>
+                <div
+                  style={{
+                    background: 'var(--color-card)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 12,
+                    padding: '16px 20px',
+                    transition: 'box-shadow 0.15s, border-color 0.15s',
+                  }}
+                  onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = 'var(--shadow-md)'; el.style.borderColor = 'var(--color-primary)'; }}
+                  onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = 'none'; el.style.borderColor = 'var(--color-border)'; }}
+                >
+                  {/* Question content */}
+                  <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.5, marginBottom: 12, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {questionText(q.title, q.description)}
+                  </div>
+                  {/* Metadata row */}
+                  <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', rowGap: 4 }}>
+                    {q.category && (
+                      <><MetaChip icon={<Folder size={13} />} color="var(--color-primary)">{q.category.name}</MetaChip><MetaPipe /></>
+                    )}
+                    <MetaChip icon={sm.icon} color={sm.color}>{sm.label}</MetaChip>
+                    <MetaPipe />
+                    <MetaChip icon={<MessageSquare size={13} />} color="var(--color-text-muted)">{q.answerCount} response{q.answerCount === 1 ? '' : 's'}</MetaChip>
+                    <MetaPipe />
+                    <MetaChip icon={<User size={13} />} color="var(--color-text-muted)">by {q.author.name}</MetaChip>
+                    <MetaPipe />
+                    <MetaChip icon={<Clock size={13} />} color="var(--color-text-muted)">{timeAgo(q.updatedAt)}</MetaChip>
                   </div>
                 </div>
               </button>
@@ -250,6 +269,20 @@ export function CommunityPage() {
       )}
     </div>
   );
+}
+
+// ─── Card meta helpers ────────────────────────────────────────────────────────
+
+function MetaChip({ icon, color, children }: { icon: React.ReactNode; color: string; children: React.ReactNode }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color, fontSize: 12, fontWeight: 500 }}>
+      {icon}<span>{children}</span>
+    </span>
+  );
+}
+
+function MetaPipe() {
+  return <span style={{ margin: '0 10px', color: 'var(--color-border)', userSelect: 'none' }}>|</span>;
 }
 
 // ─── FilterDropdown ───────────────────────────────────────────────────────────

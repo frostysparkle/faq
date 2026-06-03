@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
-  ChevronsUpDown, ChevronDown, ChevronRight, ChevronUp,
-  HelpCircle, MessageCircle, MessagesSquare, Sparkles,
-  ThumbsDown, ThumbsUp,
+  CheckCircle2, ChevronDown, ChevronRight, ChevronUp, ChevronsUpDown,
+  Circle, Clock, Folder, HelpCircle, MessageCircle, MessageSquare,
+  MessagesSquare, Sparkles, ThumbsDown, ThumbsUp, User,
 } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import type { PublicFaq } from '@samagama/shared';
@@ -306,22 +306,40 @@ function RecentQuestionsList() {
 
   return (
     <>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 10 }}>
-        {data.slice(0, 5).map((q) => (
-          <button key={q.id} onClick={() => navigate(`/community/${q.id}`)} style={{ display: 'block', textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer', width: '100%' }}>
-            <div className="mod-card mod-card-green" style={{ padding: '14px 18px' }}>
-              <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 6, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                  {(!q.description || q.description.trim() === '' || q.description.trim().toLowerCase() === q.title.trim().toLowerCase()) ? q.title : q.description}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+        {data.slice(0, 5).map((q) => {
+          const qText = (!q.description || q.description.trim() === '' || q.description.trim().toLowerCase() === q.title.trim().toLowerCase()) ? q.title : q.description;
+          const smIcon = q.status === 'open' ? <Circle size={12} /> : <CheckCircle2 size={12} />;
+          const smColor = q.status === 'open' ? 'var(--color-primary)' : 'var(--color-success)';
+          const smLabel = q.status.charAt(0).toUpperCase() + q.status.slice(1);
+          const hrsSince = Math.floor((Date.now() - new Date(q.updatedAt).getTime()) / 3600000);
+          const ago = hrsSince < 1 ? 'just now' : hrsSince < 24 ? `${hrsSince}hr${hrsSince === 1 ? '' : 's'} ago` : `${Math.floor(hrsSince / 24)}d ago`;
+          return (
+            <button key={q.id} onClick={() => navigate(`/community/${q.id}`)} style={{ display: 'block', textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer', width: '100%' }}>
+              <div
+                style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 12, padding: '14px 18px', transition: 'box-shadow 0.15s, border-color 0.15s' }}
+                onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = 'var(--shadow-md)'; el.style.borderColor = 'var(--color-primary)'; }}
+                onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = 'none'; el.style.borderColor = 'var(--color-border)'; }}
+              >
+                <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.5, marginBottom: 10, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {qText}
                 </div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                {q.category && <Badge color="accent">{q.category.name}</Badge>}
-                <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
-                  {q.answerCount} answer{q.answerCount === 1 ? '' : 's'} · by {q.author.name}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', rowGap: 4 }}>
+                  {q.category && (
+                    <><span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-primary)', fontSize: 12, fontWeight: 500 }}><Folder size={12} /><span>{q.category.name}</span></span><span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span></>
+                  )}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: smColor, fontSize: 12, fontWeight: 500 }}>{smIcon}<span>{smLabel}</span></span>
+                  <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: 12, fontWeight: 500 }}><MessageSquare size={12} /><span>{q.answerCount} response{q.answerCount === 1 ? '' : 's'}</span></span>
+                  <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: 12, fontWeight: 500 }}><User size={12} /><span>by {q.author.name}</span></span>
+                  <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: 12, fontWeight: 500 }}><Clock size={12} /><span>{ago}</span></span>
+                </div>
               </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
       <ViewAll onClick={() => navigate('/community')} />
     </>
