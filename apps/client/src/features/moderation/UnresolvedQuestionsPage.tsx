@@ -520,12 +520,6 @@ function CommunityCard({ question, pendingAnswers }: { question: PublicQuestion;
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap' }}>
         <MessageCircle size={11} /> {question.answerCount} answer{question.answerCount === 1 ? '' : 's'}
       </span>
-      {hasPending && (
-        <>
-          <Pipe />
-          <span style={{ color: '#d97706', fontWeight: 700, whiteSpace: 'nowrap' }}>{pendingAnswers.length} pending</span>
-        </>
-      )}
       <Pipe />
       <StatusDot color={statusColor} label={question.status} />
     </>
