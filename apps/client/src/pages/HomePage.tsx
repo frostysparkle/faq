@@ -1,17 +1,16 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
-  CheckCircle2, ChevronDown, ChevronRight, ChevronUp, ChevronsUpDown,
+  CheckCircle2, ChevronRight,
   Circle, Clock, Folder, HelpCircle, MessageCircle, MessageSquare,
-  MessagesSquare, Sparkles, ThumbsDown, ThumbsUp, User,
+  MessagesSquare, Sparkles, User,
 } from 'lucide-react';
 import type React from 'react';
-import type { PublicFaq } from '@samagama/shared';
 import { useAuth } from '../features/auth/AuthProvider';
 import { useStudentHomeStats } from '../features/stats/queries';
 import { IdleBucketCards } from '../features/stats/IdleBucketCards';
-import { useFaqList, useFaqFeedback } from '../features/faq/queries';
-import { FlagFaqButton } from '../features/flag/FlagFaqDialog';
+import { useFaqList } from '../features/faq/queries';
+import { FaqCard } from '../features/faq/FaqCard';
 import { useQuestions } from '../features/qna/queries';
 
 type ContentTab = 'recent-added-faqs' | 'recent-updated-faqs' | 'recent-questions';
@@ -213,11 +212,9 @@ function ContentTabs() {
 function RecentFaqsList({ sort }: { sort: 'added' | 'recent' }) {
   const navigate = useNavigate();
   const { data, isLoading } = useFaqList({ sort, pageSize: 5 });
-  const [openIds, setOpenIds] = useState<Set<string>>(new Set());
-
-  const toggleFaq = (id: string) =>
-    setOpenIds((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
-  const collapseAll = () => setOpenIds(new Set());
+  // Single-expand: matches Browse FAQs accordion behaviour
+  const [openId, setOpenId] = useState<string | null>(null);
+  const toggleFaq = (id: string) => setOpenId((prev) => (prev === id ? null : id));
 
   if (isLoading) return <div className="mod-card mod-card-blue" style={{ padding: 20, color: 'var(--color-text-muted)', fontSize: 13 }}>Loading…</div>;
   if (!data || data.items.length === 0) return (
@@ -226,159 +223,21 @@ function RecentFaqsList({ sort }: { sort: 'added' | 'recent' }) {
     </div>
   );
 
-  const items = data.items.slice(0, 5);
-
   return (
     <>
-      {openIds.size >= 2 && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-          <button
-            onClick={collapseAll}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 8,
-              background: 'var(--color-input)', color: 'var(--color-text-muted)',
-              border: '1px solid var(--color-border)', cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            <ChevronsUpDown size={13} /> Collapse all
-          </button>
-        </div>
-      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 10 }}>
-        {items.map((faq) => (
-          <FaqRowCard
+        {data.items.slice(0, 5).map((faq) => (
+          <FaqCard
             key={faq.id}
             faq={faq}
-            expanded={openIds.has(faq.id)}
+            role="student"
+            expanded={openId === faq.id}
             onToggle={() => toggleFaq(faq.id)}
           />
         ))}
       </div>
       <ViewAll onClick={() => navigate('/faqs')} />
     </>
-  );
-}
-
-const STATUS_DOT_HOME: Record<string, string> = {
-  published: '#16a34a', draft: '#6b7280', outdated: '#d97706',
-};
-
-function FaqRowCard({ faq, expanded: expandedProp, onToggle }: { faq: PublicFaq; expanded?: boolean; onToggle?: () => void }) {
-  const [expandedInternal, setExpandedInternal] = useState(false);
-  const expanded = expandedProp !== undefined ? expandedProp : expandedInternal;
-
-  const [localVote, setLocalVote] = useState<'helpful' | 'unhelpful' | null>(null);
-  const [counts, setCounts] = useState({ helpful: faq.helpfulCount ?? 0, unhelpful: faq.unhelpfulCount ?? 0 });
-  const feedback = useFaqFeedback(faq.id);
-
-  const toggle = () => { if (onToggle) onToggle(); else setExpandedInternal((v) => !v); };
-
-  const handleVote = (rating: 'helpful' | 'unhelpful') => {
-    if (feedback.isPending) return;
-    const isToggleOff = localVote === rating;
-    const wasOpposite = localVote !== null && localVote !== rating;
-    setCounts((prev) => {
-      const next = { ...prev };
-      if (isToggleOff) { next[rating] = Math.max(0, next[rating] - 1); }
-      else { next[rating] = next[rating] + 1; if (wasOpposite) { const opp = rating === 'helpful' ? 'unhelpful' : 'helpful'; next[opp] = Math.max(0, next[opp] - 1); } }
-      return next;
-    });
-    setLocalVote(isToggleOff ? null : rating);
-    feedback.mutate(rating);
-  };
-
-  const dotColor = STATUS_DOT_HOME[faq.status] ?? '#6b7280';
-  const firstCat = faq.categories[0];
-
-  return (
-    <div className="mod-card mod-card-blue">
-      {/* ── Header ── */}
-      <div style={{ padding: '14px 18px 12px' }}>
-        {/* Title + chevron */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 9 }}>
-          <button
-            onClick={toggle}
-            aria-expanded={expanded}
-            style={{ flex: 1, background: 'transparent', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: 'inherit', font: 'inherit' }}
-          >
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.45 }}>{faq.title}</span>
-          </button>
-          <button
-            onClick={toggle}
-            aria-label={expanded ? 'Collapse' : 'Expand'}
-            style={{ flexShrink: 0, background: 'transparent', border: 'none', borderRadius: 8, padding: '4px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.13s' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-input)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-          >
-            {expanded ? <ChevronUp size={15} color="var(--color-text-muted)" /> : <ChevronDown size={15} color="var(--color-text-muted)" />}
-          </button>
-        </div>
-
-        {/* Metadata row */}
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', fontSize: 12, color: 'var(--color-text-muted)', rowGap: 4 }}>
-          {firstCat && (
-            <>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-primary)', fontWeight: 600 }}>
-                <Folder size={12} />{firstCat.name}
-              </span>
-              <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span>
-            </>
-          )}
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
-            <span style={{ color: dotColor, fontWeight: 600, textTransform: 'capitalize' as const }}>{faq.status}</span>
-          </span>
-          <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            <Clock size={12} />{timeAgo(faq.updatedAt)}
-          </span>
-          <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>|</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-            <ThumbsUp size={12} />{counts.helpful}
-          </span>
-          <span style={{ margin: '0 6px', opacity: 0.35 }}>·</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-            <ThumbsDown size={12} />{counts.unhelpful}
-          </span>
-        </div>
-      </div>
-
-      {/* ── Expanded ── */}
-      {expanded && (
-        <div>
-          <div style={{ borderTop: '1px solid var(--color-border)', margin: '0 18px' }} />
-          <div style={{ padding: '14px 18px 12px', fontSize: 13, color: 'var(--color-text)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-            {faq.answer}
-          </div>
-          <div style={{ borderTop: '1px solid var(--color-border)', margin: '0 18px' }} />
-          <div style={{ padding: '10px 18px 14px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <VoteButton rating="helpful"   selected={localVote === 'helpful'}   disabled={feedback.isPending} count={counts.helpful}   onClick={() => handleVote('helpful')} />
-            <VoteButton rating="unhelpful" selected={localVote === 'unhelpful'} disabled={feedback.isPending} count={counts.unhelpful} onClick={() => handleVote('unhelpful')} />
-            <FlagFaqButton faqId={faq.id} faqUpdatedAt={faq.updatedAt} />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function VoteButton({ rating, selected, disabled, count, onClick }: {
-  rating: 'helpful' | 'unhelpful'; selected: boolean; disabled: boolean; count: number; onClick: () => void;
-}) {
-  const color = rating === 'helpful' ? 'var(--color-success)' : 'var(--color-danger)';
-  const label = rating === 'helpful' ? 'Helpful' : 'Not Helpful';
-  return (
-    <button type="button" onClick={onClick} disabled={disabled} title={selected ? `Click to remove your ${label} vote` : undefined} style={{
-      display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px',
-      border: `1px solid ${color}`, background: selected ? color : 'transparent',
-      borderRadius: 16, color: selected ? 'white' : color, fontSize: 12,
-      cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-      fontWeight: selected ? 700 : 400, opacity: disabled ? 0.6 : 1, transition: 'all 0.15s ease',
-    }}>
-      {rating === 'helpful' ? <ThumbsUp size={12} /> : <ThumbsDown size={12} />}
-      {label} {count > 0 && <span style={{ fontWeight: 400, opacity: 0.8 }}>({count})</span>}
-    </button>
   );
 }
 
