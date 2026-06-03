@@ -28,7 +28,7 @@ export interface LeaderboardEntry {
 }
 
 export interface LeaderboardResponse {
-  range: 'day' | 'week' | 'month' | 'all';
+  range: 'week' | 'month' | 'all';
   entries: LeaderboardEntry[];
   myRank?: number;
 }
@@ -39,7 +39,7 @@ export const statsApi = {
     return res.data.data;
   },
 
-  async getLeaderboard(range: 'day' | 'week' | 'month' | 'all'): Promise<LeaderboardResponse> {
+  async getLeaderboard(range: 'week' | 'month' | 'all'): Promise<LeaderboardResponse> {
     const res = await apiClient.get<ApiSuccess<LeaderboardResponse>>('/api/stats/leaderboard', {
       params: { range },
     });

@@ -3,7 +3,7 @@ import { statsApi } from './api';
 
 export const statsKeys = {
   studentHome: ['stats', 'student-home'] as const,
-  leaderboard: (range: 'day' | 'week' | 'month' | 'all') => ['stats', 'leaderboard', range] as const,
+  leaderboard: (range: 'week' | 'month' | 'all') => ['stats', 'leaderboard', range] as const,
   communityIdle: ['stats', 'community-idle'] as const,
 };
 
@@ -15,7 +15,7 @@ export function useStudentHomeStats() {
   });
 }
 
-export function useLeaderboard(range: 'day' | 'week' | 'month' | 'all') {
+export function useLeaderboard(range: 'week' | 'month' | 'all') {
   return useQuery({
     queryKey: statsKeys.leaderboard(range),
     queryFn: () => statsApi.getLeaderboard(range),

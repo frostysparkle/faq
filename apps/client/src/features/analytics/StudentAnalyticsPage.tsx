@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { CheckCircle, MessageCircle, Sparkles, Trophy } from 'lucide-react';
+import { SPURTI_POINTS } from '@samagama/shared';
 import { useAuth } from '../auth/AuthProvider';
 import { useStudentHomeStats, useLeaderboard } from '../stats/queries';
 
-type Range = 'day' | 'week' | 'month' | 'all';
+type Range = 'week' | 'month' | 'all';
 
 export function StudentAnalyticsPage() {
   const { user } = useAuth();
@@ -26,13 +27,13 @@ export function StudentAnalyticsPage() {
 
       {/* Range chips */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        {(['day', 'week', 'month', 'all'] as Range[]).map((r) => (
+        {(['week', 'month', 'all'] as Range[]).map((r) => (
           <button key={r} onClick={() => setRange(r)} style={{
             fontSize: 13, fontWeight: 700, padding: '7px 18px', borderRadius: 20,
             border: `1.5px solid ${range === r ? 'var(--color-purple)' : 'var(--color-border)'}`,
             background: range === r ? 'var(--color-purple)' : 'var(--color-card)',
             color: range === r ? 'white' : 'var(--color-text-muted)',
-            cursor: 'pointer', fontFamily: 'inherit', textTransform: 'capitalize', transition: 'all 0.15s',
+            cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
           }}>{rangeLabel(r)}</button>
         ))}
       </div>
@@ -41,7 +42,18 @@ export function StudentAnalyticsPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
         <PerfCard label="Questions Answered" value={stats?.questionsYouAnswered ?? 0} sub="Approved answers, all-time" icon={MessageCircle} color="var(--color-success)" cardClass="mod-card-green" />
         <PerfCard label="Spurti Points" value={stats?.spurtiPoints ?? 0} sub="Live balance" icon={Sparkles} color="var(--color-purple)" cardClass="mod-card-purple" />
-        <PerfCard label="Approved in range" value={leaderboard?.entries.find((e) => e.isMe)?.approvedAnswers ?? 0} sub={`Window: ${rangeLabel(range)}`} icon={CheckCircle} color="var(--color-primary)" cardClass="mod-card-blue" />
+        <PerfCard
+          label={range === 'all' ? 'All-Time Points' : `${rangeLabel(range)} Points Earned`}
+          value={
+            range === 'all'
+              ? (stats?.spurtiPoints ?? 0)
+              : periodPoints(leaderboard?.entries.find((e) => e.isMe)?.approvedAnswers ?? 0)
+          }
+          sub={range === 'all' ? 'Cumulative balance' : `${rangeLabel(range)} window`}
+          icon={CheckCircle}
+          color="var(--color-primary)"
+          cardClass="mod-card-blue"
+        />
       </div>
 
       {/* Leaderboard heading */}
@@ -50,7 +62,7 @@ export function StudentAnalyticsPage() {
           <Trophy size={16} color="#f59e0b" />
         </div>
         <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>
-          Peer Ranking — {range === 'all' ? 'All-Time Points' : `${rangeLabel(range)} Answers`}
+          Peer Ranking — {rangeLabel(range)} Spurti Points
         </span>
       </div>
 
@@ -96,10 +108,10 @@ function KaggleLeaderboard({ entries, myRank, currentUserId, currentUserName, ra
   currentUserName: string;
   range: Range;
 }) {
-  const getScore = (e: Entry) => range === 'all' ? e.spurtiPoints : e.approvedAnswers;
+  const getScore = (e: Entry) => range === 'all' ? e.spurtiPoints : e.approvedAnswers * SPURTI_POINTS.ANSWER_APPROVED_DEFAULT;
   const getSecondary = (e: Entry) => range === 'all' ? `${e.approvedAnswers} approved` : `${e.spurtiPoints} pts total`;
-  const scoreLabel = range === 'all' ? 'pts' : 'ans';
-  const maxScore = entries.length > 0 ? getScore(entries[0]) : 1;
+  const scoreLabel = 'pts';
+  const maxScore = Math.max(entries.length > 0 ? getScore(entries[0]) : 1, 1);
 
   const top3 = entries.slice(0, 3);
   // Podium order: 2nd (left), 1st (center/tallest), 3rd (right)
@@ -279,10 +291,14 @@ function rankAvatarBg(rank: number): string {
 }
 
 function rangeLabel(r: Range): string {
-  if (r === 'day') return 'Daily';
   if (r === 'week') return 'Weekly';
   if (r === 'month') return 'Monthly';
   return 'Overall';
+}
+
+/** Converts an approved-answer count to an estimated Spurti Points figure for a time window. */
+function periodPoints(approvedAnswers: number): number {
+  return approvedAnswers * SPURTI_POINTS.ANSWER_APPROVED_DEFAULT;
 }
 
 function medalFor(rank: number): string {

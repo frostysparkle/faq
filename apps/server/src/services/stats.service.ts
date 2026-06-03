@@ -42,7 +42,7 @@ export interface LeaderboardEntry {
 }
 
 export interface LeaderboardResponse {
-  range: 'day' | 'week' | 'month' | 'all';
+  range: 'week' | 'month' | 'all';
   entries: LeaderboardEntry[];
   myRank?: number;
 }
@@ -130,25 +130,43 @@ export const statsService = {
   },
 
   /**
-   * Spurti Points leaderboard. `range` filters the answer activity used to compute
-   * the secondary metric (approvedAnswers); the points balance is always the live total.
-   * Top 20 students are returned, plus the current user's rank if they're outside the top 20.
+   * Spurti Points leaderboard. `range` filters the approval window used to compute
+   * earned points (approvedAnswers × default award); the live balance is always fetched too.
+   * - week:  previous completed Mon–Sun calendar week
+   * - month: previous calendar month (1st–last day)
+   * - all:   no date filter — cumulative all-time
+   * Top 20 students are returned, plus the current user's rank if outside the top 20.
    */
   async getLeaderboard(
-    range: 'day' | 'week' | 'month' | 'all',
+    range: 'week' | 'month' | 'all',
     currentUserId: string,
   ): Promise<LeaderboardResponse> {
-    const since = (() => {
-      const now = Date.now();
-      if (range === 'day') return new Date(now - 24 * 60 * 60 * 1000);
-      if (range === 'week') return new Date(now - 7 * 24 * 60 * 60 * 1000);
-      if (range === 'month') return new Date(now - 30 * 24 * 60 * 60 * 1000);
+    const window = (() => {
+      const now = new Date();
+      if (range === 'week') {
+        // Days since the most recent Monday (0 on Mon, 6 on Sun)
+        const daysSinceMon = now.getDay() === 0 ? 6 : now.getDay() - 1;
+        const thisMonday = new Date(now);
+        thisMonday.setDate(now.getDate() - daysSinceMon);
+        thisMonday.setHours(0, 0, 0, 0);
+        // Previous week: Mon = thisMonday − 7 days, Sun = thisMonday − 1 ms
+        const prevMonday = new Date(thisMonday);
+        prevMonday.setDate(thisMonday.getDate() - 7);
+        const prevSunday = new Date(thisMonday.getTime() - 1); // 23:59:59.999 of last Sunday
+        return { gte: prevMonday, lte: prevSunday };
+      }
+      if (range === 'month') {
+        const firstOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const firstOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastOfPrevMonth = new Date(firstOfThisMonth.getTime() - 1);
+        return { gte: firstOfPrevMonth, lte: lastOfPrevMonth };
+      }
       return null;
     })();
 
     // Aggregate approved-answer counts per student in the time window.
     const matchStage: Record<string, unknown> = { status: 'approved' };
-    if (since) matchStage.approvedAt = { $gte: since };
+    if (window) matchStage.approvedAt = { $gte: window.gte, $lte: window.lte };
 
     const answersByStudent = await AnswerModel.aggregate<{
       _id: mongoose.Types.ObjectId;
