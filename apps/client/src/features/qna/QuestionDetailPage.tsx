@@ -56,8 +56,10 @@ export function QuestionDetailPage() {
           </div>
         )}
 
-        {/* Question description */}
-        {question.description && question.description.trim() && (
+        {/* Question description — only shown when non-empty and differs from the title */}
+        {question.description &&
+         question.description.trim() &&
+         question.description.trim().toLowerCase() !== question.title.trim().toLowerCase() && (
           <div style={{ fontSize: 14, color: 'var(--color-text)', lineHeight: 1.65, whiteSpace: 'pre-wrap', marginBottom: 10 }}>
             {question.description}
           </div>

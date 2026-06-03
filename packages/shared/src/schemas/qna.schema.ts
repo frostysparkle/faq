@@ -24,7 +24,10 @@ export const questionCreateSchema = z.object({
   screenshotUrl: z.string().url().optional(),
   /** Token returned by checkExisting; required so server can confirm duplicate-check ran. */
   existingAnswerCheckToken: z.string().optional(),
-});
+}).refine(
+  (data) => data.description.trim().toLowerCase() !== data.title.trim().toLowerCase(),
+  { message: 'Description must differ from the title', path: ['description'] },
+);
 
 export const answerCreateSchema = z.object({
   body: z.string().trim().min(10).max(4000),

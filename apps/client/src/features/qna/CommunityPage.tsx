@@ -60,6 +60,14 @@ function triggerLabel(status: StatusOption, idle: IdleBucket | null): string {
   return 'All';
 }
 
+/** Returns the description only when it's non-empty and meaningfully different from the title.
+ *  Prevents the same text appearing twice when a user submits description === title. */
+function descriptionToShow(title: string, description: string | undefined): string | null {
+  if (!description || !description.trim()) return null;
+  if (description.trim().toLowerCase() === title.trim().toLowerCase()) return null;
+  return description;
+}
+
 // ─── CommunityPage ────────────────────────────────────────────────────────────
 
 export function CommunityPage() {
@@ -215,10 +223,10 @@ export function CommunityPage() {
                 <div className={`mod-card ${cardColor}`} style={{ padding: '16px 18px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.45, marginBottom: q.description ? 6 : 10, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.45, marginBottom: descriptionToShow(q.title, q.description) ? 6 : 10, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                         {q.title}
                       </div>
-                      {q.description && (
+                      {descriptionToShow(q.title, q.description) && (
                         <div style={{ fontSize: 12, lineHeight: 1.55, marginBottom: 10, color: 'var(--color-text-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                           {q.description}
                         </div>
