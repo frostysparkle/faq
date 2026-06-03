@@ -26,6 +26,7 @@ import { Card } from '../../../components/ui/Card';
 import { useDeleteFaq, useCategories, useFaqList, useTags } from '../../faq/queries';
 import { useFlagList, useUpdateFlagStatus } from '../../flag/queries';
 import { InlineFaqEditor } from './InlineFaqEditor';
+import { FlagInbox } from './FlagInbox';
 
 type Filter = 'all' | 'helpful' | 'flagged';
 type ColKey = 'details' | 'engagement' | 'flag' | 'actions';
@@ -76,8 +77,7 @@ const C = {
   actionDel:  { bg: 'var(--color-danger-bg)',  fg: 'var(--color-danger)',  border: 'var(--color-danger-bg)' },
 };
 
-export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
-  const [filter, setFilter] = useState<Filter>('all');
+export function FaqsAdminTab({ filter }: { filter: Filter }) {
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -141,29 +141,13 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
   const startItem = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const endItem   = Math.min(page * pageSize, total);
 
-  const switchFilter = (f: Filter) => { setFilter(f); setPage(1); };
+  // Reset to page 1 whenever the parent changes the active filter.
+  useEffect(() => { setPage(1); }, [filter]);
 
   return (
     <div>
       {/* ── Toolbar ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {(['all', 'helpful', 'flagged'] as Filter[]).map((f) => (
-            <FilterChip key={f} active={filter === f} onClick={() => switchFilter(f)}>
-              {f === 'all' ? 'All' : f === 'helpful' ? 'Helpful FAQs' : (
-                <>
-                  Flagged FAQs
-                  {flaggedCount > 0 && (
-                    <span style={{ background: C.thumbDown, color: '#fff', borderRadius: 10, padding: '0 6px', fontSize: 10, fontWeight: 700, marginLeft: 5 }}>
-                      {flaggedCount}
-                    </span>
-                  )}
-                </>
-              )}
-            </FilterChip>
-          ))}
-        </div>
-
         {/* Search bar */}
         <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: 340 }}>
           <Search
@@ -314,6 +298,9 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
           <InlineFaqEditor categories={categories} tags={tags} onClose={() => setCreating(false)} />
         </div>
       )}
+
+      {/* ── Flag inbox — shown when the Flagged filter is active ── */}
+      {filter === 'flagged' && <FlagInbox />}
 
       {/* ── Table ── */}
       <div className="mod-card mod-card-blue" style={{ overflow: 'hidden', borderRadius: 14 }}>
