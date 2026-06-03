@@ -182,8 +182,10 @@ function projectQuestion(q: PopulatedQuestion, viewerId?: string): PublicQuestio
     category: q.category
       ? { id: q.category._id.toString(), name: q.category.name, slug: q.category.slug }
       : null,
-    tags: q.tags.map((t) => ({ id: t._id.toString(), name: t.name, slug: t.slug })),
-    author: { id: q.askedBy._id.toString(), name: q.askedBy.name },
+    tags: q.tags.filter(Boolean).map((t) => ({ id: t._id.toString(), name: t.name, slug: t.slug })),
+    author: q.askedBy
+      ? { id: q.askedBy._id.toString(), name: q.askedBy.name }
+      : { id: '', name: 'Deleted User' },
     screenshotUrl: q.screenshotUrl ?? undefined,
     answerCount: q.answerCount,
     viewCount: q.viewCount,
@@ -467,7 +469,11 @@ export const qnaService = {
     };
 
     if (opts.type) filter.type = opts.type;
-    if (opts.status) filter.status = opts.status;
+    if (opts.status) {
+      // Accept either a single value ('open') or a comma-separated list ('open,answered').
+      const parts = opts.status.split(',').map((s) => s.trim()).filter(Boolean);
+      filter.status = parts.length === 1 ? parts[0] : { $in: parts };
+    }
 
     // Idle-bucket filter — same mutually-exclusive math as the stats aggregation so
     // the dashboard card and the filter chip always agree on what's in each bucket.
