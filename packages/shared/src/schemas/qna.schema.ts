@@ -20,8 +20,8 @@ export const questionCreateSchema = z.object({
   category: objectIdSchema,
   tags: z.array(objectIdSchema).default([]),
   type: z.enum(QUESTION_TYPES).default('community'),
-  /** URL of an uploaded screenshot (Change Spec §6.1). Storage layer is implementation-defined. */
-  screenshotUrl: z.string().url().optional(),
+  /** URL or base64 data-URL of an attached screenshot. Accepts both https:// and data: schemes. */
+  screenshotUrl: z.string().min(1).optional(),
   /** Token returned by checkExisting; required so server can confirm duplicate-check ran. */
   existingAnswerCheckToken: z.string().optional(),
 });
