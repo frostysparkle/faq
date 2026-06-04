@@ -2,6 +2,7 @@ export type NotificationType =
   | 'answer_approved'
   | 'answer_rejected'
   | 'question_answered'
+  | 'flag_reviewed'
   | 'general';
 
 export interface PublicNotification {

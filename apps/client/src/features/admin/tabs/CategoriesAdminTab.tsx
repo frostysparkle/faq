@@ -1,6 +1,6 @@
 // Inline category management embedded inside FAQ Management.
 import { useEffect, useRef, useState } from 'react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { AlertTriangle, Plus, Edit, Trash2 } from 'lucide-react';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import {
@@ -14,6 +14,7 @@ export function CategoriesAdminTab() {
   const { data, isLoading } = useCategories();
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
 
   return (
     <div>
@@ -49,6 +50,16 @@ export function CategoriesAdminTab() {
             <div key={c._id} style={{ gridColumn: '1 / -1' }}>
               <CategoryForm existing={c} onClose={() => setEditingId(null)} />
             </div>
+          ) : confirmingDeleteId === c._id ? (
+            // Span all columns so the confirmation gets full width
+            <div key={c._id} style={{ gridColumn: '1 / -1' }}>
+              <DeleteConfirmCard
+                name={c.name}
+                id={c._id}
+                onCancel={() => setConfirmingDeleteId(null)}
+                onDeleted={() => setConfirmingDeleteId(null)}
+              />
+            </div>
           ) : (
             <Card
               key={c._id}
@@ -57,8 +68,16 @@ export function CategoriesAdminTab() {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '14px 16px',
-                outline: editingId && editingId !== c._id ? '2px solid transparent' : undefined,
-                opacity: editingId && editingId !== c._id ? 0.45 : 1,
+                outline:
+                  (editingId && editingId !== c._id) ||
+                  (confirmingDeleteId && confirmingDeleteId !== c._id)
+                    ? '2px solid transparent'
+                    : undefined,
+                opacity:
+                  (editingId && editingId !== c._id) ||
+                  (confirmingDeleteId && confirmingDeleteId !== c._id)
+                    ? 0.45
+                    : 1,
                 transition: 'opacity 0.15s',
               }}
             >
@@ -84,11 +103,22 @@ export function CategoriesAdminTab() {
                   onClick={() => {
                     setEditingId(c._id);
                     setCreating(false);
+                    setConfirmingDeleteId(null);
                   }}
                 >
                   <Edit size={12} />
                 </IconBtn>
-                <DeleteBtn id={c._id} />
+                <IconBtn
+                  ariaLabel="Delete category"
+                  danger
+                  onClick={() => {
+                    setConfirmingDeleteId(c._id);
+                    setEditingId(null);
+                    setCreating(false);
+                  }}
+                >
+                  <Trash2 size={12} />
+                </IconBtn>
               </div>
             </Card>
           ),
@@ -239,19 +269,138 @@ function CategoryForm({
   );
 }
 
-// ─── DeleteBtn ────────────────────────────────────────────────────────────────
+// ─── DeleteConfirmCard ────────────────────────────────────────────────────────
 
-function DeleteBtn({ id }: { id: string }) {
+function DeleteConfirmCard({
+  id,
+  name,
+  onCancel,
+  onDeleted,
+}: {
+  id: string;
+  name: string;
+  onCancel: () => void;
+  onDeleted: () => void;
+}) {
   const deleteCat = useDeleteCategory();
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  // Auto-focus Cancel on mount so keyboard users can safely dismiss
+  useEffect(() => {
+    cancelRef.current?.focus();
+  }, []);
+
+  // Escape cancels
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onCancel]);
+
+  const handleDelete = async () => {
+    await deleteCat.mutateAsync(id);
+    onDeleted();
+  };
+
   return (
-    <IconBtn
-      ariaLabel="Delete"
-      danger
-      disabled={deleteCat.isPending}
-      onClick={() => deleteCat.mutate(id)}
+    <Card
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="delete-cat-heading"
+      aria-describedby="delete-cat-desc"
+      style={{
+        padding: '18px 20px',
+        border: '1.5px solid var(--color-danger)',
+        background: 'var(--color-danger-bg)',
+      }}
     >
-      <Trash2 size={12} />
-    </IconBtn>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        {/* Icon */}
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: 'var(--color-danger)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <AlertTriangle size={18} color="white" />
+        </div>
+
+        {/* Text */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            id="delete-cat-heading"
+            style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', marginBottom: 4 }}
+          >
+            Delete &ldquo;{name}&rdquo;?
+          </div>
+          <div
+            id="delete-cat-desc"
+            style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.5 }}
+          >
+            This will permanently remove the category. FAQs assigned to it will become
+            uncategorised. This action cannot be undone.
+          </div>
+
+          {deleteCat.isError && (
+            <div
+              role="alert"
+              style={{
+                marginTop: 8,
+                fontSize: 12,
+                color: 'var(--color-danger)',
+                fontWeight: 500,
+              }}
+            >
+              {deleteCat.error instanceof Error
+                ? deleteCat.error.message
+                : 'Could not delete — please try again.'}
+            </div>
+          )}
+
+          {/* Buttons */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+            <button
+              ref={cancelRef}
+              onClick={onCancel}
+              disabled={deleteCat.isPending}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12,
+                fontWeight: 500,
+                padding: '5px 12px',
+                borderRadius: 8,
+                border: '1px solid var(--color-border)',
+                background: 'transparent',
+                color: 'var(--color-text-muted)',
+                cursor: deleteCat.isPending ? 'not-allowed' : 'pointer',
+                opacity: deleteCat.isPending ? 0.55 : 1,
+                fontFamily: 'inherit',
+              }}
+            >
+              Cancel
+            </button>
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={handleDelete}
+              disabled={deleteCat.isPending}
+            >
+              {deleteCat.isPending ? 'Deleting…' : 'Yes, delete category'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }
 

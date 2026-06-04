@@ -140,7 +140,7 @@ export function QuestionDetailPage() {
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
       {/* ── Back ── */}
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => (window.history.length > 2 ? navigate(-1) : navigate('/community'))}
         style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -696,6 +696,7 @@ function VoteControl({
       onClick={onVote}
       disabled={isPending}
       title={isUp ? 'Upvote' : 'Downvote'}
+      aria-label={`${isUp ? 'Upvote' : 'Downvote'} — ${count} vote${count === 1 ? '' : 's'}`}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -708,7 +709,8 @@ function VoteControl({
         fontSize: 12,
         fontWeight: 600,
         color: active ? activeColor : 'var(--color-text-muted)',
-        transition: 'color 0.15s',
+        transition: 'color 0.15s, opacity 0.15s',
+        opacity: isPending ? 0.45 : 1,
       }}
       onMouseEnter={(e) => {
         if (!active) (e.currentTarget as HTMLButtonElement).style.color = activeColor;

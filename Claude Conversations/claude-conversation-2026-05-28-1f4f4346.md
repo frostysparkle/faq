@@ -44,11 +44,11 @@ Architectural Blueprint: Centralized MongoDB & Stateless LLM
 This document outlines the workflows, implementation responsibilities, and exact API contracts required to implement a centralized database RAG architecture.
 
 1. System Overview
-The Orchestrator (Main Node.js Server): Manages user sessions, chat history, database queries (Vector Search), and ticket creation.
-The Single Database (MongoDB Atlas): Stores user data, application state, static FAQs (no expiry), and recent queries (Queries with answers verified by mods , with a 7-day automatic expiry).
-The Compute Node (Isolated LLM Server): Runs the local LLM model. Accepts large text prompts, generates responses, and maintains zero local state.
+   The Orchestrator (Main Node.js Server): Manages user sessions, chat history, database queries (Vector Search), and ticket creation.
+   The Single Database (MongoDB Atlas): Stores user data, application state, static FAQs (no expiry), and recent queries (Queries with answers verified by mods , with a 7-day automatic expiry).
+   The Compute Node (Isolated LLM Server): Runs the local LLM model. Accepts large text prompts, generates responses, and maintains zero local state.
 2. Core Workflows
-A. The Standard Chat Workflow (RAG)
+   A. The Standard Chat Workflow (RAG)
 
 User types a message in the frontend.
 The Main Backend receives the message and converts it into a vector embedding.
@@ -65,14 +65,12 @@ The Main Backend verifies if the user is allowed to escalate(for #escalate only)
 The Main Backend packages the recent chat history and the force-escalation reason (or escalation) and sends it to the LLM Server's /summarize endpoint.
 The LLM Server generates a strict JSON object containing a summary of the issue and a boolean flag indicating if it is a general question.
 The LLM Server returns the JSON.
-The Main Backend receives the JSON, attaches the user's ID, inserts the new ticket into the MongoDB tickets collection( or attaches it to an existing open ticket of query is similar i.e., >99% similar), and alerts the frontend.
-3. Backend Implementation Requirements (Node.js & MongoDB)
+The Main Backend receives the JSON, attaches the user's ID, inserts the new ticket into the MongoDB tickets collection( or attaches it to an existing open ticket of query is similar i.e., >99% similar), and alerts the frontend. 3. Backend Implementation Requirements (Node.js & MongoDB)
 To make this work, the backend team must implement the following database features:
 
 Vector Embeddings: The backend must generate embeddings(questions only , not for responses or answers) for every new FAQ and successfully answered user query. This can be done using a lightweight Node.js library (like Transformers.js) or by calling an external embedding API.
 MongoDB $vectorSearch: The database must be configured with vector indexes to allow rapid cosine similarity searches across the text fields.
-TTL (Time-To-Live) Indexes: To recreate the "7-day expiry" rule, the backend team must create a TTL index on the queries collection. MongoDB will automatically delete documents in this collection 168 hours (7 days) after their creation timestamp.
-4. LLM Server API Specifications
+TTL (Time-To-Live) Indexes: To recreate the "7-day expiry" rule, the backend team must create a TTL index on the queries collection. MongoDB will automatically delete documents in this collection 168 hours (7 days) after their creation timestamp. 4. LLM Server API Specifications
 The isolated LLM server only needs to expose two secure endpoints to the Main Backend. Both should be secured via HTTPS and an internal Bearer token.
 
 API 1: Generate RAG Response
@@ -82,24 +80,24 @@ Endpoint: POST /internal/llm/generate
 Headers: Authorization: Bearer <internal_secret>
 Request Payload (From Main Server):
 {
-  "system_instruction": "You are a helpful support bot. Use ONLY the provided context to answer. If the answer is not in the context, reply EXACTLY with: 'I don't have an answer for you at the moment. You can escalate it to backend team: Type #escalate'.",
-  "rag_context": [
-    "FAQ: To change your billing cycle, go to Settings > Billing and select 'Update Plan'.",
-    "Query: How do I downgrade? Answer: You can downgrade from the Billing menu."
-  ],
-  "conversation_history": [
-    {"role": "user", "content": "Hi, I need help with my account."},
-    {"role": "assistant", "content": "Hello! What kind of help do you need?"}
-  ],
-  "current_message": "Where is the billing menu located?"
+"system_instruction": "You are a helpful support bot. Use ONLY the provided context to answer. If the answer is not in the context, reply EXACTLY with: 'I don't have an answer for you at the moment. You can escalate it to backend team: Type #escalate'.",
+"rag_context": [
+"FAQ: To change your billing cycle, go to Settings > Billing and select 'Update Plan'.",
+"Query: How do I downgrade? Answer: You can downgrade from the Billing menu."
+],
+"conversation_history": [
+{"role": "user", "content": "Hi, I need help with my account."},
+{"role": "assistant", "content": "Hello! What kind of help do you need?"}
+],
+"current_message": "Where is the billing menu located?"
 }
 Response Payload (From LLM Server):
 {
-  "status": "success",
-  "data": {
-    "response_text": "You can find the billing menu by going to Settings and then selecting Billing.",
-    "fallback_triggered": false
-  }
+"status": "success",
+"data": {
+"response_text": "You can find the billing menu by going to Settings and then selecting Billing.",
+"fallback_triggered": false
+}
 }
 (Note: If the LLM uses the exact fallback string, it should set fallback_triggered: true so the backend knows to unlock the #escalate feature for the user's next message).
 
@@ -110,20 +108,20 @@ Endpoint: POST /internal/llm/summarize
 Headers: Authorization: Bearer <internal_secret>
 Request Payload (From Main Server):
 {
-  "escalation_type": "force_escalate",
-  "force_reason": "The portal won't let me click the save button.",
-  "conversation_history": [
-    {"role": "user", "content": "How do I update my billing cycle?"},
-    {"role": "assistant", "content": "Go to settings > billing > update it and click save."}
-  ]
+"escalation_type": "force_escalate",
+"force_reason": "The portal won't let me click the save button.",
+"conversation_history": [
+{"role": "user", "content": "How do I update my billing cycle?"},
+{"role": "assistant", "content": "Go to settings > billing > update it and click save."}
+]
 }
 Response Payload (From LLM Server):
 {
-  "status": "success",
-  "data": {
-    "summary": "User is attempting to change their billing cycle but reports that the save button in the portal is unresponsive.",
-    "is_general_query": false
-  }
+"status": "success",
+"data": {
+"summary": "User is attempting to change their billing cycle but reports that the save button in the portal is unresponsive.",
+"is_general_query": false
+}
 }
 (Note: The LLM Server must use Grammar/JSON Schema constraints within llama.cpp to ensure the output perfectly matches this JSON structure every single time, avoiding plain text conversational filler).
 
@@ -153,36 +151,39 @@ I now have a complete picture of your backend. Here is your documentation, forma
 
 ### 1. System Architecture — What We Own
 
-| Layer | Technology | Status |
-|---|---|---|
-| HTTP Server | Node.js 20 + Express 5 | Built |
-| Database | MongoDB Atlas (Mongoose ODM) | Built |
-| Auth | JWT (access + refresh), bcrypt | Built |
-| RBAC | `student` / `moderator` / `admin` roles | Built |
-| FAQ Management | Full CRUD + text search + feedback | Built |
-| Community Q&A | Questions, Answers, votes, moderation | Built |
-| Audit Logging | All mod/admin actions recorded | Built |
-| Flag/Report System | FAQs, questions, answers, chatbot responses | Built |
-| System Settings | Configurable thresholds (confidence, sources cap, etc.) | Built |
-| Embedding field | Reserved on `Faq` and `Answer` models | Schema ready, not populated |
-| Vector Search | MongoDB `$vectorSearch` index | Phase 6 |
-| Chat Session / RAG | Chatbot query flow | Phase 6 |
-| LLM integration | Outbound calls to your `/generate` and `/summarize` | Phase 6 |
+| Layer              | Technology                                              | Status                      |
+| ------------------ | ------------------------------------------------------- | --------------------------- |
+| HTTP Server        | Node.js 20 + Express 5                                  | Built                       |
+| Database           | MongoDB Atlas (Mongoose ODM)                            | Built                       |
+| Auth               | JWT (access + refresh), bcrypt                          | Built                       |
+| RBAC               | `student` / `moderator` / `admin` roles                 | Built                       |
+| FAQ Management     | Full CRUD + text search + feedback                      | Built                       |
+| Community Q&A      | Questions, Answers, votes, moderation                   | Built                       |
+| Audit Logging      | All mod/admin actions recorded                          | Built                       |
+| Flag/Report System | FAQs, questions, answers, chatbot responses             | Built                       |
+| System Settings    | Configurable thresholds (confidence, sources cap, etc.) | Built                       |
+| Embedding field    | Reserved on `Faq` and `Answer` models                   | Schema ready, not populated |
+| Vector Search      | MongoDB `$vectorSearch` index                           | Phase 6                     |
+| Chat Session / RAG | Chatbot query flow                                      | Phase 6                     |
+| LLM integration    | Outbound calls to your `/generate` and `/summarize`     | Phase 6                     |
 
 ---
 
 ### 2. MongoDB Collections (Your Single Source of Truth)
 
 #### `users`
+
 ```
 _id, name, email, passwordHash, role (student|moderator|admin),
 status (active|suspended|deleted), tokenVersion, spurtiPoints,
 recentlyViewedFaqs[], createdAt, updatedAt
 ```
+
 - Students start with 100 `spurtiPoints`. Points are awarded by moderators on answer approval.
 - `tokenVersion` is bumped on password change to invalidate outstanding refresh tokens.
 
 #### `faqs`
+
 ```
 _id, title, slug, answer, summary,
 categories[], tags[],
@@ -192,11 +193,13 @@ embedding: [Number]  ← Phase 6: vector of FAQ title/question
 helpfulCount, unhelpfulCount, viewCount, flagCount,
 createdBy, updatedBy, publishedAt, createdAt, updatedAt
 ```
+
 - **Text index** on `(title × 10, summary × 5, answer × 1)` — used today for keyword search; `$vectorSearch` will replace/augment in Phase 6.
 - `embedding` field is `select: false` (never returned in normal queries, only fetched by the RAG pipeline).
 - Only `published` FAQs will be fed into vector search.
 
 #### `questions` (Community Q&A)
+
 ```
 _id, title, description, category, tags[],
 type (personal|community),
@@ -206,10 +209,12 @@ screenshotUrl, moderatorViewedAt,
 existingAnswerCheck { checkedAt, matchedFaqs[], matchedQuestions[] },
 viewCount, answerCount, createdAt, updatedAt
 ```
+
 - **Text index** on `(title × 10, description × 1)` for the "Check Existing Answers" similarity lookup before a student posts.
 - Personal questions are invisible to other students — only the asker and moderators see them.
 
 #### `answers`
+
 ```
 _id, questionId, body, answeredBy,
 status (pending|approved|rejected|edited_pending),
@@ -218,9 +223,11 @@ embedding: [Number]  ← Phase 6
 eligibleForFaqConversion, convertedFaqId,
 upvoteCount, downvoteCount, createdAt, updatedAt
 ```
+
 - Only `approved` answers with high upvotes will be candidates for the RAG `queries` collection (your spec's 7-day TTL collection maps to this + a `verifiedAt` timestamp we will add in Phase 6).
 
 #### `chatfeedbacks`
+
 ```
 _id, chatSessionId, messageIndex,
 query (snapshot), answer (snapshot),
@@ -229,9 +236,11 @@ comment, userId,
 status (open|reviewed|resolved),
 createdAt, updatedAt
 ```
+
 - `incorrect` rating = flagged chatbot response → feeds the moderator review inbox.
 
 #### `systemsettings` (singleton `_id: "global"`)
+
 ```
 duplicateWarnThreshold: 0.6,      ← warn student if existing match > 60%
 duplicateStrongThreshold: 0.8,    ← block / strongly warn if > 80%
@@ -240,20 +249,25 @@ chatbotMaxSources: 6,             ← max docs bundled into your /generate paylo
 communityAnswerCap: 10,           ← max answers per community question
 urgentIdleDays: 7
 ```
+
 - These are **your thresholds to read.** When we call your `/generate` endpoint we will pre-filter by `chatbotConfidenceThreshold` and cap sources at `chatbotMaxSources` before building the payload.
 
 #### `auditlogs`
+
 ```
 _id, actorId, action, entityType, entityId, before, after, reason, createdAt
 ```
+
 - TTL index on `createdAt` — we can configure auto-expiry for old audit records separately.
 
 #### `flags`
+
 ```
 _id, entityType (faq|question|answer|chatbot_response), entityId,
 reason, details, status (open|under_review|resolved|dismissed),
 reportedBy, reviewedBy, resolutionNote, createdAt, updatedAt
 ```
+
 - Unique partial index: one active flag per `(user, entityType, entityId)`. A user can flag the same chatbot response only once.
 
 ---
@@ -277,46 +291,51 @@ LLM_INTERNAL_SECRET=<shared-bearer-token>
 ### 4. Current API Surface (All endpoints under `/api`)
 
 #### Auth — `/api/auth`
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/register` | Public | Create student account |
-| POST | `/login` | Public | Returns access + refresh token |
-| POST | `/refresh` | Public | Rotate refresh token |
-| POST | `/logout` | Public | Invalidate session |
-| GET | `/me` | Bearer | Current user profile |
+
+| Method | Path        | Auth   | Description                    |
+| ------ | ----------- | ------ | ------------------------------ |
+| POST   | `/register` | Public | Create student account         |
+| POST   | `/login`    | Public | Returns access + refresh token |
+| POST   | `/refresh`  | Public | Rotate refresh token           |
+| POST   | `/logout`   | Public | Invalidate session             |
+| GET    | `/me`       | Bearer | Current user profile           |
 
 #### FAQs — `/api/faqs`
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/` | Bearer | List/search FAQs (text search, filter by category/tag/status) |
-| GET | `/:id` | Bearer | Single FAQ detail |
-| GET | `/recent` | Bearer | User's recently viewed FAQs |
-| POST | `/` | Mod/Admin | Create FAQ |
-| PATCH | `/:id` | Mod/Admin | Update FAQ |
-| PATCH | `/:id/archive` | Mod/Admin | Archive FAQ |
-| POST | `/:id/view` | Bearer | Record view (increments viewCount) |
-| POST | `/:id/feedback` | Bearer | Submit helpful/unhelpful vote |
+
+| Method | Path            | Auth      | Description                                                   |
+| ------ | --------------- | --------- | ------------------------------------------------------------- |
+| GET    | `/`             | Bearer    | List/search FAQs (text search, filter by category/tag/status) |
+| GET    | `/:id`          | Bearer    | Single FAQ detail                                             |
+| GET    | `/recent`       | Bearer    | User's recently viewed FAQs                                   |
+| POST   | `/`             | Mod/Admin | Create FAQ                                                    |
+| PATCH  | `/:id`          | Mod/Admin | Update FAQ                                                    |
+| PATCH  | `/:id/archive`  | Mod/Admin | Archive FAQ                                                   |
+| POST   | `/:id/view`     | Bearer    | Record view (increments viewCount)                            |
+| POST   | `/:id/feedback` | Bearer    | Submit helpful/unhelpful vote                                 |
 
 #### Community Q&A — `/api/qna`
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/check-existing` | Bearer | Similarity search before posting (returns signed check token) |
-| POST | `/questions` | Bearer | Post a question (requires check token) |
-| GET | `/questions` | Bearer | List questions |
-| GET | `/questions/:id` | Bearer | Question detail |
-| POST | `/questions/:id/tag-me` | Bearer | Express interest in a question |
-| GET | `/questions/:id/answers` | Bearer | List answers on a question |
-| POST | `/questions/:id/answers` | Bearer | Submit an answer |
-| POST | `/answers/:id/vote/:direction` | Bearer | Upvote/downvote an answer |
 
-#### Chatbot — `/api/chat` *(Phase 6 write-paths not yet wired)*
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/feedback` | Mod/Admin | List chatbot feedback |
-| GET | `/feedback/stats` | Mod/Admin | Feedback counts |
-| POST | `/query` | Bearer | **Phase 6** — student sends message, we orchestrate RAG + LLM call |
+| Method | Path                           | Auth   | Description                                                   |
+| ------ | ------------------------------ | ------ | ------------------------------------------------------------- |
+| POST   | `/check-existing`              | Bearer | Similarity search before posting (returns signed check token) |
+| POST   | `/questions`                   | Bearer | Post a question (requires check token)                        |
+| GET    | `/questions`                   | Bearer | List questions                                                |
+| GET    | `/questions/:id`               | Bearer | Question detail                                               |
+| POST   | `/questions/:id/tag-me`        | Bearer | Express interest in a question                                |
+| GET    | `/questions/:id/answers`       | Bearer | List answers on a question                                    |
+| POST   | `/questions/:id/answers`       | Bearer | Submit an answer                                              |
+| POST   | `/answers/:id/vote/:direction` | Bearer | Upvote/downvote an answer                                     |
+
+#### Chatbot — `/api/chat` _(Phase 6 write-paths not yet wired)_
+
+| Method | Path              | Auth      | Description                                                        |
+| ------ | ----------------- | --------- | ------------------------------------------------------------------ |
+| GET    | `/feedback`       | Mod/Admin | List chatbot feedback                                              |
+| GET    | `/feedback/stats` | Mod/Admin | Feedback counts                                                    |
+| POST   | `/query`          | Bearer    | **Phase 6** — student sends message, we orchestrate RAG + LLM call |
 
 #### Other Existing Routes
+
 - `/api/categories` — CRUD for FAQ categories (Mod/Admin)
 - `/api/tags` — CRUD for tags (Mod/Admin)
 - `/api/moderation` — Pending answer queue, approve/reject/edit (Mod/Admin)
@@ -355,21 +374,22 @@ When we wire the chatbot, our `chatbotService` will:
 7. If `#escalate` or `#forceescalate` — call `POST /internal/llm/summarize`, then create/merge a ticket in our `tickets` collection (to be added in Phase 6).
 
 The **TTL index for the verified-queries collection** (your 7-day rule) will be added in Phase 6 as:
+
 ```js
-queriesSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7 * 24 * 60 * 60 })
+queriesSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7 * 24 * 60 * 60 });
 ```
 
 ---
 
 ### 7. What We Need From Your Team
 
-| Item | Detail |
-|---|---|
-| `LLM_BASE_URL` | The HTTPS base URL of your llama.cpp server |
-| `LLM_INTERNAL_SECRET` | Shared Bearer secret for internal calls |
-| Confirm JSON schema enforcement | Confirm `is_general_query` boolean + `summary` string are guaranteed (no markdown filler) from `/summarize` |
-| Confirm `fallback_triggered` logic | Confirm the exact fallback string your model outputs so we match it server-side |
-| Rate limits | Any request-per-minute limit we should respect when calling your server |
+| Item                               | Detail                                                                                                      |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `LLM_BASE_URL`                     | The HTTPS base URL of your llama.cpp server                                                                 |
+| `LLM_INTERNAL_SECRET`              | Shared Bearer secret for internal calls                                                                     |
+| Confirm JSON schema enforcement    | Confirm `is_general_query` boolean + `summary` string are guaranteed (no markdown filler) from `/summarize` |
+| Confirm `fallback_triggered` logic | Confirm the exact fallback string your model outputs so we match it server-side                             |
+| Rate limits                        | Any request-per-minute limit we should respect when calling your server                                     |
 
 ---
 
@@ -392,11 +412,11 @@ Architectural Blueprint: Centralized MongoDB & Stateless LLM
 This document outlines the workflows, implementation responsibilities, and exact API contracts required to implement a centralized database RAG architecture.
 
 1. System Overview
-The Orchestrator (Main Node.js Server): Manages user sessions, chat history, database queries (Vector Search), and ticket creation.
-The Single Database (MongoDB Atlas): Stores user data, application state, static FAQs (no expiry), and recent queries (Queries with answers verified by mods , with a 7-day automatic expiry).
-The Compute Node (Isolated LLM Server): Runs the local LLM model. Accepts large text prompts, generates responses, and maintains zero local state.
+   The Orchestrator (Main Node.js Server): Manages user sessions, chat history, database queries (Vector Search), and ticket creation.
+   The Single Database (MongoDB Atlas): Stores user data, application state, static FAQs (no expiry), and recent queries (Queries with answers verified by mods , with a 7-day automatic expiry).
+   The Compute Node (Isolated LLM Server): Runs the local LLM model. Accepts large text prompts, generates responses, and maintains zero local state.
 2. Core Workflows
-A. The Standard Chat Workflow (RAG)
+   A. The Standard Chat Workflow (RAG)
 
 User types a message in the frontend.
 The Main Backend receives the message and converts it into a vector embedding.
@@ -413,14 +433,12 @@ The Main Backend verifies if the user is allowed to escalate(for #escalate only)
 The Main Backend packages the recent chat history and the force-escalation reason (or escalation) and sends it to the LLM Server's /summarize endpoint.
 The LLM Server generates a strict JSON object containing a summary of the issue and a boolean flag indicating if it is a general question.
 The LLM Server returns the JSON.
-The Main Backend receives the JSON, attaches the user's ID, inserts the new ticket into the MongoDB tickets collection( or attaches it to an existing open ticket of query is similar i.e., >99% similar), and alerts the frontend.
-3. Backend Implementation Requirements (Node.js & MongoDB)
+The Main Backend receives the JSON, attaches the user's ID, inserts the new ticket into the MongoDB tickets collection( or attaches it to an existing open ticket of query is similar i.e., >99% similar), and alerts the frontend. 3. Backend Implementation Requirements (Node.js & MongoDB)
 To make this work, the backend team must implement the following database features:
 
 Vector Embeddings: The backend must generate embeddings(questions only , not for responses or answers) for every new FAQ and successfully answered user query. This can be done using a lightweight Node.js library (like Transformers.js) or by calling an external embedding API.
 MongoDB $vectorSearch: The database must be configured with vector indexes to allow rapid cosine similarity searches across the text fields.
-TTL (Time-To-Live) Indexes: To recreate the "7-day expiry" rule, the backend team must create a TTL index on the queries collection. MongoDB will automatically delete documents in this collection 168 hours (7 days) after their creation timestamp.
-4. LLM Server API Specifications
+TTL (Time-To-Live) Indexes: To recreate the "7-day expiry" rule, the backend team must create a TTL index on the queries collection. MongoDB will automatically delete documents in this collection 168 hours (7 days) after their creation timestamp. 4. LLM Server API Specifications
 The isolated LLM server only needs to expose two secure endpoints to the Main Backend. Both should be secured via HTTPS and an internal Bearer token.
 
 API 1: Generate RAG Response
@@ -430,24 +448,24 @@ Endpoint: POST /internal/llm/generate
 Headers: Authorization: Bearer <internal_secret>
 Request Payload (From Main Server):
 {
-  "system_instruction": "You are a helpful support bot. Use ONLY the provided context to answer. If the answer is not in the context, reply EXACTLY with: 'I don't have an answer for you at the moment. You can escalate it to backend team: Type #escalate'.",
-  "rag_context": [
-    "FAQ: To change your billing cycle, go to Settings > Billing and select 'Update Plan'.",
-    "Query: How do I downgrade? Answer: You can downgrade from the Billing menu."
-  ],
-  "conversation_history": [
-    {"role": "user", "content": "Hi, I need help with my account."},
-    {"role": "assistant", "content": "Hello! What kind of help do you need?"}
-  ],
-  "current_message": "Where is the billing menu located?"
+"system_instruction": "You are a helpful support bot. Use ONLY the provided context to answer. If the answer is not in the context, reply EXACTLY with: 'I don't have an answer for you at the moment. You can escalate it to backend team: Type #escalate'.",
+"rag_context": [
+"FAQ: To change your billing cycle, go to Settings > Billing and select 'Update Plan'.",
+"Query: How do I downgrade? Answer: You can downgrade from the Billing menu."
+],
+"conversation_history": [
+{"role": "user", "content": "Hi, I need help with my account."},
+{"role": "assistant", "content": "Hello! What kind of help do you need?"}
+],
+"current_message": "Where is the billing menu located?"
 }
 Response Payload (From LLM Server):
 {
-  "status": "success",
-  "data": {
-    "response_text": "You can find the billing menu by going to Settings and then selecting Billing.",
-    "fallback_triggered": false
-  }
+"status": "success",
+"data": {
+"response_text": "You can find the billing menu by going to Settings and then selecting Billing.",
+"fallback_triggered": false
+}
 }
 (Note: If the LLM uses the exact fallback string, it should set fallback_triggered: true so the backend knows to unlock the #escalate feature for the user's next message).
 
@@ -458,20 +476,20 @@ Endpoint: POST /internal/llm/summarize
 Headers: Authorization: Bearer <internal_secret>
 Request Payload (From Main Server):
 {
-  "escalation_type": "force_escalate",
-  "force_reason": "The portal won't let me click the save button.",
-  "conversation_history": [
-    {"role": "user", "content": "How do I update my billing cycle?"},
-    {"role": "assistant", "content": "Go to settings > billing > update it and click save."}
-  ]
+"escalation_type": "force_escalate",
+"force_reason": "The portal won't let me click the save button.",
+"conversation_history": [
+{"role": "user", "content": "How do I update my billing cycle?"},
+{"role": "assistant", "content": "Go to settings > billing > update it and click save."}
+]
 }
 Response Payload (From LLM Server):
 {
-  "status": "success",
-  "data": {
-    "summary": "User is attempting to change their billing cycle but reports that the save button in the portal is unresponsive.",
-    "is_general_query": false
-  }
+"status": "success",
+"data": {
+"summary": "User is attempting to change their billing cycle but reports that the save button in the portal is unresponsive.",
+"is_general_query": false
+}
 }
 (Note: The LLM Server must use Grammar/JSON Schema constraints within llama.cpp to ensure the output perfectly matches this JSON structure every single time, avoiding plain text conversational filler).
 Show less
@@ -483,7 +501,7 @@ find "/Users/ravikumark/Desktop/Samagama final/apps/server/src" -type f | sort
 
 OUT
 /Users/ravikumark/Desktop/Samagama final/apps/server/src/.DS_Store
-/Users/ravikumark/Desktop/Samagama final/apps/server/src/__tests__/health.test.ts
+/Users/ravikumark/Desktop/Samagama final/apps/server/src/**tests**/health.test.ts
 /Users/ravikumark/Desktop/Samagama final/apps/server/src/app.ts
 /Users/ravikumark/Desktop/Samagama final/apps/server/src/config/database.ts
 /Users/ravikumark/Desktop/Samagama final/apps/server/src/config/env.ts
@@ -559,34 +577,34 @@ import { Schema, model, type InferSchemaType, type HydratedDocument } from 'mong
 import { USER_ROLES, USER_STATUSES } from '@samagama/shared';
 
 const recentlyViewedSchema = new Schema(
-  {
-    faqId: { type: Schema.Types.ObjectId, ref: 'Faq', required: true },
-    viewedAt: { type: Date, default: Date.now },
-  },
-  { _id: false },
+{
+faqId: { type: Schema.Types.ObjectId, ref: 'Faq', required: true },
+viewedAt: { type: Date, default: Date.now },
+},
+{ \_id: false },
 );
 
 const userSchema = new Schema(
-  {
-    name: { type: String, required: true, trim: true, maxlength: 120 },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-      index: true,
-    },
-    passwordHash: { type: String, required: true },
-    role: { type: String, enum: USER_ROLES, default: 'student', required: true, index: true },
-    status: { type: String, enum: USER_STATUSES, default: 'active', required: true },
-    /** Bumped on password change to invalidate outstanding refresh tokens. */
-    tokenVersion: { type: Number, default: 0 },
-    /** Spurti Points — earned by contributing to Community Q&A. Default 100 for new students. */
-    spurtiPoints: { type: Number, default: 0, index: true },
-    recentlyViewedFaqs: { type: [recentlyViewedSchema], default: [] },
-  },
-  { timestamps: true },
+{
+name: { type: String, required: true, trim: true, maxlength: 120 },
+email: {
+type: String,
+required: true,
+unique: true,
+lowercase: true,
+trim: true,
+index: true,
+},
+passwordHash: { type: String, required: true },
+role: { type: String, enum: USER_ROLES, default: 'student', required: true, index: true },
+status: { type: String, enum: USER_STATUSES, default: 'active', required: true },
+/** Bumped on password change to invalidate outstanding refresh tokens. \*/
+tokenVersion: { type: Number, default: 0 },
+/** Spurti Points — earned by contributing to Community Q&A. Default 100 for new students. \*/
+spurtiPoints: { type: Number, default: 0, index: true },
+recentlyViewedFaqs: { type: [recentlyViewedSchema], default: [] },
+},
+{ timestamps: true },
 );
 
 userSchema.index({ role: 1, status: 1 });
@@ -602,10 +620,10 @@ OUT
 // FAQ collection. Mirrors PRD §12.2 plus Change Spec §8.3 helpful/unhelpful vote tracking.
 //
 // Indexes:
-//  - text index on (title, summary, answer) for keyword search
-//  - compound (status, updatedAt) for the default "recent" listing
-//  - (categories) and (tags) array indexes for filtering
-//  - (slug) unique index for stable URLs
+// - text index on (title, summary, answer) for keyword search
+// - compound (status, updatedAt) for the default "recent" listing
+// - (categories) and (tags) array indexes for filtering
+// - (slug) unique index for stable URLs
 //
 // `embedding` is reserved for Phase 6 vector search; left null until then.
 import { Schema, model, type InferSchemaType, type HydratedDocument } from 'mongoose';
@@ -613,11 +631,11 @@ import { FAQ_STATUSES } from '@samagama/shared';
 import { slugify } from '../utils/slugify.js';
 
 const faqSchema = new Schema(
-  {
-    title: { type: String, required: true, trim: true, maxlength: 280 },
-    slug: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
-    answer: { type: String, required: true, trim: true, maxlength: 8000 },
-    summary: { type: String, trim: true, maxlength: 280 },
+{
+title: { type: String, required: true, trim: true, maxlength: 280 },
+slug: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
+answer: { type: String, required: true, trim: true, maxlength: 8000 },
+summary: { type: String, trim: true, maxlength: 280 },
 
     categories: [{ type: Schema.Types.ObjectId, ref: 'Category', required: true }],
     tags: [{ type: Schema.Types.ObjectId, ref: 'Tag' }],
@@ -655,23 +673,24 @@ const faqSchema = new Schema(
     updatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     publishedAt: { type: Date },
     lastReviewedAt: { type: Date },
-  },
-  { timestamps: true },
+
+},
+{ timestamps: true },
 );
 
 faqSchema.pre('validate', function deriveSlug(next) {
-  if (!this.slug && this.title) {
-    // Append a short timestamp suffix to keep slug uniqueness without round-trips on conflict.
-    const base = slugify(this.title);
-    this.slug = `${base}-${Date.now().toString(36)}`;
-  }
-  next();
+if (!this.slug && this.title) {
+// Append a short timestamp suffix to keep slug uniqueness without round-trips on conflict.
+const base = slugify(this.title);
+this.slug = `${base}-${Date.now().toString(36)}`;
+}
+next();
 });
 
 // Text index for keyword search. Title weighted highest.
 faqSchema.index(
-  { title: 'text', summary: 'text', answer: 'text' },
-  { weights: { title: 10, summary: 5, answer: 1 }, name: 'faq_text_index' },
+{ title: 'text', summary: 'text', answer: 'text' },
+{ weights: { title: 10, summary: 5, answer: 1 }, name: 'faq_text_index' },
 );
 faqSchema.index({ status: 1, updatedAt: -1 });
 faqSchema.index({ categories: 1 });
@@ -689,14 +708,14 @@ import { chatbotService } from '../services/chatbot.service.js';
 import { ok } from '../utils/api-response.js';
 
 export const chatbotController = {
-  async listFeedback(req: Request, res: Response) {
-    const filter = (req.query.filter as 'all' | 'helpful' | 'flagged' | undefined) ?? 'all';
-    return ok(res, await chatbotService.listFeedback(filter));
-  },
+async listFeedback(req: Request, res: Response) {
+const filter = (req.query.filter as 'all' | 'helpful' | 'flagged' | undefined) ?? 'all';
+return ok(res, await chatbotService.listFeedback(filter));
+},
 
-  async getStats(_req: Request, res: Response) {
-    return ok(res, await chatbotService.getStats());
-  },
+async getStats(\_req: Request, res: Response) {
+return ok(res, await chatbotService.getStats());
+},
 };
 Bash
 IN
@@ -712,27 +731,27 @@ import type { ChatbotFeedbackStats, PublicChatFeedback } from '@samagama/shared'
 import { ChatFeedbackModel, type ChatFeedbackDocument } from '../models/ChatFeedback.model.js';
 
 interface PopulatedFeedback extends Omit<ChatFeedbackDocument, 'userId'> {
-  userId: { _id: Types.ObjectId; name: string };
+userId: { \_id: Types.ObjectId; name: string };
 }
 
 function project(f: PopulatedFeedback): PublicChatFeedback {
-  return {
-    id: f._id.toString(),
-    query: f.query,
-    answer: f.answer,
-    rating: f.rating,
-    comment: f.comment ?? undefined,
-    user: { id: f.userId._id.toString(), name: f.userId.name },
-    status: f.status,
-    createdAt: f.createdAt.toISOString(),
-  };
+return {
+id: f.\_id.toString(),
+query: f.query,
+answer: f.answer,
+rating: f.rating,
+comment: f.comment ?? undefined,
+user: { id: f.userId.\_id.toString(), name: f.userId.name },
+status: f.status,
+createdAt: f.createdAt.toISOString(),
+};
 }
 
 export const chatbotService = {
-  async listFeedback(filter: 'all' | 'helpful' | 'flagged'): Promise<PublicChatFeedback[]> {
-    const q: Record<string, unknown> = {};
-    if (filter === 'helpful') q.rating = 'helpful';
-    if (filter === 'flagged') q.rating = 'incorrect'; // dashboard says "Flagged" = bad responses
+async listFeedback(filter: 'all' | 'helpful' | 'flagged'): Promise<PublicChatFeedback[]> {
+const q: Record<string, unknown> = {};
+if (filter === 'helpful') q.rating = 'helpful';
+if (filter === 'flagged') q.rating = 'incorrect'; // dashboard says "Flagged" = bad responses
 
     const rows = await ChatFeedbackModel.find(q)
       .sort({ createdAt: -1 })
@@ -740,16 +759,17 @@ export const chatbotService = {
       .populate('userId', 'name')
       .lean<PopulatedFeedback[]>();
     return rows.map(project);
-  },
 
-  async getStats(): Promise<ChatbotFeedbackStats> {
-    const [total, helpful, flagged] = await Promise.all([
-      ChatFeedbackModel.countDocuments({}),
-      ChatFeedbackModel.countDocuments({ rating: 'helpful' }),
-      ChatFeedbackModel.countDocuments({ rating: 'incorrect' }),
-    ]);
-    return { total, helpful, flagged };
-  },
+},
+
+async getStats(): Promise<ChatbotFeedbackStats> {
+const [total, helpful, flagged] = await Promise.all([
+ChatFeedbackModel.countDocuments({}),
+ChatFeedbackModel.countDocuments({ rating: 'helpful' }),
+ChatFeedbackModel.countDocuments({ rating: 'incorrect' }),
+]);
+return { total, helpful, flagged };
+},
 };
 Bash
 IN
@@ -764,11 +784,11 @@ import { Schema, model, type InferSchemaType, type HydratedDocument } from 'mong
 import { CHAT_FEEDBACK_RATINGS } from '@samagama/shared';
 
 const chatFeedbackSchema = new Schema(
-  {
-    /** ChatSession id; nullable until Phase 6 wires real sessions. */
-    chatSessionId: { type: Schema.Types.ObjectId, ref: 'ChatSession' },
-    /** Index into the session's messages array. */
-    messageIndex: { type: Number, default: 0 },
+{
+/** ChatSession id; nullable until Phase 6 wires real sessions. \*/
+chatSessionId: { type: Schema.Types.ObjectId, ref: 'ChatSession' },
+/** Index into the session's messages array. \*/
+messageIndex: { type: Number, default: 0 },
 
     /** Snapshot of the user query and bot answer. Useful for the moderator inbox. */
     query: { type: String, required: true, trim: true },
@@ -791,8 +811,9 @@ const chatFeedbackSchema = new Schema(
       default: 'open',
       index: true,
     },
-  },
-  { timestamps: true },
+
+},
+{ timestamps: true },
 );
 
 chatFeedbackSchema.index({ rating: 1, createdAt: -1 });
@@ -800,26 +821,26 @@ chatFeedbackSchema.index({ rating: 1, createdAt: -1 });
 export type ChatFeedbackDocument = HydratedDocument<InferSchemaType<typeof chatFeedbackSchema>>;
 export const ChatFeedbackModel = model('ChatFeedback', chatFeedbackSchema);
 // Community Q&A question. Mirrors PRD §12.5 plus Change Spec §8.1 additions:
-//   - `type`: 'personal' | 'community'  → personal questions go to moderators only.
-//   - `screenshotUrl`                  → optional image attached at Ask time.
-//   - `taggedStudents[]`               → other students who tagged themselves to this question.
-//   - `moderatorViewedAt`              → timestamp set the first time a mod opens it (for "Seen" tick).
+// - `type`: 'personal' | 'community' → personal questions go to moderators only.
+// - `screenshotUrl` → optional image attached at Ask time.
+// - `taggedStudents[]` → other students who tagged themselves to this question.
+// - `moderatorViewedAt` → timestamp set the first time a mod opens it (for "Seen" tick).
 import { Schema, model, type InferSchemaType, type HydratedDocument } from 'mongoose';
 import { QUESTION_STATUSES, QUESTION_TYPES } from '@samagama/shared';
 
 const existingAnswerCheckSchema = new Schema(
-  {
-    checkedAt: { type: Date, default: Date.now },
-    matchedFaqs: [{ type: Schema.Types.ObjectId, ref: 'Faq' }],
-    matchedQuestions: [{ type: Schema.Types.ObjectId, ref: 'Question' }],
-  },
-  { _id: false },
+{
+checkedAt: { type: Date, default: Date.now },
+matchedFaqs: [{ type: Schema.Types.ObjectId, ref: 'Faq' }],
+matchedQuestions: [{ type: Schema.Types.ObjectId, ref: 'Question' }],
+},
+{ \_id: false },
 );
 
 const questionSchema = new Schema(
-  {
-    title: { type: String, required: true, trim: true, maxlength: 280 },
-    description: { type: String, required: true, trim: true, maxlength: 4000 },
+{
+title: { type: String, required: true, trim: true, maxlength: 280 },
+description: { type: String, required: true, trim: true, maxlength: 4000 },
 
     category: { type: Schema.Types.ObjectId, ref: 'Category', required: true, index: true },
     tags: [{ type: Schema.Types.ObjectId, ref: 'Tag' }],
@@ -851,14 +872,15 @@ const questionSchema = new Schema(
 
     viewCount: { type: Number, default: 0 },
     answerCount: { type: Number, default: 0 },
-  },
-  { timestamps: true },
+
+},
+{ timestamps: true },
 );
 
 // Text index for similarity search in checkExisting() (Change Spec §6.4).
 questionSchema.index(
-  { title: 'text', description: 'text' },
-  { weights: { title: 10, description: 1 }, name: 'question_text_index' },
+{ title: 'text', description: 'text' },
+{ weights: { title: 10, description: 1 }, name: 'question_text_index' },
 );
 questionSchema.index({ status: 1, type: 1, updatedAt: -1 });
 
@@ -869,10 +891,10 @@ import { Schema, model, type InferSchemaType, type HydratedDocument } from 'mong
 import { ANSWER_STATUSES } from '@samagama/shared';
 
 const answerSchema = new Schema(
-  {
-    questionId: { type: Schema.Types.ObjectId, ref: 'Question', required: true, index: true },
-    body: { type: String, required: true, trim: true, maxlength: 4000 },
-    answeredBy: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+{
+questionId: { type: Schema.Types.ObjectId, ref: 'Question', required: true, index: true },
+body: { type: String, required: true, trim: true, maxlength: 4000 },
+answeredBy: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
 
     status: {
       type: String,
@@ -893,8 +915,9 @@ const answerSchema = new Schema(
     downvotes: { type: [Schema.Types.ObjectId], default: [], select: false },
     upvoteCount: { type: Number, default: 0 },
     downvoteCount: { type: Number, default: 0 },
-  },
-  { timestamps: true },
+
+},
+{ timestamps: true },
 );
 
 answerSchema.index({ questionId: 1, status: 1, upvoteCount: -1, createdAt: -1 });
@@ -912,40 +935,40 @@ import 'dotenv/config';
 import { z } from 'zod';
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.coerce.number().int().positive().default(4000),
+NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+PORT: z.coerce.number().int().positive().default(4000),
 
-  MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
+MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
 
-  JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 characters'),
-  JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
+JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 characters'),
+JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
 
-  CORS_ORIGINS: z.string().default('http://localhost:5173'),
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+CORS_ORIGINS: z.string().default('http://localhost:5173'),
+LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
-  LLM_PROVIDER: z.enum(['mock', 'gemini', 'local-llama']).default('mock'),
-  GEMINI_API_KEY: z.string().optional(),
-  EMBEDDING_PROVIDER: z.enum(['mock', 'gemini']).default('mock'),
+LLM_PROVIDER: z.enum(['mock', 'gemini', 'local-llama']).default('mock'),
+GEMINI_API_KEY: z.string().optional(),
+EMBEDDING_PROVIDER: z.enum(['mock', 'gemini']).default('mock'),
 });
 
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  // Print human-readable validation errors and exit. Do this before logger init.
-  console.error('❌ Invalid environment configuration:');
-  for (const issue of parsed.error.issues) {
-    console.error(`  • ${issue.path.join('.')}: ${issue.message}`);
-  }
-  process.exit(1);
+// Print human-readable validation errors and exit. Do this before logger init.
+console.error('❌ Invalid environment configuration:');
+for (const issue of parsed.error.issues) {
+console.error(`  • ${issue.path.join('.')}: ${issue.message}`);
+}
+process.exit(1);
 }
 
 export const env = {
-  ...parsed.data,
-  corsOrigins: parsed.data.CORS_ORIGINS.split(',')
-    .map((o) => o.trim())
-    .filter(Boolean),
-  isProduction: parsed.data.NODE_ENV === 'production',
-  isTest: parsed.data.NODE_ENV === 'test',
+...parsed.data,
+corsOrigins: parsed.data.CORS_ORIGINS.split(',')
+.map((o) => o.trim())
+.filter(Boolean),
+isProduction: parsed.data.NODE_ENV === 'production',
+isTest: parsed.data.NODE_ENV === 'test',
 } as const;
 // Top-level API router. New feature routes will mount here.
 import { Router } from 'express';
@@ -964,8 +987,8 @@ import { settingsRouter } from './settings.routes.js';
 
 const router = Router();
 
-router.get('/health', (_req, res) => {
-  res.json({ success: true, data: { status: 'ok', uptime: process.uptime() } });
+router.get('/health', (\_req, res) => {
+res.json({ success: true, data: { status: 'ok', uptime: process.uptime() } });
 });
 
 router.use('/auth', authRouter);
@@ -992,18 +1015,18 @@ OUT
 import { Schema, model, type InferSchemaType, type HydratedDocument } from 'mongoose';
 
 const auditLogSchema = new Schema(
-  {
-    actorId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    action: { type: String, required: true, trim: true, maxlength: 100, index: true },
-    entityType: { type: String, required: true, trim: true, maxlength: 50, index: true },
-    entityId: { type: Schema.Types.ObjectId, index: true },
-    before: { type: Schema.Types.Mixed },
-    after: { type: Schema.Types.Mixed },
-    reason: { type: String, trim: true, maxlength: 500 },
-  },
-  {
-    timestamps: { createdAt: true, updatedAt: false },
-  },
+{
+actorId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+action: { type: String, required: true, trim: true, maxlength: 100, index: true },
+entityType: { type: String, required: true, trim: true, maxlength: 50, index: true },
+entityId: { type: Schema.Types.ObjectId, index: true },
+before: { type: Schema.Types.Mixed },
+after: { type: Schema.Types.Mixed },
+reason: { type: String, trim: true, maxlength: 500 },
+},
+{
+timestamps: { createdAt: true, updatedAt: false },
+},
 );
 
 auditLogSchema.index({ entityType: 1, entityId: 1 });
@@ -1018,77 +1041,77 @@ export const AuditLogModel = model('AuditLog', auditLogSchema);
 // "Check Existing Answers" clicks within a session) and is one file to swap when we scale.
 //
 // Behavior:
-//   - get(key) returns the value if it exists AND has not expired; null otherwise.
-//   - set(key, value) stores with the configured TTL.
-//   - Lazy eviction on read (no background timer). When the cache grows past `maxEntries`,
-//     the oldest 10% of entries are removed at the next set().
+// - get(key) returns the value if it exists AND has not expired; null otherwise.
+// - set(key, value) stores with the configured TTL.
+// - Lazy eviction on read (no background timer). When the cache grows past `maxEntries`,
+// the oldest 10% of entries are removed at the next set().
 
 interface Entry<V> {
-  value: V;
-  /** Absolute expiry time in epoch ms. */
-  expiresAt: number;
+value: V;
+/\*_ Absolute expiry time in epoch ms. _/
+expiresAt: number;
 }
 
 export interface TtlCache<V> {
-  get(key: string): V | null;
-  set(key: string, value: V): void;
-  delete(key: string): void;
-  clear(): void;
-  size(): number;
+get(key: string): V | null;
+set(key: string, value: V): void;
+delete(key: string): void;
+clear(): void;
+size(): number;
 }
 
 export interface TtlCacheOptions {
-  /** Time-to-live in milliseconds. */
-  ttlMs: number;
-  /** Max entries before eviction kicks in. Default 500. */
-  maxEntries?: number;
+/** Time-to-live in milliseconds. \*/
+ttlMs: number;
+/** Max entries before eviction kicks in. Default 500. \*/
+maxEntries?: number;
 }
 
 export function createTtlCache<V>({ ttlMs, maxEntries = 500 }: TtlCacheOptions): TtlCache<V> {
-  const store = new Map<string, Entry<V>>();
+const store = new Map<string, Entry<V>>();
 
-  const evictExpired = (now: number): void => {
-    for (const [key, entry] of store) {
-      if (entry.expiresAt <= now) store.delete(key);
-    }
-  };
+const evictExpired = (now: number): void => {
+for (const [key, entry] of store) {
+if (entry.expiresAt <= now) store.delete(key);
+}
+};
 
-  return {
-    get(key) {
-      const entry = store.get(key);
-      if (!entry) return null;
-      if (entry.expiresAt <= Date.now()) {
-        store.delete(key);
-        return null;
-      }
-      return entry.value;
-    },
-    set(key, value) {
-      const now = Date.now();
-      if (store.size >= maxEntries) {
-        evictExpired(now);
-        // Still over capacity — drop the oldest 10% (insertion order is preserved by Map).
-        if (store.size >= maxEntries) {
-          const dropCount = Math.max(1, Math.floor(maxEntries * 0.1));
-          let dropped = 0;
-          for (const key of store.keys()) {
-            store.delete(key);
-            if (++dropped >= dropCount) break;
-          }
-        }
-      }
-      store.set(key, { value, expiresAt: now + ttlMs });
-    },
-    delete(key) {
-      store.delete(key);
-    },
-    clear() {
-      store.clear();
-    },
-    size() {
-      return store.size;
-    },
-  };
+return {
+get(key) {
+const entry = store.get(key);
+if (!entry) return null;
+if (entry.expiresAt <= Date.now()) {
+store.delete(key);
+return null;
+}
+return entry.value;
+},
+set(key, value) {
+const now = Date.now();
+if (store.size >= maxEntries) {
+evictExpired(now);
+// Still over capacity — drop the oldest 10% (insertion order is preserved by Map).
+if (store.size >= maxEntries) {
+const dropCount = Math.max(1, Math.floor(maxEntries \* 0.1));
+let dropped = 0;
+for (const key of store.keys()) {
+store.delete(key);
+if (++dropped >= dropCount) break;
+}
+}
+}
+store.set(key, { value, expiresAt: now + ttlMs });
+},
+delete(key) {
+store.delete(key);
+},
+clear() {
+store.clear();
+},
+size() {
+return store.size;
+},
+};
 }
 Bash
 IN
@@ -1123,10 +1146,10 @@ const router = Router();
 
 // Tighter limit on login to deter credential stuffing (PRD §19.2).
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 10,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
+windowMs: 15 _ 60 _ 1000,
+limit: 10,
+standardHeaders: 'draft-7',
+legacyHeaders: false,
 });
 
 router.post('/register', validate(registerSchema), asyncHandler(authController.register));
@@ -1143,10 +1166,10 @@ cat "/Users/ravikumark/Desktop/Samagama final/apps/server/src/routes/faq.routes.
 OUT
 import { Router } from 'express';
 import {
-  faqCreateSchema,
-  faqFeedbackSchema,
-  faqListQuerySchema,
-  faqUpdateSchema,
+faqCreateSchema,
+faqFeedbackSchema,
+faqListQuerySchema,
+faqUpdateSchema,
 } from '@samagama/shared';
 import { faqController } from '../controllers/faq.controller.js';
 import { requireAuth, requireRole } from '../middlewares/auth.js';
@@ -1164,38 +1187,38 @@ router.get('/', validate(faqListQuerySchema, 'query'), asyncHandler(faqControlle
 router.get('/:id', asyncHandler(faqController.getById));
 
 router.post(
-  '/',
-  requireRole('admin', 'moderator'),
-  validate(faqCreateSchema),
-  asyncHandler(faqController.create),
+'/',
+requireRole('admin', 'moderator'),
+validate(faqCreateSchema),
+asyncHandler(faqController.create),
 );
 router.patch(
-  '/:id',
-  requireRole('admin', 'moderator'),
-  validate(faqUpdateSchema),
-  asyncHandler(faqController.update),
+'/:id',
+requireRole('admin', 'moderator'),
+validate(faqUpdateSchema),
+asyncHandler(faqController.update),
 );
 router.patch(
-  '/:id/archive',
-  requireRole('admin', 'moderator'),
-  asyncHandler(faqController.archive),
+'/:id/archive',
+requireRole('admin', 'moderator'),
+asyncHandler(faqController.archive),
 );
 
 // Authenticated student/mod/admin can record a view or leave feedback.
 router.post('/:id/view', asyncHandler(faqController.recordView));
 router.post(
-  '/:id/feedback',
-  validate(faqFeedbackSchema),
-  asyncHandler(faqController.submitFeedback),
+'/:id/feedback',
+validate(faqFeedbackSchema),
+asyncHandler(faqController.submitFeedback),
 );
 
 export const faqRouter = router;
 import { Router } from 'express';
 import {
-  answerCreateSchema,
-  checkExistingSchema,
-  questionCreateSchema,
-  tagMeSchema,
+answerCreateSchema,
+checkExistingSchema,
+questionCreateSchema,
+tagMeSchema,
 } from '@samagama/shared';
 import { qnaController } from '../controllers/qna.controller.js';
 import { requireAuth } from '../middlewares/auth.js';
@@ -1208,14 +1231,14 @@ router.use(requireAuth);
 
 // --- Existing-answer check + question lifecycle ---
 router.post(
-  '/check-existing',
-  validate(checkExistingSchema),
-  asyncHandler(qnaController.checkExisting),
+'/check-existing',
+validate(checkExistingSchema),
+asyncHandler(qnaController.checkExisting),
 );
 router.post(
-  '/questions',
-  validate(questionCreateSchema),
-  asyncHandler(qnaController.createQuestion),
+'/questions',
+validate(questionCreateSchema),
+asyncHandler(qnaController.createQuestion),
 );
 router.get('/questions', asyncHandler(qnaController.listQuestions));
 router.get('/questions/:id', asyncHandler(qnaController.getQuestion));
@@ -1224,9 +1247,9 @@ router.post('/questions/:id/tag-me', validate(tagMeSchema), asyncHandler(qnaCont
 // --- Answers ---
 router.get('/questions/:id/answers', asyncHandler(qnaController.listAnswers));
 router.post(
-  '/questions/:id/answers',
-  validate(answerCreateSchema),
-  asyncHandler(qnaController.submitAnswer),
+'/questions/:id/answers',
+validate(answerCreateSchema),
+asyncHandler(qnaController.submitAnswer),
 );
 router.post('/answers/:id/vote/:direction', asyncHandler(qnaController.voteAnswer));
 
@@ -1243,41 +1266,41 @@ import { ApiError } from '../utils/api-error.js';
 import { verifyAccessToken } from '../utils/jwt.js';
 
 declare module 'express-serve-static-core' {
-  interface Request {
-    user?: {
-      id: string;
-      role: UserRole;
-    };
-  }
+interface Request {
+user?: {
+id: string;
+role: UserRole;
+};
+}
 }
 
-export const requireAuth: RequestHandler = (req: Request, _res: Response, next: NextFunction) => {
-  const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) {
-    return next(ApiError.unauthorized('Missing Bearer token'));
-  }
-  const token = header.slice('Bearer '.length).trim();
-  if (!token) return next(ApiError.unauthorized('Missing Bearer token'));
+export const requireAuth: RequestHandler = (req: Request, \_res: Response, next: NextFunction) => {
+const header = req.headers.authorization;
+if (!header?.startsWith('Bearer ')) {
+return next(ApiError.unauthorized('Missing Bearer token'));
+}
+const token = header.slice('Bearer '.length).trim();
+if (!token) return next(ApiError.unauthorized('Missing Bearer token'));
 
-  try {
-    const claims = verifyAccessToken(token);
-    req.user = { id: claims.sub, role: claims.role };
-    next();
-  } catch (err) {
-    next(err);
-  }
+try {
+const claims = verifyAccessToken(token);
+req.user = { id: claims.sub, role: claims.role };
+next();
+} catch (err) {
+next(err);
+}
 };
 
-/** Restricts a route to one or more roles. Use after `requireAuth`. */
+/\*_ Restricts a route to one or more roles. Use after `requireAuth`. _/
 export const requireRole =
-  (...roles: UserRole[]): RequestHandler =>
-  (req, _res, next) => {
-    if (!req.user) return next(ApiError.unauthorized());
-    if (!roles.includes(req.user.role)) {
-      return next(ApiError.forbidden(`Requires role: ${roles.join(' or ')}`));
-    }
-    next();
-  };
+(...roles: UserRole[]): RequestHandler =>
+(req, \_res, next) => {
+if (!req.user) return next(ApiError.unauthorized());
+if (!roles.includes(req.user.role)) {
+return next(ApiError.forbidden(`Requires role: ${roles.join(' or ')}`));
+}
+next();
+};
 // Express app factory. Returns a configured app without starting the listener,
 // which keeps integration tests (Supertest) decoupled from network binding.
 import express, { type Express } from 'express';
@@ -1292,40 +1315,40 @@ import { apiRouter } from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middlewares/error-handler.js';
 
 export function createApp(): Express {
-  const app = express();
+const app = express();
 
-  app.disable('x-powered-by');
-  app.use(helmet());
-  app.use(
-    cors({
-      origin: env.corsOrigins.length > 0 ? env.corsOrigins : true,
-      credentials: true,
-    }),
-  );
-  app.use(express.json({ limit: '1mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '1mb' }));
-  app.use(cookieParser());
+app.disable('x-powered-by');
+app.use(helmet());
+app.use(
+cors({
+origin: env.corsOrigins.length > 0 ? env.corsOrigins : true,
+credentials: true,
+}),
+);
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(cookieParser());
 
-  if (!env.isTest) {
-    app.use(morgan(env.isProduction ? 'combined' : 'dev'));
-  }
+if (!env.isTest) {
+app.use(morgan(env.isProduction ? 'combined' : 'dev'));
+}
 
-  // Global rate limit (per-IP). Tighter limits live on individual routes.
-  app.use(
-    rateLimit({
-      windowMs: 60 * 1000,
-      limit: 200,
-      standardHeaders: 'draft-7',
-      legacyHeaders: false,
-    }),
-  );
+// Global rate limit (per-IP). Tighter limits live on individual routes.
+app.use(
+rateLimit({
+windowMs: 60 \* 1000,
+limit: 200,
+standardHeaders: 'draft-7',
+legacyHeaders: false,
+}),
+);
 
-  app.use(API_PREFIX, apiRouter);
+app.use(API_PREFIX, apiRouter);
 
-  app.use(notFoundHandler);
-  app.use(errorHandler);
+app.use(notFoundHandler);
+app.use(errorHandler);
 
-  return app;
+return app;
 }
 Bash
 IN
@@ -1336,20 +1359,20 @@ OUT
 import { Schema, model, type InferSchemaType, type HydratedDocument } from 'mongoose';
 
 const systemSettingsSchema = new Schema(
-  {
-    /** Singleton key — only one settings document exists. */
-    _id: { type: String, default: 'global' },
-    duplicateWarnThreshold: { type: Number, default: 0.6, min: 0, max: 1 },
-    duplicateStrongThreshold: { type: Number, default: 0.8, min: 0, max: 1 },
-    chatbotConfidenceThreshold: { type: Number, default: 0.7, min: 0, max: 1 },
-    chatbotMaxSources: { type: Number, default: 6, min: 1, max: 20 },
-    communityAnswerCap: { type: Number, default: 10, min: 1, max: 50 },
-    /** Max idle days before a question appears in the "urgent" bucket. */
-    urgentIdleDays: { type: Number, default: 7 },
-  },
-  {
-    timestamps: true,
-  },
+{
+/** Singleton key — only one settings document exists. \*/
+\_id: { type: String, default: 'global' },
+duplicateWarnThreshold: { type: Number, default: 0.6, min: 0, max: 1 },
+duplicateStrongThreshold: { type: Number, default: 0.8, min: 0, max: 1 },
+chatbotConfidenceThreshold: { type: Number, default: 0.7, min: 0, max: 1 },
+chatbotMaxSources: { type: Number, default: 6, min: 1, max: 20 },
+communityAnswerCap: { type: Number, default: 10, min: 1, max: 50 },
+/** Max idle days before a question appears in the "urgent" bucket. \*/
+urgentIdleDays: { type: Number, default: 7 },
+},
+{
+timestamps: true,
+},
 );
 
 export type SystemSettingsDocument = HydratedDocument<InferSchemaType<typeof systemSettingsSchema>>;
@@ -1362,24 +1385,25 @@ import { Schema, model, type InferSchemaType, type HydratedDocument } from 'mong
 import { FLAG_ENTITY_TYPES, FLAG_REASONS, FLAG_STATUSES } from '@samagama/shared';
 
 const flagSchema = new Schema(
-  {
-    entityType: { type: String, enum: FLAG_ENTITY_TYPES, required: true, index: true },
-    entityId: { type: Schema.Types.ObjectId, required: true, index: true },
-    reason: { type: String, enum: FLAG_REASONS, required: true },
-    details: { type: String, trim: true, maxlength: 1000 },
+{
+entityType: { type: String, enum: FLAG_ENTITY_TYPES, required: true, index: true },
+entityId: { type: Schema.Types.ObjectId, required: true, index: true },
+reason: { type: String, enum: FLAG_REASONS, required: true },
+details: { type: String, trim: true, maxlength: 1000 },
 
     status: { type: String, enum: FLAG_STATUSES, default: 'open', index: true },
     reportedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     reviewedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     resolutionNote: { type: String, trim: true, maxlength: 1000 },
-  },
-  { timestamps: true },
+
+},
+{ timestamps: true },
 );
 
 // One active flag per user per entity. Resolved/dismissed flags don't block new ones.
 flagSchema.index(
-  { reportedBy: 1, entityType: 1, entityId: 1, status: 1 },
-  { unique: true, partialFilterExpression: { status: { $in: ['open', 'under_review'] } } },
+{ reportedBy: 1, entityType: 1, entityId: 1, status: 1 },
+{ unique: true, partialFilterExpression: { status: { $in: ['open', 'under_review'] } } },
 );
 
 export type FlagDocument = HydratedDocument<InferSchemaType<typeof flagSchema>>;
@@ -1392,11 +1416,11 @@ OUT
 // Auth domain service. Pure business logic — no Express types here.
 import bcrypt from 'bcryptjs';
 import type {
-  AuthTokenPayload,
-  LoginInput,
-  PublicUser,
-  RegisterInput,
-  UserRole,
+AuthTokenPayload,
+LoginInput,
+PublicUser,
+RegisterInput,
+UserRole,
 } from '@samagama/shared';
 import { SPURTI_POINTS } from '@samagama/shared';
 import { UserModel, type UserDocument } from '../models/User.model.js';
@@ -1406,30 +1430,30 @@ import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/
 const BCRYPT_ROUNDS = 12;
 
 function toPublicUser(user: UserDocument): PublicUser {
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    status: user.status,
-    // Surface Spurti Points only on student accounts — moderators/admins don't earn them.
-    ...(user.role === 'student' ? { spurtiPoints: user.spurtiPoints ?? 0 } : {}),
-    createdAt: user.createdAt.toISOString(),
-  };
+return {
+id: user.id,
+name: user.name,
+email: user.email,
+role: user.role,
+status: user.status,
+// Surface Spurti Points only on student accounts — moderators/admins don't earn them.
+...(user.role === 'student' ? { spurtiPoints: user.spurtiPoints ?? 0 } : {}),
+createdAt: user.createdAt.toISOString(),
+};
 }
 
 function buildAuthPayload(user: UserDocument): AuthTokenPayload {
-  return {
-    accessToken: signAccessToken({ sub: user.id, role: user.role }),
-    refreshToken: signRefreshToken({ sub: user.id, ver: user.tokenVersion }),
-    user: toPublicUser(user),
-  };
+return {
+accessToken: signAccessToken({ sub: user.id, role: user.role }),
+refreshToken: signRefreshToken({ sub: user.id, ver: user.tokenVersion }),
+user: toPublicUser(user),
+};
 }
 
 export const authService = {
-  async register(input: RegisterInput, requesterRole?: UserRole): Promise<AuthTokenPayload> {
-    const existing = await UserModel.findOne({ email: input.email }).lean();
-    if (existing) throw ApiError.conflict('An account with this email already exists');
+async register(input: RegisterInput, requesterRole?: UserRole): Promise<AuthTokenPayload> {
+const existing = await UserModel.findOne({ email: input.email }).lean();
+if (existing) throw ApiError.conflict('An account with this email already exists');
 
     // Only admins may assign a role at registration time. Otherwise default to student.
     const role: UserRole = requesterRole === 'admin' && input.role ? input.role : 'student';
@@ -1445,13 +1469,14 @@ export const authService = {
     });
 
     return buildAuthPayload(user);
-  },
 
-  async login(input: LoginInput): Promise<AuthTokenPayload> {
-    const user = await UserModel.findOne({ email: input.email });
+},
+
+async login(input: LoginInput): Promise<AuthTokenPayload> {
+const user = await UserModel.findOne({ email: input.email });
 Bash
 IN
-cat "/Users/ravikumark/Desktop/Samagama final/apps/server/src/utils/jwt.ts" && grep -r "spurtiPoints\|escalat\|ticket\|chatSession\|redis\|Redis" "/Users/ravikumark/Desktop/Samagama final/apps/server/src" --include="*.ts" -l
+cat "/Users/ravikumark/Desktop/Samagama final/apps/server/src/utils/jwt.ts" && grep -r "spurtiPoints\|escalat\|ticket\|chatSession\|redis\|Redis" "/Users/ravikumark/Desktop/Samagama final/apps/server/src" --include="\*.ts" -l
 
 OUT
 // JWT helpers. Keeps signing/verification details out of services and middlewares.
@@ -1462,48 +1487,48 @@ import { env } from '../config/env.js';
 import { ApiError } from './api-error.js';
 
 export interface AccessTokenClaims {
-  sub: string; // user id
-  role: UserRole;
-  type: 'access';
+sub: string; // user id
+role: UserRole;
+type: 'access';
 }
 
 export interface RefreshTokenClaims {
-  sub: string;
-  type: 'refresh';
-  /** Token version, lets us invalidate refresh tokens on password change. */
-  ver: number;
+sub: string;
+type: 'refresh';
+/\*_ Token version, lets us invalidate refresh tokens on password change. _/
+ver: number;
 }
 
 export function signAccessToken(claims: Omit<AccessTokenClaims, 'type'>): string {
-  const opts: SignOptions = { expiresIn: ACCESS_TOKEN_TTL_SECONDS };
-  return jwt.sign({ ...claims, type: 'access' }, env.JWT_ACCESS_SECRET, opts);
+const opts: SignOptions = { expiresIn: ACCESS_TOKEN_TTL_SECONDS };
+return jwt.sign({ ...claims, type: 'access' }, env.JWT_ACCESS_SECRET, opts);
 }
 
 export function signRefreshToken(claims: Omit<RefreshTokenClaims, 'type'>): string {
-  const opts: SignOptions = { expiresIn: REFRESH_TOKEN_TTL_SECONDS };
-  return jwt.sign({ ...claims, type: 'refresh' }, env.JWT_REFRESH_SECRET, opts);
+const opts: SignOptions = { expiresIn: REFRESH_TOKEN_TTL_SECONDS };
+return jwt.sign({ ...claims, type: 'refresh' }, env.JWT_REFRESH_SECRET, opts);
 }
 
 export function verifyAccessToken(token: string): AccessTokenClaims {
-  try {
-    const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as AccessTokenClaims;
-    if (decoded.type !== 'access') throw ApiError.unauthorized('Invalid token type');
-    return decoded;
-  } catch (err) {
-    if (err instanceof ApiError) throw err;
-    throw ApiError.unauthorized('Invalid or expired token');
-  }
+try {
+const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as AccessTokenClaims;
+if (decoded.type !== 'access') throw ApiError.unauthorized('Invalid token type');
+return decoded;
+} catch (err) {
+if (err instanceof ApiError) throw err;
+throw ApiError.unauthorized('Invalid or expired token');
+}
 }
 
 export function verifyRefreshToken(token: string): RefreshTokenClaims {
-  try {
-    const decoded = jwt.verify(token, env.JWT_REFRESH_SECRET) as RefreshTokenClaims;
-    if (decoded.type !== 'refresh') throw ApiError.unauthorized('Invalid token type');
-    return decoded;
-  } catch (err) {
-    if (err instanceof ApiError) throw err;
-    throw ApiError.unauthorized('Invalid or expired refresh token');
-  }
+try {
+const decoded = jwt.verify(token, env.JWT_REFRESH_SECRET) as RefreshTokenClaims;
+if (decoded.type !== 'refresh') throw ApiError.unauthorized('Invalid token type');
+return decoded;
+} catch (err) {
+if (err instanceof ApiError) throw err;
+throw ApiError.unauthorized('Invalid or expired refresh token');
+}
 }
 /Users/ravikumark/Desktop/Samagama final/apps/server/src/utils/ttl-cache.ts
 /Users/ravikumark/Desktop/Samagama final/apps/server/src/models/User.model.ts
@@ -1524,26 +1549,26 @@ OUT
 // Community Q&A service. Implements PRD §8.6 + Change Spec §5–§6.
 //
 // Notable rules baked in:
-//  - Existing-answer check returns top FAQ matches AND top open community-question matches.
-//    A short-lived signed token is returned; createQuestion requires it (PRD QNA-002).
-//  - Personal questions are visible only to the asker, moderators, and admins.
-//  - Community-question answer cap: hard server-side guard at COMMUNITY_ANSWER_CAP (Change Spec §5.5).
-//  - Tag-me: any student may register their interest in an existing community question.
-//  - Vote toggling on answers is idempotent and atomic.
+// - Existing-answer check returns top FAQ matches AND top open community-question matches.
+// A short-lived signed token is returned; createQuestion requires it (PRD QNA-002).
+// - Personal questions are visible only to the asker, moderators, and admins.
+// - Community-question answer cap: hard server-side guard at COMMUNITY_ANSWER_CAP (Change Spec §5.5).
+// - Tag-me: any student may register their interest in an existing community question.
+// - Vote toggling on answers is idempotent and atomic.
 import { Types, type FilterQuery } from 'mongoose';
 import jwt from 'jsonwebtoken';
 import {
-  COMMUNITY_ANSWER_CAP,
-  SPURTI_POINTS,
-  type AnswerCreateInput,
-  type CheckExistingInput,
-  type ExistingAnswerCheckResult,
-  type PublicAnswer,
-  type PublicFaqMatch,
-  type PublicQuestion,
-  type PublicQuestionMatch,
-  type QuestionCreateInput,
-  type UserRole,
+COMMUNITY_ANSWER_CAP,
+SPURTI_POINTS,
+type AnswerCreateInput,
+type CheckExistingInput,
+type ExistingAnswerCheckResult,
+type PublicAnswer,
+type PublicFaqMatch,
+type PublicQuestion,
+type PublicQuestionMatch,
+type QuestionCreateInput,
+type UserRole,
 } from '@samagama/shared';
 import { FaqModel } from '../models/Faq.model.js';
 import { QuestionModel, type QuestionDocument } from '../models/Question.model.js';
@@ -1553,13 +1578,14 @@ import { ApiError } from '../utils/api-error.js';
 import { createTtlCache } from '../utils/ttl-cache.js';
 import { env } from '../config/env.js';
 
-/** Signed token TTL for the existing-answer check (15 minutes). Long enough to read suggestions, short enough to limit replay. */
-const EXISTING_CHECK_TTL = 15 * 60;
+/\*_ Signed token TTL for the existing-answer check (15 minutes). Long enough to read suggestions, short enough to limit replay. _/
+const EXISTING_CHECK_TTL = 15 \* 60;
 
-/**
- * In-memory cache for the FAQ + community-question similarity lookup.
- * TTL of 60 seconds covers the common pattern of a student clicking "Check Existing Answers"
- * twice
+/\*\*
+
+- In-memory cache for the FAQ + community-question similarity lookup.
+- TTL of 60 seconds covers the common pattern of a student clicking "Check Existing Answers"
+- twice
 
 [Message truncated - exceeded 50,000 character limit]
 
@@ -1596,6 +1622,7 @@ That document only exists in this **chat conversation** — it was generated as 
 It is not in your codebase. If you want to save it, I can write it to a file. Where would you like it?
 
 For example:
+
 - `/Users/ravikumark/Desktop/Samagama final/BACKEND_API_CONTRACTS.md`
 - `/Users/ravikumark/Desktop/Samagama final/apps/server/BACKEND_DOCS.md`
 - Or anywhere else you prefer
@@ -1641,6 +1668,7 @@ Now let me read the ModerationOverviewPage to understand what cards/views it has
 ## 🤖 Claude
 
 Now I have the full picture. I need to:
+
 1. Remove `Moderation Queue` from the admin sidebar in `navigation.ts`
 2. Add the Moderation Queue stat cards into `AdminOverviewPage.tsx`
 
@@ -1699,10 +1727,12 @@ Now let's verify there are no TypeScript errors:
 No errors. Here's a summary of what changed:
 
 **[navigation.ts](apps/client/src/layouts/navigation.ts)**
+
 - Removed the `Moderation Queue` nav item (`/moderation`) from the admin sidebar
 - Removed the now-unused `Shield` import
 
 **[AdminOverviewPage.tsx](apps/client/src/features/admin/AdminOverviewPage.tsx)**
+
 - Added `useModeratorStats` to fetch the moderation data
 - Added a **"Moderation Queue"** section at the bottom of the overview with all 5 stat cards (Personal Questions, Community Questions, Community Questions Today, FAQs, Flagged FAQs) — identical to what was on the standalone Moderation Queue page
 - Added the `StatCard` component locally (same as in `ModerationOverviewPage`)
@@ -1732,20 +1762,22 @@ Now I have a complete picture. Let me do a proper audit before touching any code
 
 **Duplications (same data shown twice):**
 
-| Data point | Where #1 | Where #2 |
-|---|---|---|
-| Flagged FAQs count | KPI card (secondary row) | Moderation Queue → "Flagged FAQs" StatCard |
-| Total FAQs count | KPI card (secondary row) | Moderation Queue → "FAQs" StatCard (row 1) |
+| Data point                        | Where #1                                     | Where #2                                                |
+| --------------------------------- | -------------------------------------------- | ------------------------------------------------------- |
+| Flagged FAQs count                | KPI card (secondary row)                     | Moderation Queue → "Flagged FAQs" StatCard              |
+| Total FAQs count                  | KPI card (secondary row)                     | Moderation Queue → "FAQs" StatCard (row 1)              |
 | Community questions idle/activity | `IdleBucketCards` (active 24h, idle 3d, 1wk) | Moderation Queue → "Community Questions Today" StatCard |
-| Unresolved/unanswered questions | "Unresolved Questions" KPI | Community Questions StatCard "Unanswered" row |
+| Unresolved/unanswered questions   | "Unresolved Questions" KPI                   | Community Questions StatCard "Unanswered" row           |
 
 **Structural problems:**
+
 - Three FAQ-related KPIs crammed into the secondary row (Published, Flagged, Total) with no clear grouping
 - "Pending Moderation" and the entire Moderation Queue section below say the same thing at different granularities with no hierarchy
 - `IdleBucketCards` sits at the very top before any KPIs — context-wise it makes more sense after the action items
 - No section labels on KPI rows — hard to scan
 
 **What's missing:**
+
 - **Open Flags** as a primary action item (currently buried as "Flagged FAQs" in a secondary row)
 - Platform health stats are split across two rows with no logical grouping
 
@@ -1802,26 +1834,26 @@ Zero TypeScript errors. Here's the full summary of every change made:
 
 ### What was removed (duplicates)
 
-| Removed | Why |
-|---|---|
-| "Flagged FAQs" KPI (secondary row) | Duplicate of Moderation Queue → Flagged FAQs StatCard — kept as **"Open Flags"** in Action Required row instead |
-| "Total FAQs" KPI (secondary row) | Duplicate of Moderation Queue → FAQs StatCard total row — moved to Platform Health |
-| Moderation Queue → **FAQs StatCard** (total/today/week) | Total FAQs now in Platform Health KPI; today/week granularity is FAQ management detail, not an overview metric |
-| Moderation Queue → **Community Questions Today StatCard** | Covered by `IdleBucketCards` "Active in last 24h" — same intent, two representations |
-| Moderation Queue → **Flagged FAQs StatCard** | Consolidated into "Open Flags" KPI in Action Required |
+| Removed                                                   | Why                                                                                                             |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| "Flagged FAQs" KPI (secondary row)                        | Duplicate of Moderation Queue → Flagged FAQs StatCard — kept as **"Open Flags"** in Action Required row instead |
+| "Total FAQs" KPI (secondary row)                          | Duplicate of Moderation Queue → FAQs StatCard total row — moved to Platform Health                              |
+| Moderation Queue → **FAQs StatCard** (total/today/week)   | Total FAQs now in Platform Health KPI; today/week granularity is FAQ management detail, not an overview metric  |
+| Moderation Queue → **Community Questions Today StatCard** | Covered by `IdleBucketCards` "Active in last 24h" — same intent, two representations                            |
+| Moderation Queue → **Flagged FAQs StatCard**              | Consolidated into "Open Flags" KPI in Action Required                                                           |
 
 ---
 
 ### New structure (6 labelled sections)
 
-| Section | Content |
-|---|---|
-| **Action Required** | Unresolved Questions · Pending Answers · FAQs Needing Review · Open Flags |
-| **Platform Health** | Published FAQs (helpful %) · Total FAQs · Avg Resolution Time |
-| **Quick Actions** | User Management · FAQ Quality · Moderation Load · Audit Logs |
-| **Community Activity** | `IdleBucketCards` (moved down from top — makes sense after KPIs) |
-| **Moderation Queue** | Personal Questions StatCard · Community Questions StatCard |
-| **FAQ Quality Alerts** | Conditional alert list (unchanged) |
+| Section                | Content                                                                   |
+| ---------------------- | ------------------------------------------------------------------------- |
+| **Action Required**    | Unresolved Questions · Pending Answers · FAQs Needing Review · Open Flags |
+| **Platform Health**    | Published FAQs (helpful %) · Total FAQs · Avg Resolution Time             |
+| **Quick Actions**      | User Management · FAQ Quality · Moderation Load · Audit Logs              |
+| **Community Activity** | `IdleBucketCards` (moved down from top — makes sense after KPIs)          |
+| **Moderation Queue**   | Personal Questions StatCard · Community Questions StatCard                |
+| **FAQ Quality Alerts** | Conditional alert list (unchanged)                                        |
 
 ---
 
@@ -1852,13 +1884,13 @@ I have the full file in context. Now let me closely study the image design:
 
 Zero errors. Here's exactly what changed and how it maps to the image:
 
-| Image card | What was built |
-|---|---|
-| **Personal Questions** | `IllustrationStatCard` with `variant="circle"` — large concentric circle on the left with Users icon, metric rows on the right |
-| **Community Questions** | `IllustrationStatCard` with `variant="ring"` — partial arc/donut ring with MessageSquare icon centered, metric rows on the right |
-| **Community Questions Today** | `IllustrationStatCard` with `variant="calendar"` — calendar box + clock badge overlay, metric rows on the right |
-| **FAQs** | `ColumnMetricCard` — coloured header, then 3 vertical sub-columns (icon → big number → label → sub) matching the image layout |
-| **Flagged FAQs** | `ColumnMetricCard` full-width — same 3-column layout with decorative dots in the header |
+| Image card                    | What was built                                                                                                                   |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| **Personal Questions**        | `IllustrationStatCard` with `variant="circle"` — large concentric circle on the left with Users icon, metric rows on the right   |
+| **Community Questions**       | `IllustrationStatCard` with `variant="ring"` — partial arc/donut ring with MessageSquare icon centered, metric rows on the right |
+| **Community Questions Today** | `IllustrationStatCard` with `variant="calendar"` — calendar box + clock badge overlay, metric rows on the right                  |
+| **FAQs**                      | `ColumnMetricCard` — coloured header, then 3 vertical sub-columns (icon → big number → label → sub) matching the image layout    |
+| **Flagged FAQs**              | `ColumnMetricCard` full-width — same 3-column layout with decorative dots in the header                                          |
 
 The two new components (`IllustrationStatCard` and `ColumnMetricCard`) replace the old flat `StatCard` entirely, with no data or query changes.
 
@@ -1876,80 +1908,80 @@ Use a soft light background (#F5F8FC), floating glassmorphism cards, smooth shad
 
 Each card should have:
 
-* A colored gradient header section
-* Large 3D illustration related to the card topic
-* Glass icon container
-* Large metric numbers
-* Clean typography
-* Soft glowing effects
-* Premium depth and layering
-* Subtle floating decorative elements
+- A colored gradient header section
+- Large 3D illustration related to the card topic
+- Glass icon container
+- Large metric numbers
+- Clean typography
+- Soft glowing effects
+- Premium depth and layering
+- Subtle floating decorative elements
 
 Dashboard Sections:
 
 Personal Questions Card
 
-* Blue gradient theme
-* 3D people/team illustration
-* Metrics:
-    * Total personal questions: 1
-    * Unanswered: 0
-    * Posted today: 0
+- Blue gradient theme
+- 3D people/team illustration
+- Metrics:
+  - Total personal questions: 1
+  - Unanswered: 0
+  - Posted today: 0
 
 Community Questions Card
 
-* Emerald green gradient theme
-* Circular progress visualization
-* 3D chat bubble illustration
-* Metrics:
-    * Total (all-time): 3
-    * Answered by peers: 0
-    * Unanswered: 3
+- Emerald green gradient theme
+- Circular progress visualization
+- 3D chat bubble illustration
+- Metrics:
+  - Total (all-time): 3
+  - Answered by peers: 0
+  - Unanswered: 3
 
 Community Questions Today Card
 
-* Warm orange gradient theme
-* Large 3D calendar illustration
-* Metrics:
-    * Posted today: 0
-    * Answered today: 0
-    * Unanswered today: 0
+- Warm orange gradient theme
+- Large 3D calendar illustration
+- Metrics:
+  - Posted today: 0
+  - Answered today: 0
+  - Unanswered today: 0
 
 FAQs Card
 
-* Purple gradient theme
-* Large 3D FAQ document illustration
-* Display three mini statistic cards inside
-* Metrics:
-    * Total FAQs: 130
-    * Added today: 0
-    * Added this week: 130
+- Purple gradient theme
+- Large 3D FAQ document illustration
+- Display three mini statistic cards inside
+- Metrics:
+  - Total FAQs: 130
+  - Added today: 0
+  - Added this week: 130
 
 Flagged FAQs Card
 
-* Soft red/pink gradient theme
-* Wide horizontal card
-* 3 separate metric panels
-* Alert and warning illustrations
-* Metrics:
-    * Total flagged: 0
-    * Flagged today: 0
-    * Flagged this week: 0
+- Soft red/pink gradient theme
+- Wide horizontal card
+- 3 separate metric panels
+- Alert and warning illustrations
+- Metrics:
+  - Total flagged: 0
+  - Flagged today: 0
+  - Flagged this week: 0
 
 Visual Style:
 
-* Premium enterprise SaaS
-* Dribbble award-winning quality
-* Modern fintech aesthetics
-* Beautiful gradients
-* Soft neumorphic shadows
-* Glassmorphism highlights
-* Floating 3D illustrations
-* Apple-level visual polish
-* High-end startup dashboard
-* Clean white space
-* Elegant iconography
-* Professional yet delightful
+- Premium enterprise SaaS
+- Dribbble award-winning quality
+- Modern fintech aesthetics
+- Beautiful gradients
+- Soft neumorphic shadows
+- Glassmorphism highlights
+- Floating 3D illustrations
+- Apple-level visual polish
+- High-end startup dashboard
+- Clean white space
+- Elegant iconography
+- Professional yet delightful
 
 Render as a complete dashboard UI mockup, 16:9 aspect ratio, ultra detailed, Figma-quality design system, realistic product design presentation.
 
@@ -1974,6 +2006,7 @@ Zero errors. Here's exactly what was built and how each card maps to your spec:
 **Flagged FAQs** — Full-width red gradient header with two glassmorphism icon badges (flag + alert triangle), then three equal metric panels (Total · Today · This Week) with large 40px numbers and shadow lift on the icon chips.
 
 ### Visual details applied
+
 - `#F5F8FC` page background
 - `border-radius: 28px` on all cards
 - Layered decorative blobs in every gradient header (3 circles per card)
@@ -2040,13 +2073,13 @@ Three targeted edits — one per card:
 
 Done. All three cards now use tinted backgrounds consistent with the Today and FAQs cards:
 
-| Card | Background | Box shadow tint |
-|---|---|---|
-| Personal Questions | `#eff6ff` (light blue) | blue-tinted |
-| Community Questions | `#f0fdf4` (light green) | green-tinted |
-| Community Questions Today | `#fff7ed` (light orange) | unchanged |
-| FAQs | `#f5f3ff` (light purple) | unchanged |
-| Flagged FAQs | `#fef2f2` (light red) | red-tinted |
+| Card                      | Background               | Box shadow tint |
+| ------------------------- | ------------------------ | --------------- |
+| Personal Questions        | `#eff6ff` (light blue)   | blue-tinted     |
+| Community Questions       | `#f0fdf4` (light green)  | green-tinted    |
+| Community Questions Today | `#fff7ed` (light orange) | unchanged       |
+| FAQs                      | `#f5f3ff` (light purple) | unchanged       |
+| Flagged FAQs              | `#fef2f2` (light red)    | red-tinted      |
 
 ---
 
@@ -2071,6 +2104,7 @@ Let me first check how dark mode is implemented in this project before touching 
 ## 🤖 Claude
 
 Now I have the full picture. The project uses `data-theme` + CSS custom properties. The fix is:
+
 1. Add purple token + mod-card tint classes to `globals.css`
 2. Replace every hardcoded colour in the component with CSS variables + class names
 
@@ -2097,39 +2131,44 @@ Zero errors. Here's a full summary of every change and why:
 ### `globals.css` — 2 additions
 
 **Purple token** added to both theme blocks:
+
 ```css
-/* light */ --color-purple: #7c3aed;  --color-purple-bg: #ede9fe;
-/* dark  */ --color-purple: #a78bfa;  --color-purple-bg: #1e0d40;
+/* light */
+--color-purple: #7c3aed;
+--color-purple-bg: #ede9fe;
+/* dark  */
+--color-purple: #a78bfa;
+--color-purple-bg: #1e0d40;
 ```
 
 **`.mod-card-*` classes** — each card variant gets its own light-mode tint + dark-mode override via `[data-theme='dark']` selector, so the flip is pure CSS with zero JS:
 
-| Class | Light bg | Dark bg |
-|---|---|---|
-| `mod-card-blue` | `#eff6ff` | `#0c2040` |
-| `mod-card-green` | `#f0fdf4` | `#052818` |
+| Class             | Light bg  | Dark bg   |
+| ----------------- | --------- | --------- |
+| `mod-card-blue`   | `#eff6ff` | `#0c2040` |
+| `mod-card-green`  | `#f0fdf4` | `#052818` |
 | `mod-card-orange` | `#fff7ed` | `#271500` |
 | `mod-card-purple` | `#f5f3ff` | `#1e0d40` |
-| `mod-card-red` | `#fef2f2` | `#2a0808` |
+| `mod-card-red`    | `#fef2f2` | `#2a0808` |
 
 ---
 
 ### `ModerationOverviewPage.tsx` — systematic replacement
 
-| Was (hardcoded) | Now (CSS variable) |
-|---|---|
-| `background: '#eef2fb'` | `background: 'var(--color-bg)'` |
-| All 5 card `background` + `boxShadow` | `className="mod-card mod-card-*"` |
-| `color: '#0f172a'` | `color: 'var(--color-text)'` |
-| `color: '#6b7280'` / `'#374151'` | `color: 'var(--color-text-muted)'` |
-| `background: '#eff6ff'` (icon chips) | `background: 'var(--color-primary-bg)'` |
-| `background: '#f0fdf4'` (icon chips) | `background: 'var(--color-success-bg)'` |
-| `background: '#ffedd5'` (icon chips) | `background: 'var(--color-warning-bg)'` |
-| `background: '#fef2f2'` (icon chips) | `background: 'var(--color-danger-bg)'` |
-| `background: '#ede9fe'` (FAQ chips) | `background: 'var(--color-purple-bg)'` |
-| `background: 'white'` (FAQ sub-cards) | `background: 'var(--color-card)'` |
-| `border: 'rgba(0,0,0,0.06)'` | `border: 'var(--color-border)'` |
-| All SVG `stroke` hardcoded colours | Passed as `color` prop → `var(--color-*)` |
+| Was (hardcoded)                       | Now (CSS variable)                        |
+| ------------------------------------- | ----------------------------------------- |
+| `background: '#eef2fb'`               | `background: 'var(--color-bg)'`           |
+| All 5 card `background` + `boxShadow` | `className="mod-card mod-card-*"`         |
+| `color: '#0f172a'`                    | `color: 'var(--color-text)'`              |
+| `color: '#6b7280'` / `'#374151'`      | `color: 'var(--color-text-muted)'`        |
+| `background: '#eff6ff'` (icon chips)  | `background: 'var(--color-primary-bg)'`   |
+| `background: '#f0fdf4'` (icon chips)  | `background: 'var(--color-success-bg)'`   |
+| `background: '#ffedd5'` (icon chips)  | `background: 'var(--color-warning-bg)'`   |
+| `background: '#fef2f2'` (icon chips)  | `background: 'var(--color-danger-bg)'`    |
+| `background: '#ede9fe'` (FAQ chips)   | `background: 'var(--color-purple-bg)'`    |
+| `background: 'white'` (FAQ sub-cards) | `background: 'var(--color-card)'`         |
+| `border: 'rgba(0,0,0,0.06)'`          | `border: 'var(--color-border)'`           |
+| All SVG `stroke` hardcoded colours    | Passed as `color` prop → `var(--color-*)` |
 
 ---
 
@@ -2171,17 +2210,20 @@ Zero errors. Here's exactly how each element from the image is matched:
 **`SummaryCard` shell** — rounded 20px card, tinted background using existing CSS variables (`--color-success-bg` / `--color-danger-bg` / `--color-warning-bg` — already dark-mode aware), header row with **48px filled circle icon** (white SVG inside, solid colour bg + shadow), title + subtitle, and `···` menu button.
 
 **`RateRow`** (Helpful + Unhelpful cards):
+
 - SVG donut ring: track circle in light colour (`#bbf7d0` / `#fecaca`), progress arc in accent colour, `stroke-dasharray` calculated from real `percentage` value
 - `%` value centered inside the ring in bold 22px
 - Right side: label, coloured sub text, **trend badge** (tinted background chip with upward-arrow SVG icon)
 
 **`TrendBox` + `Sparkline`**:
+
 - Rounded inner container with muted `rgba(0,0,0,0.04)` background
 - "Trend (last 7 days)" label
 - SVG sparkline — **ascending curve** for Helpful (7 points going top-right), **flat line** for Unhelpful and Flagged
 - Last dot is 5px radius (larger terminal dot), all others 3.5px — matching the image
 
 **Flagged card** (different internal layout):
+
 - Full-width "Total flagged" row: 40px red circle icon, label + large 32px number + coloured sub
 - 1px divider
 - 2-column grid: Flagged today | Flagged this week — each with 36px orange circle icon
@@ -2228,6 +2270,7 @@ Zero errors. Here's what changed and why it fixes the blank space:
 **Fix — two changes:**
 
 1. `SummaryCard` now accepts a `trend` prop (separate from `children`) and renders:
+
    ```
    [Header]
    [flex:1 div wrapping children]  ← grows to consume any leftover height
@@ -2256,15 +2299,15 @@ Let me read the current file to map every hardcoded colour before changing anyth
 
 Now I have the complete picture. Here's exactly what's hardcoded vs. what the moderation view uses:
 
-| Location | Hardcoded | Should be |
-|---|---|---|
-| RateRow stroke/text | `#16a34a` / `#dc2626` | `var(--color-success)` / `var(--color-danger)` |
-| RateRow ring track | `#bbf7d0` / `#fecaca` | `var(--color-success-bg)` / `var(--color-danger-bg)` |
-| RateRow badge bg | `${hex}18` opacity trick | `var(--color-success-bg)` / `var(--color-danger-bg)` |
-| TrendBox color | hex literals | CSS vars |
-| Flagged alert circle bg/color | `#fee2e2` / `#dc2626` | `var(--color-danger-bg)` / `var(--color-danger)` |
-| Flagged sub text | `#dc2626` | `var(--color-danger)` |
-| FlaggedMini iconBg/subColor | `#fef3c7` / `#d97706` | `var(--color-warning-bg)` / `var(--color-warning)` |
+| Location                      | Hardcoded                | Should be                                            |
+| ----------------------------- | ------------------------ | ---------------------------------------------------- |
+| RateRow stroke/text           | `#16a34a` / `#dc2626`    | `var(--color-success)` / `var(--color-danger)`       |
+| RateRow ring track            | `#bbf7d0` / `#fecaca`    | `var(--color-success-bg)` / `var(--color-danger-bg)` |
+| RateRow badge bg              | `${hex}18` opacity trick | `var(--color-success-bg)` / `var(--color-danger-bg)` |
+| TrendBox color                | hex literals             | CSS vars                                             |
+| Flagged alert circle bg/color | `#fee2e2` / `#dc2626`    | `var(--color-danger-bg)` / `var(--color-danger)`     |
+| Flagged sub text              | `#dc2626`                | `var(--color-danger)`                                |
+| FlaggedMini iconBg/subColor   | `#fef3c7` / `#d97706`    | `var(--color-warning-bg)` / `var(--color-warning)`   |
 
 `accentColor` in `SummaryCard` is **only** used for `box-shadow` glow (decorative, can't avoid hex+opacity). Everything semantic gets CSS vars.
 
@@ -2280,20 +2323,20 @@ Now update the `RateRow` component signature and internals:
 
 Zero errors. Here's every change made and the reasoning:
 
-| Element | Before | After |
-|---|---|---|
-| RateRow donut arc stroke | `#16a34a` / `#dc2626` | `var(--color-success)` / `var(--color-danger)` |
-| RateRow ring track stroke | `#bbf7d0` / `#fecaca` | `var(--color-success-bg)` / `var(--color-danger-bg)` |
-| RateRow sub text color | hex literals | `var(--color-success)` / `var(--color-danger)` |
-| RateRow badge background | `${hex}18` opacity trick | `var(--color-success-bg)` / `var(--color-danger-bg)` |
-| RateRow badge text + SVG | hex literals | `var(--color-success)` / `var(--color-danger)` |
-| TrendBox sparkline color | `#16a34a` / `#dc2626` / `#d97706` | `var(--color-success)` / `var(--color-danger)` / `var(--color-warning)` |
-| Flagged alert circle bg | `#fee2e2` | `var(--color-danger-bg)` |
-| Flagged alert circle icon | `#dc2626` | `var(--color-danger)` |
-| Flagged "Open or under review" sub | `#dc2626` | `var(--color-danger)` |
-| FlaggedMini icon color | `#d97706` | `var(--color-warning)` |
-| FlaggedMini icon bg | `#fef3c7` | `var(--color-warning-bg)` |
-| FlaggedMini sub text | `#d97706` | `var(--color-warning)` |
+| Element                            | Before                            | After                                                                   |
+| ---------------------------------- | --------------------------------- | ----------------------------------------------------------------------- |
+| RateRow donut arc stroke           | `#16a34a` / `#dc2626`             | `var(--color-success)` / `var(--color-danger)`                          |
+| RateRow ring track stroke          | `#bbf7d0` / `#fecaca`             | `var(--color-success-bg)` / `var(--color-danger-bg)`                    |
+| RateRow sub text color             | hex literals                      | `var(--color-success)` / `var(--color-danger)`                          |
+| RateRow badge background           | `${hex}18` opacity trick          | `var(--color-success-bg)` / `var(--color-danger-bg)`                    |
+| RateRow badge text + SVG           | hex literals                      | `var(--color-success)` / `var(--color-danger)`                          |
+| TrendBox sparkline color           | `#16a34a` / `#dc2626` / `#d97706` | `var(--color-success)` / `var(--color-danger)` / `var(--color-warning)` |
+| Flagged alert circle bg            | `#fee2e2`                         | `var(--color-danger-bg)`                                                |
+| Flagged alert circle icon          | `#dc2626`                         | `var(--color-danger)`                                                   |
+| Flagged "Open or under review" sub | `#dc2626`                         | `var(--color-danger)`                                                   |
+| FlaggedMini icon color             | `#d97706`                         | `var(--color-warning)`                                                  |
+| FlaggedMini icon bg                | `#fef3c7`                         | `var(--color-warning-bg)`                                               |
+| FlaggedMini sub text               | `#d97706`                         | `var(--color-warning)`                                                  |
 
 The only hardcoded hex values remaining are in `SummaryCard`'s `box-shadow` glows (`${accentColor}18` and `${accentColor}40`) — these are decorative shadows and **cannot** use CSS variables in template-literal opacity notation. Everything semantic now uses the same CSS design tokens as the Moderation Queue view.
 
@@ -2331,20 +2374,20 @@ Zero errors. Here's a precise diff of every visual change made and why it aligns
 
 ### Design token alignment
 
-| Element | Before (Image 2) | After (matches Image 1) |
-|---|---|---|
-| Card border-radius | `20px` | `22px` — matches all Moderation Queue cards |
-| Card box-shadow | `0 2px 12px ${hex}18` coloured glow | `0 2px 16px rgba(0,0,0,0.06)` — same subtle neutral shadow |
-| Header icon size | `48px` solid circle, white stroke | `36px` rounded square (`borderRadius: 10`), tinted bg, **coloured stroke** |
-| Header icon bg | Solid accent hex (`#16a34a`) | `var(--color-success-bg)` with `1px solid ${color}30` border |
-| Header icon SVG | White stroke (on dark bg) | Coloured stroke using CSS var — identical to Moderation Queue pattern |
-| RateRow ring track | `#bbf7d0` / `#fecaca` | `var(--color-success-bg)` / `var(--color-danger-bg)` |
-| RateRow ring progress | `#16a34a` / `#dc2626` | `var(--color-success)` / `var(--color-danger)` |
-| RateRow sub text | Hardcoded hex | `var(--color-success)` / `var(--color-danger)` |
-| Trend badge bg | `${hex}18` opacity trick | `var(--color-card)` + `1px solid var(--color-border)` — pill style matching the design system |
-| TrendBox bg | `rgba(0,0,0,0.04)` | `var(--color-card)` + `1px solid var(--color-border)` — same as FAQ sub-cards in Moderation Queue |
-| FlaggedMini icon container | `40px circle` | `34px rounded square` (`borderRadius: 9`) — same shape as metric row icons in Moderation Queue |
-| All semantic colors | Hardcoded hex | `var(--color-success)`, `var(--color-danger)`, `var(--color-warning)` |
+| Element                    | Before (Image 2)                    | After (matches Image 1)                                                                           |
+| -------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Card border-radius         | `20px`                              | `22px` — matches all Moderation Queue cards                                                       |
+| Card box-shadow            | `0 2px 12px ${hex}18` coloured glow | `0 2px 16px rgba(0,0,0,0.06)` — same subtle neutral shadow                                        |
+| Header icon size           | `48px` solid circle, white stroke   | `36px` rounded square (`borderRadius: 10`), tinted bg, **coloured stroke**                        |
+| Header icon bg             | Solid accent hex (`#16a34a`)        | `var(--color-success-bg)` with `1px solid ${color}30` border                                      |
+| Header icon SVG            | White stroke (on dark bg)           | Coloured stroke using CSS var — identical to Moderation Queue pattern                             |
+| RateRow ring track         | `#bbf7d0` / `#fecaca`               | `var(--color-success-bg)` / `var(--color-danger-bg)`                                              |
+| RateRow ring progress      | `#16a34a` / `#dc2626`               | `var(--color-success)` / `var(--color-danger)`                                                    |
+| RateRow sub text           | Hardcoded hex                       | `var(--color-success)` / `var(--color-danger)`                                                    |
+| Trend badge bg             | `${hex}18` opacity trick            | `var(--color-card)` + `1px solid var(--color-border)` — pill style matching the design system     |
+| TrendBox bg                | `rgba(0,0,0,0.04)`                  | `var(--color-card)` + `1px solid var(--color-border)` — same as FAQ sub-cards in Moderation Queue |
+| FlaggedMini icon container | `40px circle`                       | `34px rounded square` (`borderRadius: 9`) — same shape as metric row icons in Moderation Queue    |
+| All semantic colors        | Hardcoded hex                       | `var(--color-success)`, `var(--color-danger)`, `var(--color-warning)`                             |
 
 ---
 
@@ -2389,13 +2432,16 @@ Now remove the unused imports and the `KPICard` component since nothing referenc
 Zero errors. Here's what was removed:
 
 **Removed from the JSX:**
+
 - The 4-card "Action Required" grid — Unresolved Questions, Pending Moderation, FAQs Needing Review, Avg Resolution Time
 - The 3-card "Platform Health" grid — Published FAQs, Flagged FAQs, Total FAQs
 
 **Removed from the component code:**
+
 - The `KPICard` component definition (now dead code since no call sites remain)
 
 **Kept intact:**
+
 - `IdleBucketCards`
 - Quick Actions row
 - Community Activity section
@@ -2474,16 +2520,19 @@ Zero errors. Here's a clean summary of the architecture change:
 ### What was done
 
 **New file: [`ModerationQueueCards.tsx`](apps/client/src/features/moderation/ModerationQueueCards.tsx)**
+
 - Extracted the entire Moderation Queue card grid into a single exported component
 - Calls `useModeratorStats()` internally — no props needed
 - Contains all cards: Personal Questions, Community Questions, Community Questions Today, FAQs (with doc illustration), Flagged FAQs (full-width panel)
 - All illustrations (PersonalCircle, CommunityRing, Calendar3D, FaqDocIllustration) and icons live here
 
 **[`ModerationOverviewPage.tsx`](apps/client/src/features/moderation/ModerationOverviewPage.tsx)**
+
 - Reduced from ~380 lines to ~50 lines
 - Now just renders the welcome banner + heading + `<ModerationQueueCards />`
 
 **[`AdminOverviewPage.tsx`](apps/client/src/features/admin/AdminOverviewPage.tsx)**
+
 - Old StatCard-based Moderation Queue section (5 plain flat cards) **removed**
 - Replaced with `<ModerationQueueCards />` — identical output to Moderator Dashboard
 - Removed: `useModeratorStats` import, `StatRow` interface, `StatCard` component, 9 unused lucide imports
@@ -2524,21 +2573,21 @@ Zero errors. Here's exactly what changed to match the image:
 
 **`QuickNavCard` — complete redesign:**
 
-| Before | After (matches image) |
-|---|---|
-| Small compact strip, icon inline | Spacious card with `padding: 16px 18px` |
-| Single icon, no bg | **46px rounded-square icon container** (`borderRadius: 12`) with tinted bg |
-| Single label only | **Bold label + subtitle** below |
-| All icons primary blue | Per-card colour: blue / purple / green / orange |
+| Before                           | After (matches image)                                                      |
+| -------------------------------- | -------------------------------------------------------------------------- |
+| Small compact strip, icon inline | Spacious card with `padding: 16px 18px`                                    |
+| Single icon, no bg               | **46px rounded-square icon container** (`borderRadius: 12`) with tinted bg |
+| Single label only                | **Bold label + subtitle** below                                            |
+| All icons primary blue           | Per-card colour: blue / purple / green / orange                            |
 
 **Per-card colours (from the image):**
 
-| Card | Icon | Bg |
-|---|---|---|
-| User Management | `#0891b2` (cyan-blue) | `var(--color-primary-bg)` |
-| FAQ Quality | `var(--color-purple)` | `var(--color-purple-bg)` |
+| Card            | Icon                   | Bg                        |
+| --------------- | ---------------------- | ------------------------- |
+| User Management | `#0891b2` (cyan-blue)  | `var(--color-primary-bg)` |
+| FAQ Quality     | `var(--color-purple)`  | `var(--color-purple-bg)`  |
 | Moderation Load | `var(--color-success)` | `var(--color-success-bg)` |
-| Audit Logs | `var(--color-warning)` | `var(--color-warning-bg)` |
+| Audit Logs      | `var(--color-warning)` | `var(--color-warning-bg)` |
 
 ---
 
@@ -2564,12 +2613,12 @@ Now update the `QuickNavCard` component to accept and apply `cardBg`, and give t
 
 Done. Each card now has its own tinted background:
 
-| Card | Card background | Icon colour |
-|---|---|---|
-| User Management | `var(--color-primary-bg)` — light blue | `#0891b2` cyan-blue |
-| FAQ Quality | `var(--color-purple-bg)` — light purple | `var(--color-purple)` |
+| Card            | Card background                         | Icon colour            |
+| --------------- | --------------------------------------- | ---------------------- |
+| User Management | `var(--color-primary-bg)` — light blue  | `#0891b2` cyan-blue    |
+| FAQ Quality     | `var(--color-purple-bg)` — light purple | `var(--color-purple)`  |
 | Moderation Load | `var(--color-success-bg)` — light green | `var(--color-success)` |
-| Audit Logs | `var(--color-warning-bg)` — light amber | `var(--color-warning)` |
+| Audit Logs      | `var(--color-warning-bg)` — light amber | `var(--color-warning)` |
 
 The icon container uses `var(--color-card)` (white in light mode, dark in dark mode) with a subtle border and shadow so it visually lifts off the coloured card background — the same technique used in the Moderation Queue cards. All colours are CSS variables so dark mode adapts automatically.
 
@@ -2623,9 +2672,10 @@ Change the order to the below :
 ## 👤 User
 
 Change the order to the below :
+
 1. Moderation Queue
 2. Quick Actions
-3. FAQ Quality Alerts 
+3. FAQ Quality Alerts
 4. Idle Bucket Cards
 
 ---
@@ -2661,15 +2711,15 @@ Pushed successfully. Here's the summary:
 
 **7 files changed** — 1,087 insertions, 454 deletions:
 
-| File | Change |
-|---|---|
-| `ModerationQueueCards.tsx` | New — shared card grid used by both dashboards |
-| `ModerationOverviewPage.tsx` | Slimmed to ~50 lines, imports shared component |
-| `AdminOverviewPage.tsx` | New Quick Actions design, reordered sections, uses shared Moderation Queue |
-| `FaqManagementPage.tsx` | Premium card redesign with donut rings, sparklines, CSS vars |
-| `navigation.ts` | Removed Moderation Queue sidebar entry for admin |
-| `globals.css` | Added purple token + mod-card tinted background classes |
-| `BACKEND_API_CONTRACTS.md` | New — LLM integration handoff documentation |
+| File                         | Change                                                                     |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| `ModerationQueueCards.tsx`   | New — shared card grid used by both dashboards                             |
+| `ModerationOverviewPage.tsx` | Slimmed to ~50 lines, imports shared component                             |
+| `AdminOverviewPage.tsx`      | New Quick Actions design, reordered sections, uses shared Moderation Queue |
+| `FaqManagementPage.tsx`      | Premium card redesign with donut rings, sparklines, CSS vars               |
+| `navigation.ts`              | Removed Moderation Queue sidebar entry for admin                           |
+| `globals.css`                | Added purple token + mod-card tinted background classes                    |
+| `BACKEND_API_CONTRACTS.md`   | New — LLM integration handoff documentation                                |
 
 ---
 
@@ -2694,6 +2744,7 @@ Done. Here's what happened:
 - The worktree is cleaned up
 
 **What's inside `frontend/` on `main`:**
+
 ```
 frontend/
 ├── index.html
@@ -2753,6 +2804,7 @@ Zero errors. Both sections removed cleanly:
 Along with all their now-dead code: `AlertTriangle` import, `IdleBucketCards` import, `useAdminIntelligence` hook, `QualityAlert` type import, and the `QualityAlertRow` component.
 
 The Admin Overview now shows only:
+
 1. Moderation Queue
 2. Quick Actions
 
@@ -2817,10 +2869,10 @@ Zero errors. Here's the complete picture of what was fixed and why:
 
 ### Root cause analysis
 
-| Problem | Why |
-|---|---|
-| Helpful/Unhelpful rate % cards in FAQ Management didn't update after a vote | `useFaqFeedback.onSuccess` never invalidated `['stats', 'moderator']` or `['stats', 'faqs']` — the summary stat queries stayed stale |
-| Admin/mod engagement counts in the table didn't update for votes from other browser sessions | No polling on the admin FAQ list — counts only refreshed on manual page reload |
+| Problem                                                                                      | Why                                                                                                                                  |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Helpful/Unhelpful rate % cards in FAQ Management didn't update after a vote                  | `useFaqFeedback.onSuccess` never invalidated `['stats', 'moderator']` or `['stats', 'faqs']` — the summary stat queries stayed stale |
+| Admin/mod engagement counts in the table didn't update for votes from other browser sessions | No polling on the admin FAQ list — counts only refreshed on manual page reload                                                       |
 
 ---
 
@@ -2839,6 +2891,7 @@ Zero errors. Here's the complete picture of what was fixed and why:
 3. **`useFaqList`** — added optional `refetchInterval` parameter
 
 **`FaqsAdminTab.tsx` — 1 edit:**
+
 - Passes `{ refetchInterval: 30_000 }` to `useFaqList` so the engagement column auto-refreshes every 30 seconds — no manual reload needed when students vote in other tabs/browsers
 
 ---
@@ -2869,12 +2922,12 @@ Zero errors. Here's the complete state machine:
 
 ### Visual states — `FeedbackButton`
 
-| State | When | Appearance |
-|---|---|---|
-| **`default`** | Neither button clicked yet | Outlined border, transparent bg, coloured text |
-| **`loading`** | This button was clicked, API in flight | **Solid filled** with accent colour, white text, spinning `Loader` icon |
-| **`selected`** | This button was clicked, API succeeded | Solid filled, white text, **`✓` checkmark** replaces the thumb icon |
-| **`dimmed`** | The *other* button is in `loading`/`selected` | Muted border, grey text, `opacity: 0.45`, non-clickable |
+| State          | When                                          | Appearance                                                              |
+| -------------- | --------------------------------------------- | ----------------------------------------------------------------------- |
+| **`default`**  | Neither button clicked yet                    | Outlined border, transparent bg, coloured text                          |
+| **`loading`**  | This button was clicked, API in flight        | **Solid filled** with accent colour, white text, spinning `Loader` icon |
+| **`selected`** | This button was clicked, API succeeded        | Solid filled, white text, **`✓` checkmark** replaces the thumb icon     |
+| **`dimmed`**   | The _other_ button is in `loading`/`selected` | Muted border, grey text, `opacity: 0.45`, non-clickable                 |
 
 All state transitions use `transition: all 0.18s ease` for a smooth fill animation.
 
@@ -2907,54 +2960,54 @@ Here is the complete breakdown:
 
 ### 1. Language & Tooling
 
-| | Remote | Local |
-|---|---|---|
-| Language | JavaScript (`.js`, ES modules) | TypeScript (`.ts`) |
-| Logger | `console.log/warn/error` | `pino` + structured JSON via `config/logger.ts` |
-| Entry point | `server.js` | `index.ts` → `createApp()` |
-| Password lib | `bcrypt` | `bcryptjs` |
+|              | Remote                         | Local                                           |
+| ------------ | ------------------------------ | ----------------------------------------------- |
+| Language     | JavaScript (`.js`, ES modules) | TypeScript (`.ts`)                              |
+| Logger       | `console.log/warn/error`       | `pino` + structured JSON via `config/logger.ts` |
+| Entry point  | `server.js`                    | `index.ts` → `createApp()`                      |
+| Password lib | `bcrypt`                       | `bcryptjs`                                      |
 
 ---
 
 ### 2. Files Only in Remote (Missing Locally)
 
-| Remote File | What It Does |
-|---|---|
-| `models/AnalyticsEvent.js` | Event-sourcing for FAQ views, searches; TTL 730 days |
-| `models/AnalyticsCache.js` | Key/payload computed analytics cache |
-| `models/FeedbackEvent.js` | Per-user feedback stored in separate collection |
-| `models/RefreshToken.js` | DB-backed refresh token store with `revokedAt` |
-| `models/ReviewItem.js` | Moderation workflow item with assignee/notes |
-| `models/SearchLog.js` | Search query logs with `clickedFaqId`; TTL 365 days |
-| `services/analyticsService.js` | Full analytics aggregations |
-| `services/assistantService.js` | AI assistant service |
-| `utils/embeddings.js` | 384-dim local ML model via `@xenova/transformers` |
-| `utils/narrativeGenerator.js` | Generates narrative text from analytics |
-| `routes/adminRoutes.js` | `/api/admin` overview, heatmap, faq-quality endpoints |
-| `constants/analyticsEvents.js` | Event type constants |
-| `jobs/analyticsJobs.js` | Scheduled analytics computation |
-| `jobs/embeddingBackfillJob.js` | Background embedding generation job |
-| `middleware/rbac.js` | `requireOwnerOrRole` (local only has `requireRole`) |
+| Remote File                    | What It Does                                          |
+| ------------------------------ | ----------------------------------------------------- |
+| `models/AnalyticsEvent.js`     | Event-sourcing for FAQ views, searches; TTL 730 days  |
+| `models/AnalyticsCache.js`     | Key/payload computed analytics cache                  |
+| `models/FeedbackEvent.js`      | Per-user feedback stored in separate collection       |
+| `models/RefreshToken.js`       | DB-backed refresh token store with `revokedAt`        |
+| `models/ReviewItem.js`         | Moderation workflow item with assignee/notes          |
+| `models/SearchLog.js`          | Search query logs with `clickedFaqId`; TTL 365 days   |
+| `services/analyticsService.js` | Full analytics aggregations                           |
+| `services/assistantService.js` | AI assistant service                                  |
+| `utils/embeddings.js`          | 384-dim local ML model via `@xenova/transformers`     |
+| `utils/narrativeGenerator.js`  | Generates narrative text from analytics               |
+| `routes/adminRoutes.js`        | `/api/admin` overview, heatmap, faq-quality endpoints |
+| `constants/analyticsEvents.js` | Event type constants                                  |
+| `jobs/analyticsJobs.js`        | Scheduled analytics computation                       |
+| `jobs/embeddingBackfillJob.js` | Background embedding generation job                   |
+| `middleware/rbac.js`           | `requireOwnerOrRole` (local only has `requireRole`)   |
 
 ---
 
 ### 3. Files Only in Local (Not in Remote)
 
-| Local File | What It Does |
-|---|---|
-| `models/Flag.model.ts` | User-submitted flags with unique partial index |
-| `models/SystemSettings.model.ts` | Singleton config: thresholds, caps, idle days |
-| `models/ChatFeedback.model.ts` | Chatbot response feedback tracking |
-| `services/flag.service.ts` | Flag/report logic |
-| `services/settings.service.ts` | System settings CRUD |
-| `services/chatbot.service.ts` | Chatbot feedback read paths |
-| `routes/flag.routes.ts` | `/api/flags` flag inbox |
-| `routes/settings.routes.ts` | `/api/settings` |
-| `routes/chatbot.routes.ts` | `/api/chat/feedback` |
-| `routes/audit.routes.ts` | `/api/audit-logs` |
-| `routes/stats.routes.ts` | `/api/stats/*` full suite |
-| `utils/ttl-cache.ts` | In-process LRU TTL cache |
-| `config/logger.ts` | Pino structured logger |
+| Local File                       | What It Does                                   |
+| -------------------------------- | ---------------------------------------------- |
+| `models/Flag.model.ts`           | User-submitted flags with unique partial index |
+| `models/SystemSettings.model.ts` | Singleton config: thresholds, caps, idle days  |
+| `models/ChatFeedback.model.ts`   | Chatbot response feedback tracking             |
+| `services/flag.service.ts`       | Flag/report logic                              |
+| `services/settings.service.ts`   | System settings CRUD                           |
+| `services/chatbot.service.ts`    | Chatbot feedback read paths                    |
+| `routes/flag.routes.ts`          | `/api/flags` flag inbox                        |
+| `routes/settings.routes.ts`      | `/api/settings`                                |
+| `routes/chatbot.routes.ts`       | `/api/chat/feedback`                           |
+| `routes/audit.routes.ts`         | `/api/audit-logs`                              |
+| `routes/stats.routes.ts`         | `/api/stats/*` full suite                      |
+| `utils/ttl-cache.ts`             | In-process LRU TTL cache                       |
+| `config/logger.ts`               | Pino structured logger                         |
 
 ---
 
@@ -2962,39 +3015,39 @@ Here is the complete breakdown:
 
 **`User` model:**
 
-| Field | Remote | Local |
-|---|---|---|
-| `tokenVersion` | ❌ absent | ✅ `Number, default: 0` — refresh token invalidation |
-| `spurtiPoints` | ❌ absent | ✅ `Number, index: true` — gamification |
-| `recentlyViewedFaqs` | ✅ present | ✅ present |
-| `passwordHash` | `select: false` + `pre('save')` hook | `required: true`, hashing in `auth.service.ts` |
-| `comparePassword()` | ✅ instance method | ❌ — bcrypt.compare called in service |
+| Field                | Remote                               | Local                                                |
+| -------------------- | ------------------------------------ | ---------------------------------------------------- |
+| `tokenVersion`       | ❌ absent                            | ✅ `Number, default: 0` — refresh token invalidation |
+| `spurtiPoints`       | ❌ absent                            | ✅ `Number, index: true` — gamification              |
+| `recentlyViewedFaqs` | ✅ present                           | ✅ present                                           |
+| `passwordHash`       | `select: false` + `pre('save')` hook | `required: true`, hashing in `auth.service.ts`       |
+| `comparePassword()`  | ✅ instance method                   | ❌ — bcrypt.compare called in service                |
 
 **`Faq` model:**
 
-| Field | Remote | Local |
-|---|---|---|
-| `notHelpfulCount` | ✅ (different name) | ❌ — local uses `unhelpfulCount` |
-| `helpfulVotes[]` | ❌ absent | ✅ `[ObjectId], select: false` — deduplication |
-| `unhelpfulVotes[]` | ❌ absent | ✅ `[ObjectId], select: false` |
-| `flagCount` | ❌ absent | ✅ `Number, default: 0` |
-| `qualityScore` | ✅ `Number, default: 0` + `calculateQualityScore()` static | ❌ absent |
-| `reviewState` | ✅ enum field | ❌ absent |
-| `embedding` | ✅ `[Number], validate: 384 dims` | ✅ `[Number]`, no dimension validation |
-| Text index weights | Equal weights | `title:10, summary:5, answer:1` |
+| Field              | Remote                                                     | Local                                          |
+| ------------------ | ---------------------------------------------------------- | ---------------------------------------------- |
+| `notHelpfulCount`  | ✅ (different name)                                        | ❌ — local uses `unhelpfulCount`               |
+| `helpfulVotes[]`   | ❌ absent                                                  | ✅ `[ObjectId], select: false` — deduplication |
+| `unhelpfulVotes[]` | ❌ absent                                                  | ✅ `[ObjectId], select: false`                 |
+| `flagCount`        | ❌ absent                                                  | ✅ `Number, default: 0`                        |
+| `qualityScore`     | ✅ `Number, default: 0` + `calculateQualityScore()` static | ❌ absent                                      |
+| `reviewState`      | ✅ enum field                                              | ❌ absent                                      |
+| `embedding`        | ✅ `[Number], validate: 384 dims`                          | ✅ `[Number]`, no dimension validation         |
+| Text index weights | Equal weights                                              | `title:10, summary:5, answer:1`                |
 
 **`Question` model:**
 
-| Field | Remote | Local |
-|---|---|---|
-| `type` (personal/community) | ❌ absent | ✅ `enum QUESTION_TYPES` |
-| `screenshotUrl` | ❌ absent | ✅ present |
-| `taggedStudents[]` | ❌ absent | ✅ `[ObjectId]` |
-| `moderatorViewedAt` | ❌ absent | ✅ `Date` |
-| `priorityScore` | ✅ present | ❌ absent |
-| `embedding` (384-dim) | ✅ present | ❌ absent |
-| Field name | `categoryId` | `category` (breaking difference) |
-| Model registration | `"FAQ"` | `"Faq"` (breaking — populate refs would fail) |
+| Field                       | Remote       | Local                                         |
+| --------------------------- | ------------ | --------------------------------------------- |
+| `type` (personal/community) | ❌ absent    | ✅ `enum QUESTION_TYPES`                      |
+| `screenshotUrl`             | ❌ absent    | ✅ present                                    |
+| `taggedStudents[]`          | ❌ absent    | ✅ `[ObjectId]`                               |
+| `moderatorViewedAt`         | ❌ absent    | ✅ `Date`                                     |
+| `priorityScore`             | ✅ present   | ❌ absent                                     |
+| `embedding` (384-dim)       | ✅ present   | ❌ absent                                     |
+| Field name                  | `categoryId` | `category` (breaking difference)              |
+| Model registration          | `"FAQ"`      | `"Faq"` (breaking — populate refs would fail) |
 
 ---
 
@@ -3002,46 +3055,47 @@ Here is the complete breakdown:
 
 **Auth:**
 
-| Endpoint | Remote | Local |
-|---|---|---|
-| `POST /logout` | Requires auth + refresh token body | No auth required |
-| `GET /me` | Returns basic `{id, role, email}` | Returns full profile with `spurtiPoints` |
-| Login rate limit | Only global 300/15min | Per-route 10/15min + global 200/60s |
-| Refresh token storage | In-memory `Set` (lost on restart) | `tokenVersion` on User doc (survives restart) |
+| Endpoint              | Remote                             | Local                                         |
+| --------------------- | ---------------------------------- | --------------------------------------------- |
+| `POST /logout`        | Requires auth + refresh token body | No auth required                              |
+| `GET /me`             | Returns basic `{id, role, email}`  | Returns full profile with `spurtiPoints`      |
+| Login rate limit      | Only global 300/15min              | Per-route 10/15min + global 200/60s           |
+| Refresh token storage | In-memory `Set` (lost on restart)  | `tokenVersion` on User doc (survives restart) |
 
 **FAQs:**
 
-| Endpoint | Remote | Local |
-|---|---|---|
-| `GET /faqs/recent` | ❌ absent | ✅ recently-viewed list |
-| `PATCH /:id/archive` | ❌ absent | ✅ dedicated archive action |
-| `POST /:id/feedback` | `value: helpful/not_helpful` → `FeedbackEvent` collection | `rating: helpful/unhelpful` → vote arrays on Faq doc |
-| `POST /check-similar` | ✅ cosine + Jaccard similarity | ❌ deferred to Phase 6 |
-| Mod/admin create FAQ | `admin` only | `admin` + `moderator` |
-| Search algorithm | Hybrid semantic (embeddings) + keyword, 5-factor scoring | MongoDB text search + sort modes only |
-| View debounce | 10-min in-memory Map | None — pure atomic `$inc` |
-| Stats reset on edit | ❌ absent | ✅ resets counts + vote arrays when answer body changes |
+| Endpoint              | Remote                                                    | Local                                                   |
+| --------------------- | --------------------------------------------------------- | ------------------------------------------------------- |
+| `GET /faqs/recent`    | ❌ absent                                                 | ✅ recently-viewed list                                 |
+| `PATCH /:id/archive`  | ❌ absent                                                 | ✅ dedicated archive action                             |
+| `POST /:id/feedback`  | `value: helpful/not_helpful` → `FeedbackEvent` collection | `rating: helpful/unhelpful` → vote arrays on Faq doc    |
+| `POST /check-similar` | ✅ cosine + Jaccard similarity                            | ❌ deferred to Phase 6                                  |
+| Mod/admin create FAQ  | `admin` only                                              | `admin` + `moderator`                                   |
+| Search algorithm      | Hybrid semantic (embeddings) + keyword, 5-factor scoring  | MongoDB text search + sort modes only                   |
+| View debounce         | 10-min in-memory Map                                      | None — pure atomic `$inc`                               |
+| Stats reset on edit   | ❌ absent                                                 | ✅ resets counts + vote arrays when answer body changes |
 
 **Questions/Answers:**
 
-| Endpoint | Remote | Local |
-|---|---|---|
-| Vote endpoint | `POST /answers/:id/feedback` with body | `POST /qna/answers/:id/vote/:direction` URL param |
-| Tag-me | ❌ absent | ✅ `POST /qna/questions/:id/tag-me` |
-| Personal questions | ❌ no concept | ✅ `type: personal` — moderators only |
+| Endpoint           | Remote                                 | Local                                             |
+| ------------------ | -------------------------------------- | ------------------------------------------------- |
+| Vote endpoint      | `POST /answers/:id/feedback` with body | `POST /qna/answers/:id/vote/:direction` URL param |
+| Tag-me             | ❌ absent                              | ✅ `POST /qna/questions/:id/tag-me`               |
+| Personal questions | ❌ no concept                          | ✅ `type: personal` — moderators only             |
 
 **Moderation:**
 
-| Endpoint | Remote | Local |
-|---|---|---|
-| `PATCH /answers/:id/request-changes` | ✅ present | ❌ absent |
-| `PATCH /questions/:id/resolve` | ✅ explicit | ❌ auto-resolved on first approval |
-| `PATCH /questions/:id/duplicate` | ✅ present | ❌ absent |
-| Edit-and-approve | ❌ absent | ✅ `editedBody` in approve payload |
-| Spurti Points award | ❌ absent | ✅ awarded on approval |
-| Personal question response | ❌ absent | ✅ `respondToPersonalQuestion` |
+| Endpoint                             | Remote      | Local                              |
+| ------------------------------------ | ----------- | ---------------------------------- |
+| `PATCH /answers/:id/request-changes` | ✅ present  | ❌ absent                          |
+| `PATCH /questions/:id/resolve`       | ✅ explicit | ❌ auto-resolved on first approval |
+| `PATCH /questions/:id/duplicate`     | ✅ present  | ❌ absent                          |
+| Edit-and-approve                     | ❌ absent   | ✅ `editedBody` in approve payload |
+| Spurti Points award                  | ❌ absent   | ✅ awarded on approval             |
+| Personal question response           | ❌ absent   | ✅ `respondToPersonalQuestion`     |
 
 **Admin Analytics (Remote only — nothing equivalent locally):**
+
 - `GET /api/admin/overview`
 - `GET /api/admin/issue-heatmap?days=`
 - `GET /api/admin/unanswered-searches?limit=`
@@ -3052,44 +3106,44 @@ Here is the complete breakdown:
 
 ### 6. Auth Architecture Difference (Critical)
 
-| | Remote | Local |
-|---|---|---|
-| Per-request DB hit | ✅ `User.findOne({ _id, status: ACTIVE })` on every request | ❌ Stateless JWT verify only — no DB hit |
-| Token invalidation | In-memory blacklist (lost on process restart) | `tokenVersion` on User doc — persistent, survives restart |
-| Register response | Returns `{ user }` only, no tokens | Returns `{ accessToken, refreshToken, user }` |
-| Spurti Points on register | ❌ absent | ✅ students get initial balance |
+|                           | Remote                                                      | Local                                                     |
+| ------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
+| Per-request DB hit        | ✅ `User.findOne({ _id, status: ACTIVE })` on every request | ❌ Stateless JWT verify only — no DB hit                  |
+| Token invalidation        | In-memory blacklist (lost on process restart)               | `tokenVersion` on User doc — persistent, survives restart |
+| Register response         | Returns `{ user }` only, no tokens                          | Returns `{ accessToken, refreshToken, user }`             |
+| Spurti Points on register | ❌ absent                                                   | ✅ students get initial balance                           |
 
 ---
 
 ### 7. Environment Variables Differences
 
-| Variable | Remote | Local |
-|---|---|---|
-| `PORT` | default `5000` | default `4000` |
-| `JWT_ACCESS_EXPIRY` | ✅ required string (`"15m"`) | ❌ — uses `ACCESS_TOKEN_TTL_SECONDS` from shared package |
-| `JWT_REFRESH_EXPIRY` | ✅ required string (`"7d"`) | ❌ — uses `REFRESH_TOKEN_TTL_SECONDS` from shared package |
-| `CLIENT_URL` | ✅ required | ❌ — local uses `CORS_ORIGINS` comma list |
-| `CORS_ORIGINS` | ❌ absent | ✅ comma-separated, default `http://localhost:5173` |
-| `LOG_LEVEL` | ❌ absent | ✅ pino log level |
-| `LLM_PROVIDER` | ❌ absent | ✅ `mock/gemini/local-llama` |
-| `GEMINI_API_KEY` | ❌ absent | ✅ optional |
-| `EMBEDDING_PROVIDER` | ❌ absent | ✅ `mock/gemini` |
+| Variable             | Remote                       | Local                                                     |
+| -------------------- | ---------------------------- | --------------------------------------------------------- |
+| `PORT`               | default `5000`               | default `4000`                                            |
+| `JWT_ACCESS_EXPIRY`  | ✅ required string (`"15m"`) | ❌ — uses `ACCESS_TOKEN_TTL_SECONDS` from shared package  |
+| `JWT_REFRESH_EXPIRY` | ✅ required string (`"7d"`)  | ❌ — uses `REFRESH_TOKEN_TTL_SECONDS` from shared package |
+| `CLIENT_URL`         | ✅ required                  | ❌ — local uses `CORS_ORIGINS` comma list                 |
+| `CORS_ORIGINS`       | ❌ absent                    | ✅ comma-separated, default `http://localhost:5173`       |
+| `LOG_LEVEL`          | ❌ absent                    | ✅ pino log level                                         |
+| `LLM_PROVIDER`       | ❌ absent                    | ✅ `mock/gemini/local-llama`                              |
+| `GEMINI_API_KEY`     | ❌ absent                    | ✅ optional                                               |
+| `EMBEDDING_PROVIDER` | ❌ absent                    | ✅ `mock/gemini`                                          |
 
 ---
 
 ### 8. Architectural Summary
 
-| Area | Remote has more | Local has more |
-|---|---|---|
-| AI/Search | ✅ 384-dim embeddings, hybrid scoring, quality score, search logs | ❌ stubbed for Phase 6 |
-| Admin analytics | ✅ heatmaps, unanswered searches, moderation load with full history | ❌ partial via stats endpoints |
-| Gamification | ❌ absent | ✅ Spurti Points — initial balance, leaderboard, award on approval |
-| Flag/report system | ❌ absent | ✅ full Flag collection, inbox, resolution workflow |
-| System settings | ❌ absent | ✅ singleton config document with configurable thresholds |
-| Chatbot feedback | ❌ absent | ✅ ChatFeedback collection + moderator inbox |
-| Token security | In-memory blacklist (lost on restart) | DB-backed `tokenVersion` (survives restart) |
-| Personal questions | ❌ absent | ✅ separate type with moderator-direct flow |
-| Auth on requests | DB lookup per request | Stateless JWT only |
+| Area               | Remote has more                                                     | Local has more                                                     |
+| ------------------ | ------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| AI/Search          | ✅ 384-dim embeddings, hybrid scoring, quality score, search logs   | ❌ stubbed for Phase 6                                             |
+| Admin analytics    | ✅ heatmaps, unanswered searches, moderation load with full history | ❌ partial via stats endpoints                                     |
+| Gamification       | ❌ absent                                                           | ✅ Spurti Points — initial balance, leaderboard, award on approval |
+| Flag/report system | ❌ absent                                                           | ✅ full Flag collection, inbox, resolution workflow                |
+| System settings    | ❌ absent                                                           | ✅ singleton config document with configurable thresholds          |
+| Chatbot feedback   | ❌ absent                                                           | ✅ ChatFeedback collection + moderator inbox                       |
+| Token security     | In-memory blacklist (lost on restart)                               | DB-backed `tokenVersion` (survives restart)                        |
+| Personal questions | ❌ absent                                                           | ✅ separate type with moderator-direct flow                        |
+| Auth on requests   | DB lookup per request                                               | Stateless JWT only                                                 |
 
 ---
 
@@ -3194,73 +3248,73 @@ Here is the full, detailed comparison report:
 
 ### 1. Files Only in Remote (Missing Locally)
 
-| File | What It Does |
-|---|---|
-| `constants/analyticsEvents.js` | Event type constants: `FAQ_VIEWED`, `QUESTION_ASKED`, etc. |
-| `constants/auth.js` | Auth constants (token expiry configs) |
-| `constants/errorCodes.js` | Centralized error codes: `UNAUTHORIZED`, `DUPLICATE_RESOURCE` |
-| `constants/eventTypes.js` | Audit event constants: `RECORD_CREATED`, `RECORD_UPDATED` |
-| `constants/httpStatus.js` | HTTP status code constants (200, 400, 401…) |
-| `constants/roles.js` | Role value mappings |
-| `constants/statusEnums.js` | Status enums for FAQs, questions, answers |
-| `constants/statuses.js` | Detailed status/enum definitions |
-| `controllers/adminController.js` | Admin dashboard: overview, heatmap, quality scores, moderation load |
-| `controllers/assistantController.js` | AI assistant/chatbot endpoints |
-| `jobs/analyticsJobs.js` | Background analytics computation jobs |
-| `jobs/embeddingBackfillJob.js` | Async job to generate 384-dim embeddings |
-| `middleware/loginRateLimiter.js` | Dedicated login rate-limiting middleware |
-| `middleware/notFound.js` | Standalone 404 handler |
-| `middleware/rbac.js` | RBAC with `requireRole` AND `requireOwnerOrRole` |
-| `models/AnalyticsCache.js` | Pre-computed analytics cache with TTL expiration |
-| `models/AnalyticsEvent.js` | Event log: FAQ viewed, question asked, search run |
-| `models/FeedbackEvent.js` | Per-user helpful/unhelpful feedback (separate collection) |
-| `models/RefreshToken.js` | DB-backed token tracking with `tokenHash` + `revokedAt` |
-| `models/ReviewItem.js` | Moderation review queue items with assignee + notes |
-| `models/SearchLog.js` | Search queries, result counts, click-throughs (TTL 365 days) |
-| `services/analyticsService.js` | Analytics aggregation + caching |
-| `services/answerService.js` | Answer-specific CRUD and moderation |
-| `services/assistantService.js` | AI assistant logic |
-| `services/categoryService.js` | Category CRUD + slug management |
-| `services/crudService.js` | Generic CRUD factory |
-| `services/questionService.js` | Question lifecycle + priority scoring |
-| `services/tagService.js` | Tag CRUD |
-| `services/userService.js` | User profile and preference management |
-| `utils/embeddings.js` | 384-dim vectors via `@xenova/transformers` (local ML model) |
-| `utils/narrativeGenerator.js` | Natural language generation from analytics |
-| `utils/narrativeGenerator.js` | Natural language generation utility |
-| `utils/token.js` | JWT sign/verify utilities |
-| `seed/faqContent.js` | FAQ seed content data |
+| File                                 | What It Does                                                        |
+| ------------------------------------ | ------------------------------------------------------------------- |
+| `constants/analyticsEvents.js`       | Event type constants: `FAQ_VIEWED`, `QUESTION_ASKED`, etc.          |
+| `constants/auth.js`                  | Auth constants (token expiry configs)                               |
+| `constants/errorCodes.js`            | Centralized error codes: `UNAUTHORIZED`, `DUPLICATE_RESOURCE`       |
+| `constants/eventTypes.js`            | Audit event constants: `RECORD_CREATED`, `RECORD_UPDATED`           |
+| `constants/httpStatus.js`            | HTTP status code constants (200, 400, 401…)                         |
+| `constants/roles.js`                 | Role value mappings                                                 |
+| `constants/statusEnums.js`           | Status enums for FAQs, questions, answers                           |
+| `constants/statuses.js`              | Detailed status/enum definitions                                    |
+| `controllers/adminController.js`     | Admin dashboard: overview, heatmap, quality scores, moderation load |
+| `controllers/assistantController.js` | AI assistant/chatbot endpoints                                      |
+| `jobs/analyticsJobs.js`              | Background analytics computation jobs                               |
+| `jobs/embeddingBackfillJob.js`       | Async job to generate 384-dim embeddings                            |
+| `middleware/loginRateLimiter.js`     | Dedicated login rate-limiting middleware                            |
+| `middleware/notFound.js`             | Standalone 404 handler                                              |
+| `middleware/rbac.js`                 | RBAC with `requireRole` AND `requireOwnerOrRole`                    |
+| `models/AnalyticsCache.js`           | Pre-computed analytics cache with TTL expiration                    |
+| `models/AnalyticsEvent.js`           | Event log: FAQ viewed, question asked, search run                   |
+| `models/FeedbackEvent.js`            | Per-user helpful/unhelpful feedback (separate collection)           |
+| `models/RefreshToken.js`             | DB-backed token tracking with `tokenHash` + `revokedAt`             |
+| `models/ReviewItem.js`               | Moderation review queue items with assignee + notes                 |
+| `models/SearchLog.js`                | Search queries, result counts, click-throughs (TTL 365 days)        |
+| `services/analyticsService.js`       | Analytics aggregation + caching                                     |
+| `services/answerService.js`          | Answer-specific CRUD and moderation                                 |
+| `services/assistantService.js`       | AI assistant logic                                                  |
+| `services/categoryService.js`        | Category CRUD + slug management                                     |
+| `services/crudService.js`            | Generic CRUD factory                                                |
+| `services/questionService.js`        | Question lifecycle + priority scoring                               |
+| `services/tagService.js`             | Tag CRUD                                                            |
+| `services/userService.js`            | User profile and preference management                              |
+| `utils/embeddings.js`                | 384-dim vectors via `@xenova/transformers` (local ML model)         |
+| `utils/narrativeGenerator.js`        | Natural language generation from analytics                          |
+| `utils/narrativeGenerator.js`        | Natural language generation utility                                 |
+| `utils/token.js`                     | JWT sign/verify utilities                                           |
+| `seed/faqContent.js`                 | FAQ seed content data                                               |
 
 ---
 
 ### 2. Files Only in Local (Not in Remote)
 
-| File | What It Does |
-|---|---|
-| `config/logger.ts` | Pino structured JSON logger |
-| `controllers/audit.controller.ts` | Audit log query endpoints |
-| `controllers/flag.controller.ts` | FAQ flag/report endpoints |
-| `controllers/settings.controller.ts` | System settings endpoints |
-| `controllers/stats.controller.ts` | All dashboard statistics endpoints |
-| `models/ChatFeedback.model.ts` | Chatbot interaction ratings |
-| `models/Flag.model.ts` | User-submitted flags on any entity |
-| `models/SystemSettings.model.ts` | Singleton config doc (thresholds, caps) |
-| `routes/audit.routes.ts` | `/api/audit-logs` |
-| `routes/chatbot.routes.ts` | `/api/chat/feedback` |
-| `routes/flag.routes.ts` | `/api/flags` |
-| `routes/index.ts` | Single route aggregation / mounting file |
-| `routes/settings.routes.ts` | `/api/settings` |
-| `routes/stats.routes.ts` | Full `/api/stats/*` suite |
-| `services/audit.service.ts` | Audit log queries |
-| `services/chatbot.service.ts` | Chatbot feedback read paths |
-| `services/flag.service.ts` | Flag/report management |
-| `services/settings.service.ts` | System settings CRUD |
-| `services/stats.service.ts` | All statistics computation |
-| `services/user.service.ts` | User profile + Spurti Points |
-| `utils/ttl-cache.ts` | In-process LRU TTL cache |
-| `utils/slugify.ts` | URL slug generation (no npm dep) |
-| `utils/jwt.ts` | Typed JWT sign/verify wrappers |
-| `scripts/seed-*.ts` | 4 seed scripts (dev users, real accounts, FAQs, chatbot feedback) |
+| File                                 | What It Does                                                      |
+| ------------------------------------ | ----------------------------------------------------------------- |
+| `config/logger.ts`                   | Pino structured JSON logger                                       |
+| `controllers/audit.controller.ts`    | Audit log query endpoints                                         |
+| `controllers/flag.controller.ts`     | FAQ flag/report endpoints                                         |
+| `controllers/settings.controller.ts` | System settings endpoints                                         |
+| `controllers/stats.controller.ts`    | All dashboard statistics endpoints                                |
+| `models/ChatFeedback.model.ts`       | Chatbot interaction ratings                                       |
+| `models/Flag.model.ts`               | User-submitted flags on any entity                                |
+| `models/SystemSettings.model.ts`     | Singleton config doc (thresholds, caps)                           |
+| `routes/audit.routes.ts`             | `/api/audit-logs`                                                 |
+| `routes/chatbot.routes.ts`           | `/api/chat/feedback`                                              |
+| `routes/flag.routes.ts`              | `/api/flags`                                                      |
+| `routes/index.ts`                    | Single route aggregation / mounting file                          |
+| `routes/settings.routes.ts`          | `/api/settings`                                                   |
+| `routes/stats.routes.ts`             | Full `/api/stats/*` suite                                         |
+| `services/audit.service.ts`          | Audit log queries                                                 |
+| `services/chatbot.service.ts`        | Chatbot feedback read paths                                       |
+| `services/flag.service.ts`           | Flag/report management                                            |
+| `services/settings.service.ts`       | System settings CRUD                                              |
+| `services/stats.service.ts`          | All statistics computation                                        |
+| `services/user.service.ts`           | User profile + Spurti Points                                      |
+| `utils/ttl-cache.ts`                 | In-process LRU TTL cache                                          |
+| `utils/slugify.ts`                   | URL slug generation (no npm dep)                                  |
+| `utils/jwt.ts`                       | Typed JWT sign/verify wrappers                                    |
+| `scripts/seed-*.ts`                  | 4 seed scripts (dev users, real accounts, FAQs, chatbot feedback) |
 
 ---
 
@@ -3268,56 +3322,58 @@ Here is the full, detailed comparison report:
 
 #### User
 
-| Field | Local | Remote |
-|---|---|---|
-| `tokenVersion` | ✅ `Number, default: 0` — refresh token invalidation | ❌ absent |
-| `spurtiPoints` | ✅ `Number, default: 0, indexed` — gamification | ❌ absent |
-| `passwordHash` | `required: true`; hashing in service | `select: false`; hashing in `pre('save')` hook |
-| Schema methods | None | `.comparePassword()`, `.findActiveByEmail()` static |
+| Field          | Local                                                | Remote                                              |
+| -------------- | ---------------------------------------------------- | --------------------------------------------------- |
+| `tokenVersion` | ✅ `Number, default: 0` — refresh token invalidation | ❌ absent                                           |
+| `spurtiPoints` | ✅ `Number, default: 0, indexed` — gamification      | ❌ absent                                           |
+| `passwordHash` | `required: true`; hashing in service                 | `select: false`; hashing in `pre('save')` hook      |
+| Schema methods | None                                                 | `.comparePassword()`, `.findActiveByEmail()` static |
 
 #### FAQ
 
-| Field | Local | Remote |
-|---|---|---|
-| `unhelpfulCount` | ✅ field name | `notHelpfulCount` — **different name** (breaking) |
-| `helpfulVotes[]` | ✅ `[ObjectId], select: false` — voter deduplication | ❌ absent |
-| `unhelpfulVotes[]` | ✅ `[ObjectId], select: false` | ❌ absent |
-| `flagCount` | ✅ `Number, default: 0` | ❌ absent |
-| `qualityScore` | ❌ absent | ✅ `Number, default: 0` — 5-factor score |
-| `reviewState` | ❌ absent | ✅ `enum FAQ_REVIEW_STATE_VALUES` |
-| `embedding` dimension | No validation | ✅ validator: must be exactly 384 dimensions |
-| `summary` | Optional | **Required**, maxlength 300 |
-| `createdBy` | Optional | **Required** |
-| Virtuals | None | `helpfulnessRatio` computed getter |
-| Static methods | None | `calculateQualityScore()` |
-| Text index weights | `title:10, summary:5, answer:1` | Equal weights |
+| Field                 | Local                                                | Remote                                            |
+| --------------------- | ---------------------------------------------------- | ------------------------------------------------- |
+| `unhelpfulCount`      | ✅ field name                                        | `notHelpfulCount` — **different name** (breaking) |
+| `helpfulVotes[]`      | ✅ `[ObjectId], select: false` — voter deduplication | ❌ absent                                         |
+| `unhelpfulVotes[]`    | ✅ `[ObjectId], select: false`                       | ❌ absent                                         |
+| `flagCount`           | ✅ `Number, default: 0`                              | ❌ absent                                         |
+| `qualityScore`        | ❌ absent                                            | ✅ `Number, default: 0` — 5-factor score          |
+| `reviewState`         | ❌ absent                                            | ✅ `enum FAQ_REVIEW_STATE_VALUES`                 |
+| `embedding` dimension | No validation                                        | ✅ validator: must be exactly 384 dimensions      |
+| `summary`             | Optional                                             | **Required**, maxlength 300                       |
+| `createdBy`           | Optional                                             | **Required**                                      |
+| Virtuals              | None                                                 | `helpfulnessRatio` computed getter                |
+| Static methods        | None                                                 | `calculateQualityScore()`                         |
+| Text index weights    | `title:10, summary:5, answer:1`                      | Equal weights                                     |
 
 #### Question
 
-| Field | Local | Remote |
-|---|---|---|
-| `type` (personal/community) | ✅ `enum QUESTION_TYPES` | ❌ absent |
-| `screenshotUrl` | ✅ String | ❌ absent |
-| `taggedStudents[]` | ✅ `[ObjectId]` | ❌ absent |
-| `moderatorViewedAt` | ✅ Date | ❌ absent |
-| `priorityScore` | ❌ absent | ✅ `Number, default: 0` |
-| `resolvedAt` | ❌ absent | ✅ Date |
-| `embedding` | ❌ absent | ✅ `[Number], 384 dims, select: false` |
-| Field name `category` | `category` | `categoryId` — **breaking difference** |
+| Field                       | Local                    | Remote                                 |
+| --------------------------- | ------------------------ | -------------------------------------- |
+| `type` (personal/community) | ✅ `enum QUESTION_TYPES` | ❌ absent                              |
+| `screenshotUrl`             | ✅ String                | ❌ absent                              |
+| `taggedStudents[]`          | ✅ `[ObjectId]`          | ❌ absent                              |
+| `moderatorViewedAt`         | ✅ Date                  | ❌ absent                              |
+| `priorityScore`             | ❌ absent                | ✅ `Number, default: 0`                |
+| `resolvedAt`                | ❌ absent                | ✅ Date                                |
+| `embedding`                 | ❌ absent                | ✅ `[Number], 384 dims, select: false` |
+| Field name `category`       | `category`               | `categoryId` — **breaking difference** |
 
 #### Answer
 
-| Field | Local | Remote |
-|---|---|---|
-| `upvotes[]` / `downvotes[]` | ✅ `[ObjectId], select: false` | ❌ absent |
-| `upvoteCount` / `downvoteCount` | ✅ `Number, default: 0` | ❌ absent |
-| `helpfulCount` / `notHelpfulCount` | ❌ absent | ✅ tracked via FeedbackEvent collection |
-| `embedding` | ✅ `[Number], select: false` reserved | ❌ absent |
+| Field                              | Local                                 | Remote                                  |
+| ---------------------------------- | ------------------------------------- | --------------------------------------- |
+| `upvotes[]` / `downvotes[]`        | ✅ `[ObjectId], select: false`        | ❌ absent                               |
+| `upvoteCount` / `downvoteCount`    | ✅ `Number, default: 0`               | ❌ absent                               |
+| `helpfulCount` / `notHelpfulCount` | ❌ absent                             | ✅ tracked via FeedbackEvent collection |
+| `embedding`                        | ✅ `[Number], select: false` reserved | ❌ absent                               |
 
 #### Models Only in Remote
+
 `AnalyticsEvent`, `AnalyticsCache`, `FeedbackEvent`, `RefreshToken`, `ReviewItem`, `SearchLog`
 
 #### Models Only in Local
+
 `ChatFeedback`, `Flag`, `SystemSettings`
 
 ---
@@ -3326,114 +3382,114 @@ Here is the full, detailed comparison report:
 
 #### Auth (`/api/auth`)
 
-| Endpoint | Local | Remote |
-|---|---|---|
-| `POST /login` | loginLimiter **10/15min** + global 200/60s | Global 300/15min only |
-| `POST /logout` | No auth required | Requires auth + refresh token body |
-| `GET /me` | Returns full profile with `spurtiPoints` | Returns basic `{id, role, email}` |
-| Token revocation | `tokenVersion` on User (DB, survives restart) | In-memory `Set` (lost on restart) |
-| Registration response | Returns `{accessToken, refreshToken, user}` | Returns `{user}` only |
+| Endpoint              | Local                                         | Remote                             |
+| --------------------- | --------------------------------------------- | ---------------------------------- |
+| `POST /login`         | loginLimiter **10/15min** + global 200/60s    | Global 300/15min only              |
+| `POST /logout`        | No auth required                              | Requires auth + refresh token body |
+| `GET /me`             | Returns full profile with `spurtiPoints`      | Returns basic `{id, role, email}`  |
+| Token revocation      | `tokenVersion` on User (DB, survives restart) | In-memory `Set` (lost on restart)  |
+| Registration response | Returns `{accessToken, refreshToken, user}`   | Returns `{user}` only              |
 
 #### FAQs (`/api/faqs`)
 
-| Endpoint | Local | Remote |
-|---|---|---|
-| `GET /faqs/recent` | ✅ Recently-viewed list | ❌ absent |
-| `PATCH /:id/archive` | ✅ Dedicated archive action | ❌ absent |
-| `PATCH /:id/status` | ❌ absent | ✅ Explicit status transition endpoint |
-| `POST /check-similar` | ❌ (Phase 6) | ✅ Cosine + Jaccard similarity check |
-| `POST /` creator roles | `admin` + `moderator` | `admin` only |
-| Query params | `q, category, tag, sort, page, pageSize, filter` | `query, categoryId, tagIds, status, page, limit` |
+| Endpoint               | Local                                            | Remote                                           |
+| ---------------------- | ------------------------------------------------ | ------------------------------------------------ |
+| `GET /faqs/recent`     | ✅ Recently-viewed list                          | ❌ absent                                        |
+| `PATCH /:id/archive`   | ✅ Dedicated archive action                      | ❌ absent                                        |
+| `PATCH /:id/status`    | ❌ absent                                        | ✅ Explicit status transition endpoint           |
+| `POST /check-similar`  | ❌ (Phase 6)                                     | ✅ Cosine + Jaccard similarity check             |
+| `POST /` creator roles | `admin` + `moderator`                            | `admin` only                                     |
+| Query params           | `q, category, tag, sort, page, pageSize, filter` | `query, categoryId, tagIds, status, page, limit` |
 
 #### Q&A (`/api/qna` vs `/api/questions`)
 
-| Endpoint | Local | Remote |
-|---|---|---|
-| `POST /questions/:id/tag-me` | ✅ Student self-tagging | ❌ absent |
-| `POST /answers/:id/vote/:direction` | ✅ URL-param voting | ❌ absent |
-| `POST /answers/:id/feedback` | ❌ absent | ✅ helpfulCount feedback |
-| Personal question type | ✅ `type: personal` entire flow | ❌ no concept |
+| Endpoint                            | Local                           | Remote                   |
+| ----------------------------------- | ------------------------------- | ------------------------ |
+| `POST /questions/:id/tag-me`        | ✅ Student self-tagging         | ❌ absent                |
+| `POST /answers/:id/vote/:direction` | ✅ URL-param voting             | ❌ absent                |
+| `POST /answers/:id/feedback`        | ❌ absent                       | ✅ helpfulCount feedback |
+| Personal question type              | ✅ `type: personal` entire flow | ❌ no concept            |
 
 #### Moderation
 
-| Endpoint | Local | Remote |
-|---|---|---|
-| `PATCH /answers/:id/request-changes` | ❌ absent | ✅ present |
-| `PATCH /questions/:id/resolve` | ❌ auto on first approval | ✅ explicit endpoint |
-| `PATCH /questions/:id/duplicate` | ❌ absent | ✅ present |
-| Edit-and-approve | ✅ `editedBody` in approve payload | ❌ absent |
-| Spurti Points award | ✅ on approval | ❌ absent |
-| Bulk actions | `bulkApprove` + `bulkReject` (separate) | `bulkModerationAction` (single, `action` param) |
+| Endpoint                             | Local                                   | Remote                                          |
+| ------------------------------------ | --------------------------------------- | ----------------------------------------------- |
+| `PATCH /answers/:id/request-changes` | ❌ absent                               | ✅ present                                      |
+| `PATCH /questions/:id/resolve`       | ❌ auto on first approval               | ✅ explicit endpoint                            |
+| `PATCH /questions/:id/duplicate`     | ❌ absent                               | ✅ present                                      |
+| Edit-and-approve                     | ✅ `editedBody` in approve payload      | ❌ absent                                       |
+| Spurti Points award                  | ✅ on approval                          | ❌ absent                                       |
+| Bulk actions                         | `bulkApprove` + `bulkReject` (separate) | `bulkModerationAction` (single, `action` param) |
 
 #### Admin Analytics
 
-| Endpoint | Local | Remote |
-|---|---|---|
-| `GET /api/admin/overview` | ❌ absent | ✅ present |
-| `GET /api/admin/issue-heatmap?days=` | ❌ absent | ✅ present |
-| `GET /api/admin/unanswered-searches` | ❌ absent | ✅ present |
-| `GET /api/stats/leaderboard` | ✅ Spurti Points leaderboard | ❌ absent |
-| `GET /api/stats/student` | ✅ Student home stats | ❌ absent |
-| `GET /api/stats/community-idle` | ✅ Idle bucket counts | ❌ absent |
-| `GET /api/stats/moderator-personal` | ✅ Per-moderator stats | ❌ absent |
+| Endpoint                             | Local                        | Remote     |
+| ------------------------------------ | ---------------------------- | ---------- |
+| `GET /api/admin/overview`            | ❌ absent                    | ✅ present |
+| `GET /api/admin/issue-heatmap?days=` | ❌ absent                    | ✅ present |
+| `GET /api/admin/unanswered-searches` | ❌ absent                    | ✅ present |
+| `GET /api/stats/leaderboard`         | ✅ Spurti Points leaderboard | ❌ absent  |
+| `GET /api/stats/student`             | ✅ Student home stats        | ❌ absent  |
+| `GET /api/stats/community-idle`      | ✅ Idle bucket counts        | ❌ absent  |
+| `GET /api/stats/moderator-personal`  | ✅ Per-moderator stats       | ❌ absent  |
 
 ---
 
 ### 5. Service / Business Logic Differences
 
-| Service | Local | Remote |
-|---|---|---|
-| **FAQ search** | MongoDB text search + sort modes | Hybrid: 384-dim semantic (Xenova) + Jaccard keyword + 5-factor quality score |
-| **Embedding generation** | Reserved, not implemented (Phase 6) | Real-time via local ML model + scheduled backfill job |
-| **Feedback tracking** | Vote arrays (`helpfulVotes[]`, `unhelpfulVotes[]`) directly on FAQ doc | Separate `FeedbackEvent` collection (one per user-entity pair) |
-| **Stats reset on edit** | ✅ Resets counts + vote arrays when answer body changes | ❌ absent |
-| **Slug generation** | Timestamp suffix — no DB retries | Retry loop with incrementing counter until unique |
-| **Spurti Points** | ✅ Awarded on answer approval; leaderboard | ❌ not implemented |
-| **Token revocation** | `tokenVersion` bump on password change | In-memory Set blacklist |
-| **Quality scoring** | ❌ not implemented | ✅ 35% helpfulness + 25% search clicks + 20% freshness + 10% repeat-Q reduction + 10% mod review |
+| Service                  | Local                                                                  | Remote                                                                                           |
+| ------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **FAQ search**           | MongoDB text search + sort modes                                       | Hybrid: 384-dim semantic (Xenova) + Jaccard keyword + 5-factor quality score                     |
+| **Embedding generation** | Reserved, not implemented (Phase 6)                                    | Real-time via local ML model + scheduled backfill job                                            |
+| **Feedback tracking**    | Vote arrays (`helpfulVotes[]`, `unhelpfulVotes[]`) directly on FAQ doc | Separate `FeedbackEvent` collection (one per user-entity pair)                                   |
+| **Stats reset on edit**  | ✅ Resets counts + vote arrays when answer body changes                | ❌ absent                                                                                        |
+| **Slug generation**      | Timestamp suffix — no DB retries                                       | Retry loop with incrementing counter until unique                                                |
+| **Spurti Points**        | ✅ Awarded on answer approval; leaderboard                             | ❌ not implemented                                                                               |
+| **Token revocation**     | `tokenVersion` bump on password change                                 | In-memory Set blacklist                                                                          |
+| **Quality scoring**      | ❌ not implemented                                                     | ✅ 35% helpfulness + 25% search clicks + 20% freshness + 10% repeat-Q reduction + 10% mod review |
 
 ---
 
 ### 6. Middleware Differences
 
-| Aspect | Local | Remote |
-|---|---|---|
-| Auth per-request DB hit | ❌ stateless JWT verify only | ✅ `User.findOne({_id, status: ACTIVE})` every request |
-| RBAC | `requireRole(...roles)` in `auth.ts` | Separate `rbac.js` with `requireRole` + `requireOwnerOrRole` |
-| Error handler — JWT errors | Not handled explicitly | ✅ Catches `TokenExpiredError`, `JsonWebTokenError` |
-| Rate limit | Global 200/60s + login 10/15min | Global 300/15min only |
-| Cookie parser | ✅ used | ❌ not used |
-| Logging | Pino structured JSON | `console.log/warn/error` |
+| Aspect                     | Local                                | Remote                                                       |
+| -------------------------- | ------------------------------------ | ------------------------------------------------------------ |
+| Auth per-request DB hit    | ❌ stateless JWT verify only         | ✅ `User.findOne({_id, status: ACTIVE})` every request       |
+| RBAC                       | `requireRole(...roles)` in `auth.ts` | Separate `rbac.js` with `requireRole` + `requireOwnerOrRole` |
+| Error handler — JWT errors | Not handled explicitly               | ✅ Catches `TokenExpiredError`, `JsonWebTokenError`          |
+| Rate limit                 | Global 200/60s + login 10/15min      | Global 300/15min only                                        |
+| Cookie parser              | ✅ used                              | ❌ not used                                                  |
+| Logging                    | Pino structured JSON                 | `console.log/warn/error`                                     |
 
 ---
 
 ### 7. Environment Variable Differences
 
-| Variable | Local | Remote |
-|---|---|---|
-| `PORT` | default **4000** | default **5000** |
-| `JWT_ACCESS_EXPIRY` | ❌ hardcoded in shared constants | ✅ required env string (`"15m"`) |
-| `JWT_REFRESH_EXPIRY` | ❌ hardcoded | ✅ required env string (`"7d"`) |
-| `CLIENT_URL` | ❌ absent | ✅ required URL |
-| `CORS_ORIGINS` | ✅ comma-separated list | ❌ absent (single `CLIENT_URL`) |
-| `LOG_LEVEL` | ✅ pino level enum | ❌ absent |
-| `LLM_PROVIDER` | ✅ `mock/gemini/local-llama` | ❌ absent |
-| `GEMINI_API_KEY` | ✅ optional | ❌ absent |
-| `EMBEDDING_PROVIDER` | ✅ `mock/gemini` | ❌ absent (hardcoded Xenova) |
+| Variable             | Local                            | Remote                           |
+| -------------------- | -------------------------------- | -------------------------------- |
+| `PORT`               | default **4000**                 | default **5000**                 |
+| `JWT_ACCESS_EXPIRY`  | ❌ hardcoded in shared constants | ✅ required env string (`"15m"`) |
+| `JWT_REFRESH_EXPIRY` | ❌ hardcoded                     | ✅ required env string (`"7d"`)  |
+| `CLIENT_URL`         | ❌ absent                        | ✅ required URL                  |
+| `CORS_ORIGINS`       | ✅ comma-separated list          | ❌ absent (single `CLIENT_URL`)  |
+| `LOG_LEVEL`          | ✅ pino level enum               | ❌ absent                        |
+| `LLM_PROVIDER`       | ✅ `mock/gemini/local-llama`     | ❌ absent                        |
+| `GEMINI_API_KEY`     | ✅ optional                      | ❌ absent                        |
+| `EMBEDDING_PROVIDER` | ✅ `mock/gemini`                 | ❌ absent (hardcoded Xenova)     |
 
 ---
 
 ### 8. Package / Dependency Differences
 
-| Package | Local | Remote |
-|---|---|---|
-| Language | TypeScript + `tsx` + `vitest` | JavaScript + `jest` + `nodemon` |
-| Password hashing | `bcryptjs` | `bcrypt` |
-| Logger | `pino` + `pino-pretty` | ❌ console only |
-| Embeddings | ❌ (deferred) | `@xenova/transformers ^2.17.2` |
-| Slug generation | Custom `utils/slugify.ts` | `slugify ^1.6.6` npm package |
-| Shared types | `@samagama/shared` (monorepo) | `"file:../shared"` |
-| Build step | TypeScript → `dist/` | None (runs `.js` directly) |
+| Package          | Local                         | Remote                          |
+| ---------------- | ----------------------------- | ------------------------------- |
+| Language         | TypeScript + `tsx` + `vitest` | JavaScript + `jest` + `nodemon` |
+| Password hashing | `bcryptjs`                    | `bcrypt`                        |
+| Logger           | `pino` + `pino-pretty`        | ❌ console only                 |
+| Embeddings       | ❌ (deferred)                 | `@xenova/transformers ^2.17.2`  |
+| Slug generation  | Custom `utils/slugify.ts`     | `slugify ^1.6.6` npm package    |
+| Shared types     | `@samagama/shared` (monorepo) | `"file:../shared"`              |
+| Build step       | TypeScript → `dist/`          | None (runs `.js` directly)      |
 
 ---
 
@@ -3471,13 +3527,13 @@ Based on both detailed comparisons already done — and with both codebases pres
 
 ## 1. Language — The Most Obvious Difference
 
-| Your Local Backend | Remote Repo Backend |
-|---|---|
-| TypeScript (`.ts` files) | JavaScript (`.js` files) |
-| Types checked at compile time | No types — errors appear at runtime |
+| Your Local Backend                 | Remote Repo Backend                      |
+| ---------------------------------- | ---------------------------------------- |
+| TypeScript (`.ts` files)           | JavaScript (`.js` files)                 |
+| Types checked at compile time      | No types — errors appear at runtime      |
 | Compiles to `dist/` before running | Runs `.js` files directly, no build step |
-| Uses `vitest` for tests | Uses `jest` for tests |
-| Structured logs via `pino` | Plain `console.log` |
+| Uses `vitest` for tests            | Uses `jest` for tests                    |
+| Structured logs via `pino`         | Plain `console.log`                      |
 
 **Impact:** You cannot drop remote files into your project without rewriting them in TypeScript first.
 
@@ -3487,18 +3543,18 @@ Based on both detailed comparisons already done — and with both codebases pres
 
 Your local backend has **more product features**:
 
-| Feature | Your Local | Remote |
-|---|---|---|
-| **Spurti Points** — students earn points for contributing answers | ✅ Full system with leaderboard | ❌ Not implemented |
-| **Flag / Report system** — students can flag bad FAQs | ✅ `Flag` model + routes + inbox | ❌ Not implemented |
-| **Personal vs Community questions** — private questions go to moderators | ✅ `type: personal/community` | ❌ No such concept |
-| **Student can tag themselves** to a question | ✅ `taggedStudents[]` field | ❌ Not implemented |
-| **Screenshot attachments** on questions | ✅ `screenshotUrl` field | ❌ Not implemented |
-| **System Settings** — configurable thresholds stored in DB | ✅ `SystemSettings` model | ❌ Not implemented |
-| **Chatbot feedback tracking** | ✅ `ChatFeedback` model | ❌ Not implemented |
-| **Moderator "seen" tick** on questions | ✅ `moderatorViewedAt` field | ❌ Not implemented |
-| **Edit-and-approve** — mod edits answer while approving it | ✅ Supported | ❌ Not supported |
-| **Stats suite** — student, moderator, community idle, leaderboard | ✅ Full `/api/stats/*` | ❌ Partial |
+| Feature                                                                  | Your Local                       | Remote             |
+| ------------------------------------------------------------------------ | -------------------------------- | ------------------ |
+| **Spurti Points** — students earn points for contributing answers        | ✅ Full system with leaderboard  | ❌ Not implemented |
+| **Flag / Report system** — students can flag bad FAQs                    | ✅ `Flag` model + routes + inbox | ❌ Not implemented |
+| **Personal vs Community questions** — private questions go to moderators | ✅ `type: personal/community`    | ❌ No such concept |
+| **Student can tag themselves** to a question                             | ✅ `taggedStudents[]` field      | ❌ Not implemented |
+| **Screenshot attachments** on questions                                  | ✅ `screenshotUrl` field         | ❌ Not implemented |
+| **System Settings** — configurable thresholds stored in DB               | ✅ `SystemSettings` model        | ❌ Not implemented |
+| **Chatbot feedback tracking**                                            | ✅ `ChatFeedback` model          | ❌ Not implemented |
+| **Moderator "seen" tick** on questions                                   | ✅ `moderatorViewedAt` field     | ❌ Not implemented |
+| **Edit-and-approve** — mod edits answer while approving it               | ✅ Supported                     | ❌ Not supported   |
+| **Stats suite** — student, moderator, community idle, leaderboard        | ✅ Full `/api/stats/*`           | ❌ Partial         |
 
 ---
 
@@ -3506,18 +3562,18 @@ Your local backend has **more product features**:
 
 The remote backend has **richer AI and analytics**:
 
-| Feature | Remote | Your Local |
-|---|---|---|
-| **Semantic search** — searches FAQ meaning, not just keywords | ✅ 384-dim ML embeddings via local AI model | ❌ Keyword search only (AI deferred to Phase 6) |
-| **Quality scoring** — each FAQ gets a score based on helpfulness, freshness, search clicks | ✅ 5-factor `qualityScore` on every FAQ | ❌ Not implemented |
-| **Analytics infrastructure** — tracks every search, FAQ view, click-through | ✅ `SearchLog`, `AnalyticsEvent`, `AnalyticsCache` models | ❌ Not implemented |
-| **Admin heatmap** — shows which questions get asked most over time | ✅ `GET /api/admin/issue-heatmap` | ❌ Not present |
-| **Unanswered searches** — shows what students searched but got no answer for | ✅ `GET /api/admin/unanswered-searches` | ❌ Not present |
-| **Review queue** — moderation workflow items tracked in DB | ✅ `ReviewItem` model | ❌ Not implemented |
-| **Configurable token expiry** — `JWT_ACCESS_EXPIRY` set in `.env` | ✅ Env variable | ❌ Hardcoded in shared constants |
-| **`requireOwnerOrRole`** RBAC | ✅ In `rbac.js` | ❌ Only `requireRole` |
-| **Request-changes** on answers | ✅ Moderator can request changes before approval | ❌ Not implemented |
-| **Mark question as duplicate** | ✅ Supported | ❌ Not supported |
+| Feature                                                                                    | Remote                                                    | Your Local                                      |
+| ------------------------------------------------------------------------------------------ | --------------------------------------------------------- | ----------------------------------------------- |
+| **Semantic search** — searches FAQ meaning, not just keywords                              | ✅ 384-dim ML embeddings via local AI model               | ❌ Keyword search only (AI deferred to Phase 6) |
+| **Quality scoring** — each FAQ gets a score based on helpfulness, freshness, search clicks | ✅ 5-factor `qualityScore` on every FAQ                   | ❌ Not implemented                              |
+| **Analytics infrastructure** — tracks every search, FAQ view, click-through                | ✅ `SearchLog`, `AnalyticsEvent`, `AnalyticsCache` models | ❌ Not implemented                              |
+| **Admin heatmap** — shows which questions get asked most over time                         | ✅ `GET /api/admin/issue-heatmap`                         | ❌ Not present                                  |
+| **Unanswered searches** — shows what students searched but got no answer for               | ✅ `GET /api/admin/unanswered-searches`                   | ❌ Not present                                  |
+| **Review queue** — moderation workflow items tracked in DB                                 | ✅ `ReviewItem` model                                     | ❌ Not implemented                              |
+| **Configurable token expiry** — `JWT_ACCESS_EXPIRY` set in `.env`                          | ✅ Env variable                                           | ❌ Hardcoded in shared constants                |
+| **`requireOwnerOrRole`** RBAC                                                              | ✅ In `rbac.js`                                           | ❌ Only `requireRole`                           |
+| **Request-changes** on answers                                                             | ✅ Moderator can request changes before approval          | ❌ Not implemented                              |
+| **Mark question as duplicate**                                                             | ✅ Supported                                              | ❌ Not supported                                |
 
 ---
 
@@ -3525,23 +3581,23 @@ The remote backend has **richer AI and analytics**:
 
 These are the most dangerous differences — if you tried to run both against the same MongoDB database, they would conflict:
 
-| What | Your Local Field Name | Remote Field Name | Impact |
-|---|---|---|---|
-| Negative votes on FAQ | `unhelpfulCount` | `notHelpfulCount` | Queries would return 0 for the other side |
-| Question's category | `category` | `categoryId` | Populate/query would fail cross-system |
-| Model registration name | `'Faq'` | `'FAQ'` | `ref: 'FAQ'` vs `ref: 'Faq'` — populate breaks |
-| Answer voting | `upvotes[]`, `downvotes[]` (arrays) | `helpfulCount`, `notHelpfulCount` (counters) | Completely different mechanism |
+| What                    | Your Local Field Name               | Remote Field Name                            | Impact                                         |
+| ----------------------- | ----------------------------------- | -------------------------------------------- | ---------------------------------------------- |
+| Negative votes on FAQ   | `unhelpfulCount`                    | `notHelpfulCount`                            | Queries would return 0 for the other side      |
+| Question's category     | `category`                          | `categoryId`                                 | Populate/query would fail cross-system         |
+| Model registration name | `'Faq'`                             | `'FAQ'`                                      | `ref: 'FAQ'` vs `ref: 'Faq'` — populate breaks |
+| Answer voting           | `upvotes[]`, `downvotes[]` (arrays) | `helpfulCount`, `notHelpfulCount` (counters) | Completely different mechanism                 |
 
 ---
 
 ## 5. Authentication Approach
 
-| Aspect | Your Local | Remote |
-|---|---|---|
+| Aspect                             | Your Local                                                                                | Remote                                                               |
+| ---------------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | How refresh tokens are invalidated | `tokenVersion` number on the User document — persists in MongoDB, survives server restart | In-memory JavaScript `Set` — **lost every time the server restarts** |
-| Per-request auth | JWT verified only (no DB hit per request) | DB lookup on every request: `User.findOne({ _id, status: ACTIVE })` |
-| Login rate limit | 10 attempts per 15 minutes (route-level) + global 200/min | Global 300/15min only |
-| What register returns | Full `{ accessToken, refreshToken, user }` | Only `{ user }` — no tokens |
+| Per-request auth                   | JWT verified only (no DB hit per request)                                                 | DB lookup on every request: `User.findOne({ _id, status: ACTIVE })`  |
+| Login rate limit                   | 10 attempts per 15 minutes (route-level) + global 200/min                                 | Global 300/15min only                                                |
+| What register returns              | Full `{ accessToken, refreshToken, user }`                                                | Only `{ user }` — no tokens                                          |
 
 **Summary:** Your local auth is more secure and performant (no DB hit per request, persistent token invalidation). Remote's in-memory blacklist is a known MVP limitation.
 
@@ -3550,6 +3606,7 @@ These are the most dangerous differences — if you tried to run both against th
 ## 6. API Endpoints That Exist in One But Not the Other
 
 **Only in your local backend:**
+
 ```
 GET  /api/faqs/recent             ← student's recently viewed FAQs
 PATCH /api/faqs/:id/archive       ← dedicated archive action
@@ -3566,6 +3623,7 @@ GET  /api/chat/feedback
 ```
 
 **Only in the remote backend:**
+
 ```
 GET  /api/admin/overview          ← admin summary view
 GET  /api/admin/issue-heatmap     ← question frequency over time
@@ -3579,14 +3637,14 @@ PATCH /api/answers/:id/request-changes ← ask author to revise
 
 ## 7. Direct Verdict on "Was It a Fork?"
 
-| Question | Answer |
-|---|---|
-| Does local share the same core concept? | Yes — same FAQ portal idea, same MongoDB + Express stack |
-| Are the core models (User, FAQ, Question, Answer) recognisably the same? | Yes — same fields in most cases |
-| Can you drop remote files into your project without changes? | **No** — different language (JS vs TS), different field names, different constants system |
-| Do they share the same endpoints? | **Partially** — ~60% overlap, 40% are unique to one or the other |
-| Would both work against the same MongoDB database without conflicts? | **No** — `notHelpfulCount` vs `unhelpfulCount`, `categoryId` vs `category`, `'FAQ'` vs `'Faq'` would all conflict |
-| Is the remote a more complete version of local? | **No** — they went in different directions. Remote is more complete on AI search + analytics. Local is more complete on product features (Spurti Points, flags, personal questions, system settings) |
+| Question                                                                 | Answer                                                                                                                                                                                               |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Does local share the same core concept?                                  | Yes — same FAQ portal idea, same MongoDB + Express stack                                                                                                                                             |
+| Are the core models (User, FAQ, Question, Answer) recognisably the same? | Yes — same fields in most cases                                                                                                                                                                      |
+| Can you drop remote files into your project without changes?             | **No** — different language (JS vs TS), different field names, different constants system                                                                                                            |
+| Do they share the same endpoints?                                        | **Partially** — ~60% overlap, 40% are unique to one or the other                                                                                                                                     |
+| Would both work against the same MongoDB database without conflicts?     | **No** — `notHelpfulCount` vs `unhelpfulCount`, `categoryId` vs `category`, `'FAQ'` vs `'Faq'` would all conflict                                                                                    |
+| Is the remote a more complete version of local?                          | **No** — they went in different directions. Remote is more complete on AI search + analytics. Local is more complete on product features (Spurti Points, flags, personal questions, system settings) |
 
 ---
 
@@ -3595,6 +3653,7 @@ PATCH /api/answers/:id/request-changes ← ask author to revise
 The two backends **cannot be merged as-is** without a deliberate migration effort because of the breaking field name differences, the language difference (JS vs TS), and the divergent feature sets.
 
 If your goal is to align them, the safest path is:
+
 1. **Keep your local TypeScript backend** as the base (it is cleaner and type-safe)
 2. **Port the missing remote features you want** into TypeScript one by one — specifically the analytics models and the hybrid search/embedding pipeline
 3. **Do not copy remote `.js` files directly** — they will not compile in your TypeScript project and the field names would conflict with your existing MongoDB data
@@ -3716,177 +3775,177 @@ The user just ran /insights to generate a usage report analyzing their Claude Co
 
 Here is the full insights data:
 {
-  "project_areas": {
-    "areas": [
-      {
-        "name": "Backend Development & Integration",
-        "session_count": 2,
-        "description": "Claude built a full backend, configured MongoDB, and integrated it with the application. Heavy use of Bash, Write, and Edit tools supported server setup and database configuration, though one repo comparison task was left incomplete due to interruptions."
-      },
-      {
-        "name": "UI Redesign & Dashboard Work",
-        "session_count": 2,
-        "description": "Claude redesigned the moderator dashboard with new backend stats and performed broader UI redesigns alongside FAQ data replacement. Work was primarily in TypeScript and CSS, with clean builds confirmed and successful outcomes across both sessions."
-      },
-      {
-        "name": "Feature Implementation",
-        "session_count": 1,
-        "description": "Claude implemented a variable Spurti points feature and redesigned a card layout to match a reference image. The card layout required one iteration to switch from a horizontal divider design to the desired vertical single-row layout before delivery."
-      },
-      {
-        "name": "Version Control & Git Operations",
-        "session_count": 3,
-        "description": "Claude handled pushing code to the Avatar branch and other GitHub operations across multiple sessions. Bash was the dominant tool, supporting commits, pushes, and branch management that resulted in 7 commits."
-      },
-      {
-        "name": "Code Comparison & Alignment",
-        "session_count": 2,
-        "description": "Claude compared local implementations against reference repositories to align code. These tasks were frequently disrupted by user interruptions and API credit/context errors, leaving comparison and alignment work partially incomplete."
-      }
-    ]
-  },
-  "interaction_style": {
-    "narrative": "You operate in **batch mode, bundling multiple distinct tasks into single requests** — a typical session asks Claude to build a backend, configure MongoDB, push to GitHub, *and* compare against a reference repo all at once. This multi-objective style is reflected in your numbers: 63 messages across 52 hours with heavy Bash (175) and Edit (79) usage, meaning you tend to give Claude a broad mandate and let it run through long sequences of tool calls. Your projects are real and shipping — 7 commits, multi-file TypeScript/JavaScript codebases, builds confirmed clean — so you're working at the level of full features and deployments, not isolated snippets.\n\nYou show a clear preference for **letting Claude execute autonomously rather than micromanaging**, but you stay close enough to interrupt when needed. In the repo-comparison session you interrupted a tool call, said 'continue,' then interrupted again — suggesting you steer mid-flight rather than waiting for completion. When results miss the mark, like the card layout that came back horizontal instead of the vertical single-row design from your reference image, you **correct with a quick clarifying follow-up** rather than rewriting the whole spec. This iterate-on-output rhythm works well: 4 of 5 sessions landed at mostly or fully achieved, with satisfaction overwhelmingly positive (13 satisfied vs 1 frustrated).\n\nThe friction you hit is mostly **external rather than collaborative** — API credit limits ('Usage credits required for 1M context') blocked one whole session despite you repeatedly typing 'Continue!', and a linter silently reverting Claude's writes forced re-work. These are environmental blockers, not breakdowns in how you communicate. Your one genuine misunderstanding (the card layout) was resolved in a single iteration. The recurring pattern of leaving comparison/alignment tasks incomplete suggests you tend to **front-load the high-value build work and treat verification steps as lower-priority**, often interrupting or running out of context before they finish.",
-    "key_pattern": "You bundle several ambitious tasks per session and let Claude run autonomously, steering with quick interruptions and one-shot corrections rather than detailed upfront specs."
-  },
-  "what_works": {
-    "intro": "Over five sessions spanning a full-stack TypeScript/JavaScript project, you drove backend builds, UI redesigns, and clean git workflows to mostly successful outcomes.",
-    "impressive_workflows": [
-      {
-        "title": "End-to-end full-stack delivery",
-        "description": "You consistently bundled feature work into complete pipelines — building a backend, integrating it, configuring MongoDB, and pushing to GitHub in a single flow. Stacking implementation, configuration, and version control into one coherent session shows you treat features as shippable units rather than isolated edits."
-      },
-      {
-        "title": "Build-verified UI redesigns",
-        "description": "Your moderator dashboard and card layout redesigns were confirmed with clean builds before being pushed to the Avatar branch. By validating that redesigns actually compile and don't break the project, you avoid the common trap of merging visually 'done' but technically broken work."
-      },
-      {
-        "title": "Image-driven iteration with tight feedback",
-        "description": "When the first card layout used horizontal dividers instead of the vertical single-row design you wanted, you quickly clarified against the reference image and got it matched in one iteration. Pairing visual references with fast corrective feedback kept your redesigns aligned to intent without long back-and-forth."
-      }
-    ]
-  },
-  "friction_analysis": {
-    "intro": "Your work largely succeeds, but friction clusters around interrupted long-running tasks, hitting API/context limits, and visual or layout requests that need a clarifying round-trip.",
-    "categories": [
-      {
-        "category": "Interrupted and incomplete multi-step tasks",
-        "description": "You tend to stack many goals into a single session (build, configure, push, compare), so when you interrupt or hit a stopping point the final steps get dropped. Consider breaking large requests into smaller checkpoints so each one finishes cleanly before moving on.",
-        "examples": [
-          "You interrupted the repo comparison, said continue, then interrupted again, leaving the comparison incomplete despite the backend build and push succeeding.",
-          "Your session combining FAQ fixes, backend comparisons, and alignment work was only partially achieved because the alignment task was cut off."
-        ]
-      },
-      {
-        "category": "Hitting API credit and context limits",
-        "description": "Several sessions stalled on usage/context errors that no amount of retrying could resolve, so progress halted mid-task. Watch for large-context operations and split or trim work before you exhaust credits rather than repeatedly retrying.",
-        "examples": [
-          "You repeatedly typed 'Continue!' against an 'API Error: Usage credits required for 1M context' message, but all further progress stayed blocked.",
-          "The implementation alignment work was abandoned specifically due to API credit and context errors, dropping that session to only partially achieved."
-        ]
-      },
-      {
-        "category": "Visual/layout requests needing clarification",
-        "description": "When you ask for designs based on an image, the first attempt sometimes misses the exact layout you wanted, requiring an extra iteration. Providing more explicit layout details (orientation, structure) up front can save a round-trip.",
-        "examples": [
-          "Your card layout request produced a horizontal card with dividers on the first try instead of the vertical single-row layout from your image, needing a clarifying follow-up.",
-          "A linter silently reverted two client files after the initial redesign write, forcing the changes to be re-applied and adding delay to your UI work."
-        ]
-      }
-    ]
-  },
-  "suggestions": {
-    "claude_md_additions": [
-      {
-        "addition": "## Git Workflow\n- Default push target is the `Avatar` branch unless told otherwise.\n- Always confirm a clean build before committing and pushing.",
-        "why": "Pushing to the Avatar branch and confirming clean builds before push recurred across at least three sessions.",
-        "prompt_scaffold": "Add as a new ## Git Workflow section near the top of CLAUDE.md"
-      },
-      {
-        "addition": "## Build & Lint\n- This project uses a linter that may silently revert client file edits after writes; re-verify edited files persisted before moving on.\n- Run a type check / build (TypeScript-heavy codebase) after multi-file changes.",
-        "why": "A linter silently reverted two client files in one session, and the codebase is dominated by TypeScript where post-edit verification prevents wasted iterations.",
-        "prompt_scaffold": "Add as a new ## Build & Lint section in CLAUDE.md"
-      },
-      {
-        "addition": "## UI Work\n- When a layout reference image is provided, restate the intended layout (e.g. vertical single-row vs horizontal with dividers) before implementing.",
-        "why": "The card layout took an extra iteration because the first attempt misread the desired layout from the reference image.",
-        "prompt_scaffold": "Add as a new ## UI Work section in CLAUDE.md"
-      }
-    ],
-    "features_to_try": [
-      {
-        "feature": "Custom Skills",
-        "one_liner": "Reusable single-command workflows defined in markdown.",
-        "why_for_you": "Your sessions repeatedly do the same git_operations + clean-build + push-to-Avatar sequence; a /ship skill would collapse that into one command.",
-        "example_code": "Create .claude/skills/ship/SKILL.md:\n---\nname: ship\n---\nRun the build, confirm it's clean, stage all changes, commit with a concise message, and push to the Avatar branch."
-      },
-      {
-        "feature": "Hooks",
-        "one_liner": "Shell commands that auto-run at lifecycle events.",
-        "why_for_you": "A linter silently reverted edited files; a post-edit hook running format/lint+typecheck would surface this immediately instead of after the fact.",
-        "example_code": "// .claude/settings.json\n{\n  \"hooks\": {\n    \"PostToolUse\": [\n      { \"matcher\": \"Edit|Write\", \"hooks\": [{ \"type\": \"command\", \"command\": \"npm run lint --silent && npx tsc --noEmit\" }] }\n    ]\n  }\n}"
-      },
-      {
-        "feature": "Task Agents",
-        "one_liner": "Focused sub-agents for exploration and comparison work.",
-        "why_for_you": "Your repo-comparison goals were left incomplete after interruptions; a dedicated agent can run the comparison in one focused pass.",
-        "example_code": "Use an agent to compare our backend implementation against the reference repo and produce a diff summary."
-      }
-    ],
-    "usage_patterns": [
-      {
-        "title": "Repo comparison keeps getting cut off",
-        "suggestion": "Front-load the comparison or delegate it to an agent so interruptions and context limits don't strand it.",
-        "detail": "Two sessions involved comparing your implementation to a reference repo, and both ended incomplete — once from interruptions, once from a context-credit error. Bash dominates your tool use (175 calls), suggesting heavy manual diffing. Running the comparison early or via a sub-agent keeps it from being the casualty when sessions run long.",
-        "copyable_prompt": "Before any edits, use an agent to clone/read the reference repo and produce a structured comparison of backend modules vs ours, then save it to COMPARISON.md."
-      },
-      {
-        "title": "Context/credit limits stalling long sessions",
-        "suggestion": "Break very long sessions (52 hours over 5 sessions) into scoped chunks to avoid the 1M-context credit blocker.",
-        "detail": "One session was repeatedly blocked by 'Usage credits required for 1M context' despite you typing Continue. Long multi-goal sessions inflate context. Splitting work into a backend task, a UI task, and a comparison task each as its own session keeps context lean and progress saveable.",
-        "copyable_prompt": "Let's scope this session to ONLY the moderator dashboard redesign. Summarize remaining backend and comparison tasks into a TODO.md so I can run them separately."
-      },
-      {
-        "title": "Confirm layout intent before building UI",
-        "suggestion": "Have Claude restate the layout from a reference image before coding to avoid rework.",
-        "detail": "Your card-layout task needed a second iteration because the first used horizontal dividers instead of the intended vertical single-row design. A quick restate-and-confirm step catches this before code is written. This is cheap insurance given how often your work is UI-driven (CSS + TS heavy).",
-        "copyable_prompt": "Here's the reference image. Before coding, describe the exact layout structure (rows, columns, dividers, alignment) you plan to build and wait for my confirmation."
-      }
-    ]
-  },
-  "on_the_horizon": {
-    "intro": "AI-assisted development is shifting from single-task assistance toward autonomous, multi-agent workflows that build, verify, and align entire features against references with minimal human intervention.",
-    "opportunities": [
-      {
-        "title": "Autonomous Reference-Driven Code Alignment",
-        "whats_possible": "Instead of manually comparing your implementation to a reference repo, an agent can clone both, diff architecture and behavior, and autonomously refactor your code until it matches the reference's patterns. It can run continuously across sessions, persisting a checklist so interruptions never lose progress. The agent self-verifies alignment by running shared test suites against both implementations.",
-        "how_to_try": "Use the Agent tool with a persistent TodoWrite-backed plan and Bash for git cloning and diffing, so comparison work survives context resets.",
-        "copyable_prompt": "Clone the reference repo at <URL> and compare it to my current backend. Create a persisted TODO checklist of every divergence in architecture, API contracts, and data models. Then autonomously refactor my code file-by-file to match the reference, checking off each item as you verify it with a build and test run. If you hit a blocker, save state to ALIGNMENT_PROGRESS.md so we can resume cleanly."
-      },
-      {
-        "title": "Parallel Agents For Frontend And Backend",
-        "whats_possible": "Spin up multiple specialized agents that work simultaneously — one redesigning the dashboard UI from a reference image, another building the backend stats endpoints, and a third wiring MongoDB. Each agent owns its domain, runs its own build verification, and reports back so multi-file features ship in a fraction of the time. A coordinator agent merges their work and resolves integration conflicts.",
-        "how_to_try": "Launch concurrent Agent tool subtasks scoped to UI, backend, and data layers, then have a coordinator run the full build to confirm clean integration.",
-        "copyable_prompt": "Decompose this feature into three parallel agents: (1) redesign the moderator dashboard to match the attached image, (2) build the backend stats endpoints, (3) configure the MongoDB schema and queries. Run them concurrently, have each verify its own build, then coordinate a final integration build and push to the Avatar branch. Report any cross-agent conflicts before merging."
-      },
-      {
-        "title": "Self-Healing Build And Lint Loop",
-        "whats_possible": "An agent applies UI and feature changes, then enters a verification loop that detects when a linter or formatter silently reverts files and automatically re-applies and re-verifies until the build is stable. It iterates against tests and visual snapshots so a card layout matches the target image on the first delivery, not after manual follow-up. The loop only stops when the build, lint, and test gates all pass.",
-        "how_to_try": "Combine Edit and Write with a Bash-driven loop that re-runs lint/build/test after every change and re-applies any reverted edits before declaring success.",
-        "copyable_prompt": "Implement the variable Spurti points feature and the vertical single-row card layout from the attached image. After each edit, run lint, build, and tests; if the linter reverts any of my changes, detect it via git diff and re-apply automatically. Loop until all gates pass and the rendered layout matches the image, then commit and push. Don't ask me to confirm intermediate states — only report the final verified result."
-      }
-    ]
-  },
-  "fun_ending": {
-    "headline": "User kept hammering 'Continue!' into the void while API credit errors blocked every attempt — a one-sided conversation with a wall",
-    "detail": "During the FAQ button and backend alignment session, repeated 'API Error: Usage credits required for 1M context' messages halted all progress, but the user kept optimistically typing 'Continue!' anyway, unable to push past the blocker."
-  },
-  "at_a_glance": {
-    "whats_working": "You consistently treat features as complete, shippable units—bundling backend builds, MongoDB config, and Git pushes into one coherent flow rather than isolated edits. Your build-verified approach stands out: redesigns like the moderator dashboard and card layout were confirmed clean before pushing, and you pair visual references with tight corrective feedback to keep work aligned to intent.",
-    "whats_hindering": "On Claude's side, a linter silently reverted files mid-redesign and an early card layout missed your intended orientation, both requiring re-work. On your side, stacking many goals into one long session means final steps—especially repo comparisons—get stranded when you interrupt or hit context and credit limits that no amount of retrying can clear.",
-    "quick_wins": "Try Task Agents to offload repo comparison work so it runs in its own context and doesn't get cut off by interruptions or credit limits. Hooks can also auto-run your build or lint checks after each change, catching that silent file-revert problem before it costs you a round-trip.",
-    "ambitious_workflows": "As models improve, expect autonomous reference-driven alignment: an agent that clones both repos, diffs them, and refactors your code to match—persisting a checklist so interruptions never lose progress. You'll also be able to run parallel agents owning frontend, backend, and database simultaneously, with a self-healing build loop that re-applies reverted changes and matches a layout to its reference image on the first delivery."
-  }
+"project_areas": {
+"areas": [
+{
+"name": "Backend Development & Integration",
+"session_count": 2,
+"description": "Claude built a full backend, configured MongoDB, and integrated it with the application. Heavy use of Bash, Write, and Edit tools supported server setup and database configuration, though one repo comparison task was left incomplete due to interruptions."
+},
+{
+"name": "UI Redesign & Dashboard Work",
+"session_count": 2,
+"description": "Claude redesigned the moderator dashboard with new backend stats and performed broader UI redesigns alongside FAQ data replacement. Work was primarily in TypeScript and CSS, with clean builds confirmed and successful outcomes across both sessions."
+},
+{
+"name": "Feature Implementation",
+"session_count": 1,
+"description": "Claude implemented a variable Spurti points feature and redesigned a card layout to match a reference image. The card layout required one iteration to switch from a horizontal divider design to the desired vertical single-row layout before delivery."
+},
+{
+"name": "Version Control & Git Operations",
+"session_count": 3,
+"description": "Claude handled pushing code to the Avatar branch and other GitHub operations across multiple sessions. Bash was the dominant tool, supporting commits, pushes, and branch management that resulted in 7 commits."
+},
+{
+"name": "Code Comparison & Alignment",
+"session_count": 2,
+"description": "Claude compared local implementations against reference repositories to align code. These tasks were frequently disrupted by user interruptions and API credit/context errors, leaving comparison and alignment work partially incomplete."
+}
+]
+},
+"interaction_style": {
+"narrative": "You operate in **batch mode, bundling multiple distinct tasks into single requests** — a typical session asks Claude to build a backend, configure MongoDB, push to GitHub, _and_ compare against a reference repo all at once. This multi-objective style is reflected in your numbers: 63 messages across 52 hours with heavy Bash (175) and Edit (79) usage, meaning you tend to give Claude a broad mandate and let it run through long sequences of tool calls. Your projects are real and shipping — 7 commits, multi-file TypeScript/JavaScript codebases, builds confirmed clean — so you're working at the level of full features and deployments, not isolated snippets.\n\nYou show a clear preference for **letting Claude execute autonomously rather than micromanaging**, but you stay close enough to interrupt when needed. In the repo-comparison session you interrupted a tool call, said 'continue,' then interrupted again — suggesting you steer mid-flight rather than waiting for completion. When results miss the mark, like the card layout that came back horizontal instead of the vertical single-row design from your reference image, you **correct with a quick clarifying follow-up** rather than rewriting the whole spec. This iterate-on-output rhythm works well: 4 of 5 sessions landed at mostly or fully achieved, with satisfaction overwhelmingly positive (13 satisfied vs 1 frustrated).\n\nThe friction you hit is mostly **external rather than collaborative** — API credit limits ('Usage credits required for 1M context') blocked one whole session despite you repeatedly typing 'Continue!', and a linter silently reverting Claude's writes forced re-work. These are environmental blockers, not breakdowns in how you communicate. Your one genuine misunderstanding (the card layout) was resolved in a single iteration. The recurring pattern of leaving comparison/alignment tasks incomplete suggests you tend to **front-load the high-value build work and treat verification steps as lower-priority**, often interrupting or running out of context before they finish.",
+"key_pattern": "You bundle several ambitious tasks per session and let Claude run autonomously, steering with quick interruptions and one-shot corrections rather than detailed upfront specs."
+},
+"what_works": {
+"intro": "Over five sessions spanning a full-stack TypeScript/JavaScript project, you drove backend builds, UI redesigns, and clean git workflows to mostly successful outcomes.",
+"impressive_workflows": [
+{
+"title": "End-to-end full-stack delivery",
+"description": "You consistently bundled feature work into complete pipelines — building a backend, integrating it, configuring MongoDB, and pushing to GitHub in a single flow. Stacking implementation, configuration, and version control into one coherent session shows you treat features as shippable units rather than isolated edits."
+},
+{
+"title": "Build-verified UI redesigns",
+"description": "Your moderator dashboard and card layout redesigns were confirmed with clean builds before being pushed to the Avatar branch. By validating that redesigns actually compile and don't break the project, you avoid the common trap of merging visually 'done' but technically broken work."
+},
+{
+"title": "Image-driven iteration with tight feedback",
+"description": "When the first card layout used horizontal dividers instead of the vertical single-row design you wanted, you quickly clarified against the reference image and got it matched in one iteration. Pairing visual references with fast corrective feedback kept your redesigns aligned to intent without long back-and-forth."
+}
+]
+},
+"friction_analysis": {
+"intro": "Your work largely succeeds, but friction clusters around interrupted long-running tasks, hitting API/context limits, and visual or layout requests that need a clarifying round-trip.",
+"categories": [
+{
+"category": "Interrupted and incomplete multi-step tasks",
+"description": "You tend to stack many goals into a single session (build, configure, push, compare), so when you interrupt or hit a stopping point the final steps get dropped. Consider breaking large requests into smaller checkpoints so each one finishes cleanly before moving on.",
+"examples": [
+"You interrupted the repo comparison, said continue, then interrupted again, leaving the comparison incomplete despite the backend build and push succeeding.",
+"Your session combining FAQ fixes, backend comparisons, and alignment work was only partially achieved because the alignment task was cut off."
+]
+},
+{
+"category": "Hitting API credit and context limits",
+"description": "Several sessions stalled on usage/context errors that no amount of retrying could resolve, so progress halted mid-task. Watch for large-context operations and split or trim work before you exhaust credits rather than repeatedly retrying.",
+"examples": [
+"You repeatedly typed 'Continue!' against an 'API Error: Usage credits required for 1M context' message, but all further progress stayed blocked.",
+"The implementation alignment work was abandoned specifically due to API credit and context errors, dropping that session to only partially achieved."
+]
+},
+{
+"category": "Visual/layout requests needing clarification",
+"description": "When you ask for designs based on an image, the first attempt sometimes misses the exact layout you wanted, requiring an extra iteration. Providing more explicit layout details (orientation, structure) up front can save a round-trip.",
+"examples": [
+"Your card layout request produced a horizontal card with dividers on the first try instead of the vertical single-row layout from your image, needing a clarifying follow-up.",
+"A linter silently reverted two client files after the initial redesign write, forcing the changes to be re-applied and adding delay to your UI work."
+]
+}
+]
+},
+"suggestions": {
+"claude_md_additions": [
+{
+"addition": "## Git Workflow\n- Default push target is the `Avatar` branch unless told otherwise.\n- Always confirm a clean build before committing and pushing.",
+"why": "Pushing to the Avatar branch and confirming clean builds before push recurred across at least three sessions.",
+"prompt_scaffold": "Add as a new ## Git Workflow section near the top of CLAUDE.md"
+},
+{
+"addition": "## Build & Lint\n- This project uses a linter that may silently revert client file edits after writes; re-verify edited files persisted before moving on.\n- Run a type check / build (TypeScript-heavy codebase) after multi-file changes.",
+"why": "A linter silently reverted two client files in one session, and the codebase is dominated by TypeScript where post-edit verification prevents wasted iterations.",
+"prompt_scaffold": "Add as a new ## Build & Lint section in CLAUDE.md"
+},
+{
+"addition": "## UI Work\n- When a layout reference image is provided, restate the intended layout (e.g. vertical single-row vs horizontal with dividers) before implementing.",
+"why": "The card layout took an extra iteration because the first attempt misread the desired layout from the reference image.",
+"prompt_scaffold": "Add as a new ## UI Work section in CLAUDE.md"
+}
+],
+"features_to_try": [
+{
+"feature": "Custom Skills",
+"one_liner": "Reusable single-command workflows defined in markdown.",
+"why_for_you": "Your sessions repeatedly do the same git_operations + clean-build + push-to-Avatar sequence; a /ship skill would collapse that into one command.",
+"example_code": "Create .claude/skills/ship/SKILL.md:\n---\nname: ship\n---\nRun the build, confirm it's clean, stage all changes, commit with a concise message, and push to the Avatar branch."
+},
+{
+"feature": "Hooks",
+"one_liner": "Shell commands that auto-run at lifecycle events.",
+"why_for_you": "A linter silently reverted edited files; a post-edit hook running format/lint+typecheck would surface this immediately instead of after the fact.",
+"example_code": "// .claude/settings.json\n{\n \"hooks\": {\n \"PostToolUse\": [\n { \"matcher\": \"Edit|Write\", \"hooks\": [{ \"type\": \"command\", \"command\": \"npm run lint --silent && npx tsc --noEmit\" }] }\n ]\n }\n}"
+},
+{
+"feature": "Task Agents",
+"one_liner": "Focused sub-agents for exploration and comparison work.",
+"why_for_you": "Your repo-comparison goals were left incomplete after interruptions; a dedicated agent can run the comparison in one focused pass.",
+"example_code": "Use an agent to compare our backend implementation against the reference repo and produce a diff summary."
+}
+],
+"usage_patterns": [
+{
+"title": "Repo comparison keeps getting cut off",
+"suggestion": "Front-load the comparison or delegate it to an agent so interruptions and context limits don't strand it.",
+"detail": "Two sessions involved comparing your implementation to a reference repo, and both ended incomplete — once from interruptions, once from a context-credit error. Bash dominates your tool use (175 calls), suggesting heavy manual diffing. Running the comparison early or via a sub-agent keeps it from being the casualty when sessions run long.",
+"copyable_prompt": "Before any edits, use an agent to clone/read the reference repo and produce a structured comparison of backend modules vs ours, then save it to COMPARISON.md."
+},
+{
+"title": "Context/credit limits stalling long sessions",
+"suggestion": "Break very long sessions (52 hours over 5 sessions) into scoped chunks to avoid the 1M-context credit blocker.",
+"detail": "One session was repeatedly blocked by 'Usage credits required for 1M context' despite you typing Continue. Long multi-goal sessions inflate context. Splitting work into a backend task, a UI task, and a comparison task each as its own session keeps context lean and progress saveable.",
+"copyable_prompt": "Let's scope this session to ONLY the moderator dashboard redesign. Summarize remaining backend and comparison tasks into a TODO.md so I can run them separately."
+},
+{
+"title": "Confirm layout intent before building UI",
+"suggestion": "Have Claude restate the layout from a reference image before coding to avoid rework.",
+"detail": "Your card-layout task needed a second iteration because the first used horizontal dividers instead of the intended vertical single-row design. A quick restate-and-confirm step catches this before code is written. This is cheap insurance given how often your work is UI-driven (CSS + TS heavy).",
+"copyable_prompt": "Here's the reference image. Before coding, describe the exact layout structure (rows, columns, dividers, alignment) you plan to build and wait for my confirmation."
+}
+]
+},
+"on_the_horizon": {
+"intro": "AI-assisted development is shifting from single-task assistance toward autonomous, multi-agent workflows that build, verify, and align entire features against references with minimal human intervention.",
+"opportunities": [
+{
+"title": "Autonomous Reference-Driven Code Alignment",
+"whats_possible": "Instead of manually comparing your implementation to a reference repo, an agent can clone both, diff architecture and behavior, and autonomously refactor your code until it matches the reference's patterns. It can run continuously across sessions, persisting a checklist so interruptions never lose progress. The agent self-verifies alignment by running shared test suites against both implementations.",
+"how_to_try": "Use the Agent tool with a persistent TodoWrite-backed plan and Bash for git cloning and diffing, so comparison work survives context resets.",
+"copyable_prompt": "Clone the reference repo at <URL> and compare it to my current backend. Create a persisted TODO checklist of every divergence in architecture, API contracts, and data models. Then autonomously refactor my code file-by-file to match the reference, checking off each item as you verify it with a build and test run. If you hit a blocker, save state to ALIGNMENT_PROGRESS.md so we can resume cleanly."
+},
+{
+"title": "Parallel Agents For Frontend And Backend",
+"whats_possible": "Spin up multiple specialized agents that work simultaneously — one redesigning the dashboard UI from a reference image, another building the backend stats endpoints, and a third wiring MongoDB. Each agent owns its domain, runs its own build verification, and reports back so multi-file features ship in a fraction of the time. A coordinator agent merges their work and resolves integration conflicts.",
+"how_to_try": "Launch concurrent Agent tool subtasks scoped to UI, backend, and data layers, then have a coordinator run the full build to confirm clean integration.",
+"copyable_prompt": "Decompose this feature into three parallel agents: (1) redesign the moderator dashboard to match the attached image, (2) build the backend stats endpoints, (3) configure the MongoDB schema and queries. Run them concurrently, have each verify its own build, then coordinate a final integration build and push to the Avatar branch. Report any cross-agent conflicts before merging."
+},
+{
+"title": "Self-Healing Build And Lint Loop",
+"whats_possible": "An agent applies UI and feature changes, then enters a verification loop that detects when a linter or formatter silently reverts files and automatically re-applies and re-verifies until the build is stable. It iterates against tests and visual snapshots so a card layout matches the target image on the first delivery, not after manual follow-up. The loop only stops when the build, lint, and test gates all pass.",
+"how_to_try": "Combine Edit and Write with a Bash-driven loop that re-runs lint/build/test after every change and re-applies any reverted edits before declaring success.",
+"copyable_prompt": "Implement the variable Spurti points feature and the vertical single-row card layout from the attached image. After each edit, run lint, build, and tests; if the linter reverts any of my changes, detect it via git diff and re-apply automatically. Loop until all gates pass and the rendered layout matches the image, then commit and push. Don't ask me to confirm intermediate states — only report the final verified result."
+}
+]
+},
+"fun_ending": {
+"headline": "User kept hammering 'Continue!' into the void while API credit errors blocked every attempt — a one-sided conversation with a wall",
+"detail": "During the FAQ button and backend alignment session, repeated 'API Error: Usage credits required for 1M context' messages halted all progress, but the user kept optimistically typing 'Continue!' anyway, unable to push past the blocker."
+},
+"at_a_glance": {
+"whats_working": "You consistently treat features as complete, shippable units—bundling backend builds, MongoDB config, and Git pushes into one coherent flow rather than isolated edits. Your build-verified approach stands out: redesigns like the moderator dashboard and card layout were confirmed clean before pushing, and you pair visual references with tight corrective feedback to keep work aligned to intent.",
+"whats_hindering": "On Claude's side, a linter silently reverted files mid-redesign and an early card layout missed your intended orientation, both requiring re-work. On your side, stacking many goals into one long session means final steps—especially repo comparisons—get stranded when you interrupt or hit context and credit limits that no amount of retrying can clear.",
+"quick_wins": "Try Task Agents to offload repo comparison work so it runs in its own context and doesn't get cut off by interruptions or credit limits. Hooks can also auto-run your build or lint checks after each change, catching that silent file-revert problem before it costs you a round-trip.",
+"ambitious_workflows": "As models improve, expect autonomous reference-driven alignment: an agent that clones both repos, diffs them, and refactors your code to match—persisting a checklist so interruptions never lose progress. You'll also be able to run parallel agents owning frontend, backend, and database simultaneously, with a self-healing build loop that re-applies reverted changes and matches a layout to its reference image on the first delivery."
+}
 }
 
 Report URL: file:///Users/ravikumark/.claude/usage-data/report-2026-05-29-211214.html
@@ -3894,6 +3953,7 @@ HTML file: /Users/ravikumark/.claude/usage-data/report-2026-05-29-211214.html
 Facets directory: /Users/ravikumark/.claude/usage-data/facets
 
 At-a-glance summary (for your context only — the user has not seen any output yet):
+
 # Claude Code Insights
 
 10 sessions total · 5 analyzed · 63 messages · 52h · 7 commits
@@ -3943,4 +4003,3 @@ No response requested.
 API Error: Usage credits required for 1M context · turn on usage credits at claude.ai/settings/usage, or use --model to switch to standard context
 
 ---
-

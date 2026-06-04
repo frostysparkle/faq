@@ -95,11 +95,29 @@ function buildFilter(query: FaqListQuery, role: UserRole): FilterQuery<FaqDocume
   }
   // No default status filter for mods/admins — they see draft/published/outdated.
 
-  if (query.category && Types.ObjectId.isValid(query.category)) {
-    filter.categories = new Types.ObjectId(query.category);
+  if (query.category) {
+    const categoryIds = query.category
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => Types.ObjectId.isValid(s))
+      .map((s) => new Types.ObjectId(s));
+    if (categoryIds.length === 1) {
+      filter.categories = categoryIds[0];
+    } else if (categoryIds.length > 1) {
+      filter.categories = { $in: categoryIds };
+    }
   }
-  if (query.tag && Types.ObjectId.isValid(query.tag)) {
-    filter.tags = new Types.ObjectId(query.tag);
+  if (query.tag) {
+    const tagIds = query.tag
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => Types.ObjectId.isValid(s))
+      .map((s) => new Types.ObjectId(s));
+    if (tagIds.length === 1) {
+      filter.tags = tagIds[0];
+    } else if (tagIds.length > 1) {
+      filter.tags = { $in: tagIds };
+    }
   }
   if (query.q) {
     filter.$text = { $search: query.q };

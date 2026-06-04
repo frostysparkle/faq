@@ -18,6 +18,7 @@ import type {
 import { FlagModel, type FlagDocument } from '../models/Flag.model.js';
 import { FaqModel } from '../models/Faq.model.js';
 import { QuestionModel } from '../models/Question.model.js';
+import { notificationService } from './notification.service.js';
 import { UserModel } from '../models/User.model.js';
 import { ApiError } from '../utils/api-error.js';
 
@@ -168,11 +169,73 @@ export const flagService = {
     }
 
     // Award/deduct Spurti points to the reporter if the moderator specified a reward.
-    if (typeof input.spurtiPoints === 'number' && input.spurtiPoints !== 0) {
+    const hasPointChange =
+      typeof input.spurtiPoints === 'number' && input.spurtiPoints !== 0;
+    if (hasPointChange) {
       await UserModel.updateOne(
         { _id: flag.reportedBy },
         { $inc: { spurtiPoints: input.spurtiPoints } },
       );
+    }
+
+    // Notify the reporter when the flag reaches a terminal state or points are awarded/deducted.
+    const isTerminal = input.status === 'resolved' || input.status === 'dismissed';
+    if (isTerminal || hasPointChange) {
+      // Resolve entity title for the notification body.
+      let entityTitle = 'the reported content';
+      if (flag.entityType === 'faq') {
+        const faq = await FaqModel.findById(flag.entityId)
+          .select('title')
+          .lean<{ title: string }>();
+        if (faq?.title) entityTitle = faq.title;
+      } else if (flag.entityType === 'question') {
+        const question = await QuestionModel.findById(flag.entityId)
+          .select('title')
+          .lean<{ title: string }>();
+        if (question?.title) entityTitle = question.title;
+      }
+
+      const contentLabel =
+        flag.entityType === 'faq'
+          ? 'FAQ'
+          : flag.entityType === 'question'
+            ? 'question'
+            : 'content';
+
+      let notifTitle: string;
+      let notifBody: string;
+
+      if (hasPointChange) {
+        const pts = input.spurtiPoints!;
+        const abs = Math.abs(pts);
+        const ptLabel = abs === 1 ? 'Spurti Point' : 'Spurti Points';
+        if (pts > 0) {
+          notifTitle = `Your report earned you +${pts} ${ptLabel}!`;
+          notifBody = `Your report on the ${contentLabel} "${entityTitle}" was reviewed. You earned +${pts} ${ptLabel}.`;
+        } else {
+          notifTitle = `${abs} ${ptLabel} deducted`;
+          notifBody = `Your report on the ${contentLabel} "${entityTitle}" was reviewed. ${abs} ${ptLabel} were deducted.`;
+        }
+      } else if (input.status === 'resolved') {
+        notifTitle = 'Your report was resolved';
+        notifBody = `Your report on the ${contentLabel} "${entityTitle}" was reviewed and resolved.`;
+      } else {
+        notifTitle = 'Your report was dismissed';
+        notifBody = `Your report on the ${contentLabel} "${entityTitle}" was reviewed and dismissed.`;
+      }
+
+      if (input.resolutionNote) {
+        notifBody += ` Moderator note: "${input.resolutionNote}"`;
+      }
+
+      void notificationService.create({
+        userId: flag.reportedBy.toString(),
+        type: 'flag_reviewed',
+        title: notifTitle,
+        body: notifBody,
+        relatedId:
+          flag.entityType === 'question' ? flag.entityId.toString() : undefined,
+      });
     }
 
     const populated = await FlagModel.findById(flag._id)

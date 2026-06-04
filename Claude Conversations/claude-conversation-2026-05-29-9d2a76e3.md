@@ -34,6 +34,7 @@ The clone succeeded. Now I'll copy the backend (`server/`), RAG (`rag/`), and sh
 All three directories are copied with all endpoints intact. Here's what was added to the project:
 
 **`server/`** — Production Node.js/ESM backend with:
+
 - [server/src/routes/assistantRoutes.js](server/src/routes/assistantRoutes.js) — `POST /api/assistant/search`
 - [server/src/routes/faqRoutes.js](server/src/routes/faqRoutes.js) — full FAQ CRUD + view/feedback/check-similar
 - [server/src/routes/questionRoutes.js](server/src/routes/questionRoutes.js) — questions, answers, moderation endpoints
@@ -43,6 +44,7 @@ All three directories are copied with all endpoints intact. Here's what was adde
 - [server/src/jobs/embeddingBackfillJob.js](server/src/jobs/embeddingBackfillJob.js) — batch embedding backfill
 
 **`rag/`** — RAG design docs and LLM server:
+
 - [rag/llm-server/index.js](rag/llm-server/index.js) — `POST /internal/llm/generate` and `POST /internal/llm/summarize` (LM Studio wrapper)
 - [rag/knowledge_base.md](rag/knowledge_base.md) — ground-truth FAQ knowledge base
 - [rag/rag-detailed.md](rag/rag-detailed.md) — architecture blueprint
@@ -76,9 +78,9 @@ Get back to the commit 2c0bb52
 That commit doesn't exist anywhere in this repository. I already checked all branches and history — `2c0bb52` is not present.
 
 A few possibilities:
+
 - It may be on a remote branch that hasn't been fetched. Want me to run `git fetch --all` and check again?
 - It could be from a different repository entirely.
 - The hash may be slightly wrong.
 
 ---
-

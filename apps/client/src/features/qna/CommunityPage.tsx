@@ -166,7 +166,7 @@ export function CommunityPage() {
     return p;
   }, [applied.status, applied.activity]);
 
-  const { data: rawData, isLoading } = useQuestions(queryParams);
+  const { data: rawData, isLoading, isError, refetch } = useQuestions(queryParams);
 
   // Category + text search are both filtered client-side.
   const data = useMemo(() => {
@@ -312,12 +312,43 @@ export function CommunityPage() {
           className="mod-card mod-card-green"
           style={{ padding: 20, color: 'var(--color-text-muted)', fontSize: 13 }}
         >
-          Loading…
+          Loading questions…
+        </div>
+      )}
+
+      {/* ── Error ─────────────────────────────────────────────────────── */}
+      {isError && (
+        <div className="mod-card mod-card-red" style={{ padding: 20 }}>
+          <div style={{ color: 'var(--color-danger)', fontWeight: 700, marginBottom: 4 }}>
+            Couldn't load questions.
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 10 }}>
+            Check your connection and try again.
+          </div>
+          <button
+            onClick={() => refetch()}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '6px 14px',
+              borderRadius: 8,
+              border: '1px solid var(--color-danger)',
+              background: 'transparent',
+              color: 'var(--color-danger)',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Try again
+          </button>
         </div>
       )}
 
       {/* ── Empty state ───────────────────────────────────────────────── */}
-      {!isLoading && data.length === 0 && (
+      {!isLoading && !isError && data.length === 0 && (
         <div className="mod-card mod-card-green" style={{ padding: 40, textAlign: 'center' }}>
           <div
             style={{
@@ -372,7 +403,7 @@ export function CommunityPage() {
       )}
 
       {/* ── Question list ─────────────────────────────────────────────── */}
-      {!isLoading && data.length > 0 && (
+      {!isLoading && !isError && data.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {data.map((q) => {
             const sm = getStatusMeta(q.status);

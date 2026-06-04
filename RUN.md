@@ -32,11 +32,11 @@
 Install all tools listed below before continuing. Commands for **macOS** and
 **Windows** are shown side by side.
 
-### Node.js 20 LTS *(required)*
+### Node.js 20 LTS _(required)_
 
-| | macOS / Linux | Windows |
-|---|---|---|
-| **Download** | https://nodejs.org → LTS installer | https://nodejs.org → LTS installer |
+|                                       | macOS / Linux                                                                                                          | Windows                                                                                                           |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Download**                          | https://nodejs.org → LTS installer                                                                                     | https://nodejs.org → LTS installer                                                                                |
 | **Via version manager (recommended)** | `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh \| bash` then `nvm install 20 && nvm use 20` | Install [nvm-windows](https://github.com/coreybutler/nvm-windows/releases) then `nvm install 20` and `nvm use 20` |
 
 Verify:
@@ -46,13 +46,13 @@ node --version    # must print v20.x.x or higher
 npm  --version    # must print 10.x.x or higher
 ```
 
-### MongoDB Community 7 *(required)*
+### MongoDB Community 7 _(required)_
 
-| | macOS | Windows |
-|---|---|---|
-| **Homebrew** | `brew tap mongodb/brew && brew install mongodb-community@7.0` | *(not available)* |
-| **Installer** | https://www.mongodb.com/try/download/community | https://www.mongodb.com/try/download/community |
-| **Start service** | `brew services start mongodb-community@7.0` | Run **MongoDB Compass** or `net start MongoDB` in an admin terminal |
+|                   | macOS                                                         | Windows                                                             |
+| ----------------- | ------------------------------------------------------------- | ------------------------------------------------------------------- |
+| **Homebrew**      | `brew tap mongodb/brew && brew install mongodb-community@7.0` | _(not available)_                                                   |
+| **Installer**     | https://www.mongodb.com/try/download/community                | https://www.mongodb.com/try/download/community                      |
+| **Start service** | `brew services start mongodb-community@7.0`                   | Run **MongoDB Compass** or `net start MongoDB` in an admin terminal |
 
 Verify:
 
@@ -60,16 +60,16 @@ Verify:
 mongod --version   # must print v7.x or higher
 ```
 
-### Git *(required)*
+### Git _(required)_
 
-| macOS | Windows |
-|---|---|
+| macOS                                                     | Windows                          |
+| --------------------------------------------------------- | -------------------------------- |
 | `brew install git` or Xcode CLT: `xcode-select --install` | https://git-scm.com/download/win |
 
-### Ollama *(optional — only needed for full AI chatbot)*
+### Ollama _(optional — only needed for full AI chatbot)_
 
-| macOS | Windows |
-|---|---|
+| macOS                                          | Windows                                        |
+| ---------------------------------------------- | ---------------------------------------------- |
 | https://ollama.com/download (`.dmg` installer) | https://ollama.com/download (`.exe` installer) |
 
 ---
@@ -179,9 +179,11 @@ EMBEDDING_PROVIDER=mock
 > **Generate JWT secrets quickly**
 >
 > macOS / Linux / Windows (any terminal with Node):
+>
 > ```bash
 > node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 > ```
+>
 > Run it twice and paste the two different outputs as `JWT_ACCESS_SECRET` and
 > `JWT_REFRESH_SECRET`.
 
@@ -221,6 +223,7 @@ net start MongoDB
 ```
 
 > **First-time Windows users:** create the data directory before starting:
+>
 > ```cmd
 > mkdir C:\data\db
 > ```
@@ -306,7 +309,7 @@ npm --workspace @samagama/server run seed:chat-conversations
 
 ## 8. Run the Application
 
-### Option A — Start everything with one command *(recommended)*
+### Option A — Start everything with one command _(recommended)_
 
 ```bash
 npm run dev
@@ -351,9 +354,9 @@ VITE v5.x.x  ready in 235 ms
 
 Open your browser and navigate to:
 
-| Service | URL | Expected result |
-|---------|-----|-----------------|
-| **React app** | http://localhost:5173 | Login page loads |
+| Service        | URL                          | Expected result   |
+| -------------- | ---------------------------- | ----------------- |
+| **React app**  | http://localhost:5173        | Login page loads  |
 | **API health** | http://localhost:4000/health | `{"status":"ok"}` |
 
 ### Quick terminal health check
@@ -386,11 +389,11 @@ Both should return `{"status":"ok","uptime":...}`.
 
 The login page has a built-in dev credentials panel (development mode only).
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | `admin@samagama.test` | `AdminDev!2024` |
-| Moderator | `moderator@samagama.test` | `ModDev!2024` |
-| Student | `student@samagama.test` | `StudentDev!2024` |
+| Role      | Email                     | Password          |
+| --------- | ------------------------- | ----------------- |
+| Admin     | `admin@samagama.test`     | `AdminDev!2024`   |
+| Moderator | `moderator@samagama.test` | `ModDev!2024`     |
+| Student   | `student@samagama.test`   | `StudentDev!2024` |
 
 ### Named accounts (from seed data)
 
@@ -400,12 +403,12 @@ All 25 students share password **`Student@2026`**. Email format:
 **Example students:** `aditya@samagama.test` · `priya@samagama.test` ·
 `arjun@samagama.test` · `rohit@samagama.test`
 
-| Role | Email | Password |
-|------|-------|----------|
+| Role      | Email                    | Password         |
+| --------- | ------------------------ | ---------------- |
 | Moderator | `kushagra@samagama.test` | `Moderator@2026` |
-| Moderator | `jahnvi@samagama.test` | `Moderator@2026` |
-| Admin | `divy@samagama.test` | `Admin@2026` |
-| Admin | `anshuman@samagama.test` | `Admin@2026` |
+| Moderator | `jahnvi@samagama.test`   | `Moderator@2026` |
+| Admin     | `divy@samagama.test`     | `Admin@2026`     |
+| Admin     | `anshuman@samagama.test` | `Admin@2026`     |
 
 ---
 
@@ -416,26 +419,26 @@ Windows.
 
 ### Development
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start server + client together |
-| `npm run dev:server` | Start API server only (port 4000) |
+| Command              | Description                         |
+| -------------------- | ----------------------------------- |
+| `npm run dev`        | Start server + client together      |
+| `npm run dev:server` | Start API server only (port 4000)   |
 | `npm run dev:client` | Start React client only (port 5173) |
-| `npm run build` | Production build for all workspaces |
-| `npm run typecheck` | TypeScript type-check everything |
-| `npm run lint` | ESLint across the whole repo |
-| `npm run format` | Prettier format check |
+| `npm run build`      | Production build for all workspaces |
+| `npm run typecheck`  | TypeScript type-check everything    |
+| `npm run lint`       | ESLint across the whole repo        |
+| `npm run format`     | Prettier format check               |
 
 ### Seeding
 
-| Command | Description |
-|---------|-------------|
-| `npm --workspace @samagama/server run seed:dev-users` | Dev login accounts |
-| `npm --workspace @samagama/server run seed:accounts` | Real student / mod / admin accounts |
-| `npm --workspace @samagama/server run seed:faqs` | FAQ content |
-| `npm --workspace @samagama/server run seed:chat-conversations` | Extended chatbot test data |
-| `npm --workspace @samagama/server run simulate:full` | Full student activity simulation |
-| `npm --workspace @samagama/server run test:search` | Semantic search accuracy tests |
+| Command                                                        | Description                         |
+| -------------------------------------------------------------- | ----------------------------------- |
+| `npm --workspace @samagama/server run seed:dev-users`          | Dev login accounts                  |
+| `npm --workspace @samagama/server run seed:accounts`           | Real student / mod / admin accounts |
+| `npm --workspace @samagama/server run seed:faqs`               | FAQ content                         |
+| `npm --workspace @samagama/server run seed:chat-conversations` | Extended chatbot test data          |
+| `npm --workspace @samagama/server run simulate:full`           | Full student activity simulation    |
+| `npm --workspace @samagama/server run test:search`             | Semantic search accuracy tests      |
 
 ### Stop the application
 

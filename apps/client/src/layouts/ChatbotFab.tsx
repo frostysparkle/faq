@@ -76,7 +76,7 @@ export function ChatbotFab() {
   const isResizing = useRef(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const sendMutation = useSendMessage();
   const feedbackMutation = useSubmitChatFeedback();
 
@@ -136,11 +136,20 @@ export function ChatbotFab() {
     document.addEventListener('pointerup', onPointerUp);
   };
 
+  /* Grow textarea to fit content, capped at 120px */
+  const growTextarea = (el: HTMLTextAreaElement) => {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  };
+
   /* Send a message */
   const send = async () => {
     const text = input.trim();
     if (!text || sendMutation.isPending) return;
     setInput('');
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+    }
     setMessages((prev) => [...prev, { role: 'user', content: text }]);
     setIsTyping(true);
     try {
@@ -299,16 +308,25 @@ export function ChatbotFab() {
           send();
         }}
       >
-        <input
+        <textarea
           ref={inputRef}
-          type="text"
           id="ym-input"
           name="question"
+          rows={1}
           placeholder="Type a question…"
           maxLength={500}
           aria-label="Your question for Yaksha-mini"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => {
+            setInput(e.target.value);
+            growTextarea(e.target);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              send();
+            }
+          }}
         />
         <button
           type="submit"

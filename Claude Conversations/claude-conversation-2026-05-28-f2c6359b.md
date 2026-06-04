@@ -118,9 +118,10 @@ I have a thorough understanding of the codebase. Here's what I'll do:
 
 **Backend:** Add `pendingAnswers` to `ModeratorDashboardStats`  
 **Frontend:** Redesign `ModerationOverviewPage.tsx` with:
+
 - Top urgency row (4 compact cards: stale community Q's, unanswered personal, unanswered community, flagged FAQs)
 - Section 2 (2-col): IdleBucketCards + Personal StatCard
-- Section 3 (2-col): Community StatCard + Community Today StatCard  
+- Section 3 (2-col): Community StatCard + Community Today StatCard
 - Section 4 (2-col): FAQ StatCard + Flagged FAQs StatCard (with pending answers added to FAQ card)
 
 ---
@@ -162,13 +163,16 @@ No errors. Here's a summary of all changes made:
 ---
 
 **Backend** ([stats.service.ts](apps/server/src/services/stats.service.ts)):
+
 - Added `pendingAnswers: number` to `ModeratorDashboardStats` interface
 - Added `AnswerModel.countDocuments({ status: 'pending' })` to `getModeratorDashboardStats()` to compute it
 
 **Client type** ([faq/api.ts](apps/client/src/features/faq/api.ts)):
+
 - Added `pendingAnswers: number` to the client-side `ModeratorDashboardStats` interface
 
 **Dashboard** ([ModerationOverviewPage.tsx](apps/client/src/features/moderation/ModerationOverviewPage.tsx)):
+
 - **Row 1 — "Needs Attention"**: 4 compact `UrgencyCard` components showing stale Q&A (>1 week idle), unanswered personal questions, unanswered community questions, and flagged FAQs. Each turns the accent color and shows an "Action needed" badge when the count is non-zero. All are clickable and navigate to the relevant working screen.
 - **Row 2 — "Community Queue"**: IdleBucketCards (full bucket breakdown) + Personal Questions card + Community Questions card + Community Today card
 - **Row 3 — "FAQ Health"**: FAQs card (with a new 4th row for the pending answer queue) + Flagged FAQs card
@@ -216,4 +220,3 @@ Now verify the client TypeScript is clean too:
 Both backend and client compile cleanly with zero errors. The linter had silently reverted the two client files after my initial write, but both are now correct and confirmed passing TypeScript checks.
 
 ---
-

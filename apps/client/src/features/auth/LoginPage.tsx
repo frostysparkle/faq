@@ -24,6 +24,8 @@ export function LoginPage() {
     return <Navigate to={redirectTo} replace />;
   }
 
+  const wasRedirected = (location.state as { redirected?: boolean })?.redirected === true;
+
   const onSubmit = async (data: LoginInput) => {
     setServerError(null);
     try {
@@ -274,6 +276,24 @@ export function LoginPage() {
                 </div>
               </div>
             </div>
+
+            {wasRedirected && (
+              <div
+                role="status"
+                style={{
+                  marginBottom: 18,
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  background: 'var(--color-warning-bg, #fffbeb)',
+                  color: 'var(--color-warning, #d97706)',
+                  fontSize: 13,
+                  border: '1px solid var(--color-warning, #d97706)',
+                  fontWeight: 500,
+                }}
+              >
+                Your session has expired. Please sign in to continue.
+              </div>
+            )}
 
             <form onSubmit={handleSubmit(onSubmit)}>
               {/* Email */}

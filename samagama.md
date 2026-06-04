@@ -637,7 +637,6 @@ Score: **33/36 (~92%)**, with the remaining 3 items all blocked on out-of-scope 
 - `apps/client/src/features/auth/DevCredentials.tsx`
 - `apps/client/src/features/auth/__tests__/LoginPage.test.tsx`
 
-
 ---
 
 ## 2026-05-27 — UI Polish Sprint: FAQ Management redesign, Moderator Dashboard upgrades, Browse FAQs filter panel
@@ -645,6 +644,7 @@ Score: **33/36 (~92%)**, with the remaining 3 items all blocked on out-of-scope 
 ### What was completed
 
 **FAQ Management tab (FaqsAdminTab + FaqManagementPage):**
+
 - Complete SaaS-style table redesign: hardcoded colour constants `C`, white card container with shadow/border-radius, 6-column CSS Grid (`52px 190px minmax(0,1fr) 160px 140px 130px`), row hover effects.
 - Numbered badge column (01, 02…) with purple pill styling.
 - Details column restructured as **2-row stacked layout**: top row = folder icon + category name (full, no truncation); bottom row = status dot + status pill + divider + calendar icon + updated time. Fixes overflow/truncation seen in the single-row layout.
@@ -660,35 +660,42 @@ Score: **33/36 (~92%)**, with the remaining 3 items all blocked on out-of-scope 
 - `FaqSummaryCard` component shared between FAQ Management and Moderator Dashboard.
 
 **InlineFaqEditor:**
+
 - Extended `ExistingFaq` interface with `helpfulCount?`, `unhelpfulCount?`, `flagCount?`.
 - Added `resetHelpful`, `resetUnhelpful`, `resetFlags` boolean state and "Reset counters" UI section (edit mode only) with `ResetCheckbox` components.
 - Added `statsResetNote` banner when server signals the answer body changed.
 
 **FlagInbox:**
+
 - Added Spurti points selector (−1 / 0 / +1 / +2) per flag row using `spurtiMap` state.
 - Passes `spurtiPoints` into both Resolve and Dismiss mutations.
 - Fixed curly/smart-quote parse error (`type="button"` had unicode quotes).
 
 **Shared schemas:**
+
 - `faqUpdateSchema`: added `resetHelpful`, `resetUnhelpful`, `resetFlags` optional booleans.
 - `flagUpdateStatusSchema`: added `spurtiPoints: z.number().int().min(-1).max(2).optional()`.
 
 **Server services:**
+
 - `faq.service.update()`: manual stat resets (`resetHelpful/Unhelpful/Flags`) when answer body did NOT change; auto-reset still fires on answer change.
 - `flag.service.updateStatus()`: awards/deducts Spurti Points to the reporter if `spurtiPoints !== 0`.
 - `stats.service.getModeratorDashboardStats()`: added two extra parallel queries — published FAQ count + helpful/unhelpful aggregate. Returns new `helpfulFaqs` and `unhelpfulFaqs` fields.
 - `ModeratorDashboardStats` interface extended with `helpfulFaqs: { percentage, publishedTotal }` and `unhelpfulFaqs: { percentage, publishedTotal }`.
 
 **Client `faq/api.ts`:**
+
 - `ModeratorDashboardStats` interface mirrored with the two new fields.
 
 **Moderator Dashboard (ModerationOverviewPage):**
+
 - Welcome banner ("Welcome back, [Name] 👋 · Signed in as moderator").
 - Top 2-column grid: Open Community Q&A (IdleBucketCards) / Personal Questions / Community Questions / Community Questions Today / FAQs / Flagged FAQs — all using the `StatCard` component with icon-per-row, big number + label, coloured subtitle.
 - Flagged FAQs card remains in the 2-column grid with Total / Today / This week rows.
 - Role-based login redirect: moderators → `/moderation`, admins → `/admin` (via `<Navigate replace>` in HomePage).
 
 **Browse FAQs (FaqsPage):**
+
 - Full redesign to match SaaS filter panel reference image.
 - Search bar: wider, rounded-12, subtle shadow, icon + clear button.
 - "Filters" toggle button (SlidersHorizontal icon) shows/hides the filter panel with ChevronUp/Down.
@@ -710,10 +717,12 @@ Score: **33/36 (~92%)**, with the remaining 3 items all blocked on out-of-scope 
 ### Files touched
 
 **New / rewritten:**
+
 - `apps/client/src/features/faq/FaqsPage.tsx` (Browse FAQs redesign)
 - `apps/client/src/features/admin/FaqManagementPage.tsx` (removed old stat cards, moved tab bar below summary cards)
 
 **Updated:**
+
 - `apps/client/src/features/admin/tabs/FaqsAdminTab.tsx` (table redesign, column toggle, search bar, summary cards removed)
 - `apps/client/src/features/admin/tabs/FlagInbox.tsx` (Spurti selector, smart-quote fix)
 - `apps/client/src/features/admin/tabs/InlineFaqEditor.tsx` (reset counters UI)
@@ -734,22 +743,25 @@ Score: **33/36 (~92%)**, with the remaining 3 items all blocked on out-of-scope 
 ### What was completed
 
 **Backend:**
+
 - New aggregation `statsService.getCommunityIdleBuckets()` returns `{ last24h, over3days, over1week, totalOpen }` for **community** questions in `open`/`answered` status using `updatedAt` as the activity proxy. Single `$facet` so all four counts return in one round trip.
 - Bucket math is mutually exclusive — every open community question fits exactly one bucket and the three counts always sum to `totalOpen`:
   - `last24h`: `updatedAt >= now-24h`
-  - `over3days`: `now-7d <= updatedAt < now-24h`  ← deliberately wider than the literal "> 3 days" so cards + chips always sum cleanly. Documented in the service.
+  - `over3days`: `now-7d <= updatedAt < now-24h` ← deliberately wider than the literal "> 3 days" so cards + chips always sum cleanly. Documented in the service.
   - `over1week`: `updatedAt < now-7d`
 - New endpoint `GET /api/stats/community-idle` (all authed roles).
 - `qna.service.listQuestions` accepts `idle?: 'last24h' | 'over3days' | 'over1week'` with the same bucket math, so the Community page filter narrows to exactly what the dashboard cards count.
 - Controller picks up `?idle=…` from the query string with input validation.
 
 **Caching (`checkExisting`):**
+
 - New `apps/server/src/utils/ttl-cache.ts` — generic in-process TTL cache with lazy eviction, `maxEntries`, and a single-file shape so swapping to Redis later is trivial.
 - `qna.service.checkExisting` now caches the FAQ + community-question similarity result for 60 seconds, keyed on `(userId, normalizedTitle, normalizedDescription)`. The signed token is **never** cached (each call produces a fresh one bound to the requesting user).
 - Cache invalidation: when a new community question is created, the whole map is cleared (cache warms again within seconds; correctness > micro-optimization).
 - Live measured: 61ms cold → 11ms warm against a local Mongo. On Atlas with 50–100ms RTT the savings will be larger.
 
 **Frontend:**
+
 - New `IdleBucketCards` component in `apps/client/src/features/stats/`. Three click-through cards (Active 24h / Idle > 3d / Idle > 1w) that navigate to `/community?idle=…`.
 - Component reused on Student Home, Moderator Overview, and the new Admin Overview page so all three roles see the same numbers.
 - New `AdminOverviewPage` replacing the "Coming Soon" placeholder. Hosts the idle row plus a 3-card system overview (Unresolved Questions / Flagged FAQs / Published FAQs). Wired into App router.
@@ -760,9 +772,11 @@ Score: **33/36 (~92%)**, with the remaining 3 items all blocked on out-of-scope 
 - TanStack Query hooks: new `useCommunityIdleBuckets()` with 60s staleTime so the cards don't refetch on every page change.
 
 ### Why
+
 Dashboards previously had no signal about question staleness. The idle buckets surface the "needs a moderator" tier without manual triage. Putting the same chips on the Community page closes the feedback loop — click a card → see the matching list. Caching `checkExisting` removes the obvious hot-path cost (text-index queries fire every keystroke after the user clicks "Check Existing Answers").
 
 ### Architectural decisions
+
 - **Single `$facet` aggregation, not three count queries.** One Mongo round trip; all four counts come back together; can't drift due to interleaved writes.
 - **Middle bucket spans 24h–7d, not 3d–7d.** A strict reading of "> 3 days" leaves questions idle for 1–3 days uncounted on every dashboard. Tradeoff: the chip says "Idle > 3 days" but actually catches "Idle > 1 day" — visible-but-imprecise wording vs hidden gap. Picked the former. Documented inline in `stats.service` for future readers.
 - **In-process cache, not Redis.** Single-process MERN MVP; Redis is a new daemon and a new outage path. The `TtlCache` interface is what `checkExisting` uses, so the swap is one file.
@@ -771,17 +785,20 @@ Dashboards previously had no signal about question staleness. The idle buckets s
 - **Cache cleared on new community question, not on tag-me.** Tagging doesn't change the corpus of community questions, only `taggedStudents[]` on an existing row.
 
 ### Tradeoffs
+
 - **No background refresh.** TanStack Query will refetch when the user navigates back; otherwise the 60s staleTime governs freshness. Adequate for the MVP — moderators don't need second-by-second updates.
 - **Idle filter clears the personal-question OR clause.** Setting `idle=…` implies community-only (personal questions don't have peer-answer activity). Documented in the service.
 - **Cache invalidation is whole-map clear on createQuestion.** Could be more surgical (clear only entries whose normalized text overlaps the new question), but the cost of a clear is "everyone re-runs the cheap query once" which is fine.
 
 ### Live verification
+
 - `GET /api/stats/community-idle` (any role) → `{ last24h: 2, over3days: 0, over1week: 0, totalOpen: 2 }`. Sum equals total ✓.
 - `GET /api/qna/questions?type=community&idle=last24h` → 2 questions, matches the card count ✓.
 - `GET /api/qna/questions?type=community&idle=over1week` → 0 questions ✓.
 - `POST /api/qna/check-existing` twice in a row with identical body: 61ms (cold) → 11ms (warm) ✓.
 
 ### Self-check
+
 - Lint: ✅ 0 errors
 - Typecheck (3 workspaces, strict): ✅
 - Tests: ✅ 22/22 (no new tests yet — TODO add `ttl-cache` + idle bucket math tests in Phase 7)
@@ -789,17 +806,21 @@ Dashboards previously had no signal about question staleness. The idle buckets s
 - Live API: ✅ all four behaviors verified end-to-end
 
 ### TODOs
+
 - Test for `TtlCache` covering get/set/expiry/eviction.
 - Test that locks the bucket invariant `last24h + over3days + over1week === totalOpen`.
 - Hint to operator: when migrating to multi-instance, swap `createTtlCache` for a Redis-backed implementation; the rest of the call sites stay unchanged.
 
 ### Files touched
+
 **New:**
+
 - `apps/server/src/utils/ttl-cache.ts`
 - `apps/client/src/features/stats/IdleBucketCards.tsx`
 - `apps/client/src/features/admin/AdminOverviewPage.tsx`
 
 **Updated:**
+
 - `apps/server/src/services/stats.service.ts` (new `getCommunityIdleBuckets` + `IdleBuckets` type)
 - `apps/server/src/services/qna.service.ts` (cache wiring + `idle` filter in `listQuestions`)
 - `apps/server/src/controllers/stats.controller.ts`, `routes/stats.routes.ts` (`/community-idle` route)

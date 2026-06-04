@@ -4,6 +4,7 @@ const NOTIFICATION_TYPES = [
   'answer_approved',
   'answer_rejected',
   'question_answered',
+  'flag_reviewed',
   'general',
 ] as const;
 

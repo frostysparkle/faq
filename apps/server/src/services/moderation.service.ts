@@ -96,11 +96,15 @@ export const moderationService = {
 
     // Notify the answer author (fire-and-forget — never block the approval response).
     const questionTitle = question?.title ?? 'a community question';
+    const ptLabel = Math.abs(pts) === 1 ? 'Spurti Point' : 'Spurti Points';
     void notificationService.create({
       userId: answer.answeredBy.toString(),
       type: 'answer_approved',
-      title: 'Your answer was approved!',
-      body: `Your answer to "${questionTitle}" has been approved by a moderator.`,
+      title: pts > 0 ? `Answer approved! +${pts} ${ptLabel}` : 'Your answer was approved!',
+      body:
+        pts > 0
+          ? `Your answer to "${questionTitle}" was approved. You earned +${pts} ${ptLabel}!`
+          : `Your answer to "${questionTitle}" has been approved by a moderator.`,
       relatedId: answer.questionId.toString(),
     });
 
@@ -111,7 +115,7 @@ export const moderationService = {
         userId: question.askedBy.toString(),
         type: 'question_answered',
         title: 'Your question has been resolved!',
-        body: `A moderator approved an answer to your question: "${questionTitle}".`,
+        body: `A moderator approved an answer to your question: "${questionTitle}". View the resolved answer to see the full response.`,
         relatedId: answer.questionId.toString(),
       });
     }
@@ -214,6 +218,21 @@ export const moderationService = {
     // Community questions stay 'answered' so peers can still contribute.
     question.status = question.type === 'personal' ? 'resolved' : 'answered';
     await question.save();
+
+    // Notify the student that their question received a direct moderator response.
+    void notificationService.create({
+      userId: question.askedBy.toString(),
+      type: 'question_answered',
+      title:
+        question.type === 'personal'
+          ? 'A moderator answered your question!'
+          : 'Your question received a new answer',
+      body:
+        question.type === 'personal'
+          ? `A moderator replied to your personal question: "${question.title}". View the response in My Questions.`
+          : `A moderator posted an answer to your community question: "${question.title}".`,
+      relatedId: question._id.toString(),
+    });
   },
 
   /** List approved answers eligible for FAQ conversion. */

@@ -34,10 +34,10 @@ Can you continue from that chat!
 I don't have access to previous conversations — each session starts fresh with no memory of past chats.
 
 To pick up where you left off, you can:
+
 1. **Paste the relevant context** from that chat here (what was being worked on, any errors, etc.)
 2. **Describe the task** — what were you trying to do with the backend build status?
 
 I can see from the git status that there are several new model/service files on the current branch. If the previous chat was about getting the server running or debugging a build issue, just tell me where things stood and I'll continue from there.
 
 ---
-

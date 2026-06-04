@@ -10,36 +10,39 @@
 
 ## 1. System Architecture — What We Own
 
-| Layer | Technology | Status |
-|---|---|---|
-| HTTP Server | Node.js 20 + Express 5 | Built |
-| Database | MongoDB Atlas (Mongoose ODM) | Built |
-| Auth | JWT (access + refresh), bcrypt | Built |
-| RBAC | `student` / `moderator` / `admin` roles | Built |
-| FAQ Management | Full CRUD + text search + feedback | Built |
-| Community Q&A | Questions, Answers, votes, moderation | Built |
-| Audit Logging | All mod/admin actions recorded | Built |
-| Flag/Report System | FAQs, questions, answers, chatbot responses | Built |
-| System Settings | Configurable thresholds (confidence, sources cap, etc.) | Built |
-| Embedding field | Reserved on `Faq` and `Answer` models | Schema ready, not populated |
-| Vector Search | MongoDB `$vectorSearch` index | Phase 6 |
-| Chat Session / RAG | Chatbot query flow | Phase 6 |
-| LLM integration | Outbound calls to `/generate` and `/summarize` | Phase 6 |
+| Layer              | Technology                                              | Status                      |
+| ------------------ | ------------------------------------------------------- | --------------------------- |
+| HTTP Server        | Node.js 20 + Express 5                                  | Built                       |
+| Database           | MongoDB Atlas (Mongoose ODM)                            | Built                       |
+| Auth               | JWT (access + refresh), bcrypt                          | Built                       |
+| RBAC               | `student` / `moderator` / `admin` roles                 | Built                       |
+| FAQ Management     | Full CRUD + text search + feedback                      | Built                       |
+| Community Q&A      | Questions, Answers, votes, moderation                   | Built                       |
+| Audit Logging      | All mod/admin actions recorded                          | Built                       |
+| Flag/Report System | FAQs, questions, answers, chatbot responses             | Built                       |
+| System Settings    | Configurable thresholds (confidence, sources cap, etc.) | Built                       |
+| Embedding field    | Reserved on `Faq` and `Answer` models                   | Schema ready, not populated |
+| Vector Search      | MongoDB `$vectorSearch` index                           | Phase 6                     |
+| Chat Session / RAG | Chatbot query flow                                      | Phase 6                     |
+| LLM integration    | Outbound calls to `/generate` and `/summarize`          | Phase 6                     |
 
 ---
 
 ## 2. MongoDB Collections (Single Source of Truth)
 
 ### `users`
+
 ```
 _id, name, email, passwordHash, role (student|moderator|admin),
 status (active|suspended|deleted), tokenVersion, spurtiPoints,
 recentlyViewedFaqs[], createdAt, updatedAt
 ```
+
 - Students start with 100 `spurtiPoints`. Points are awarded by moderators on answer approval.
 - `tokenVersion` is bumped on password change to invalidate outstanding refresh tokens.
 
 ### `faqs`
+
 ```
 _id, title, slug, answer, summary,
 categories[], tags[],
@@ -49,11 +52,13 @@ embedding: [Number]  ← Phase 6: vector of FAQ title/question
 helpfulCount, unhelpfulCount, viewCount, flagCount,
 createdBy, updatedBy, publishedAt, createdAt, updatedAt
 ```
+
 - **Text index** on `(title × 10, summary × 5, answer × 1)` — used today for keyword search; `$vectorSearch` will replace/augment in Phase 6.
 - `embedding` field is `select: false` (never returned in normal queries, only fetched by the RAG pipeline).
 - Only `published` FAQs will be fed into vector search.
 
 ### `questions` (Community Q&A)
+
 ```
 _id, title, description, category, tags[],
 type (personal|community),
@@ -63,10 +68,12 @@ screenshotUrl, moderatorViewedAt,
 existingAnswerCheck { checkedAt, matchedFaqs[], matchedQuestions[] },
 viewCount, answerCount, createdAt, updatedAt
 ```
+
 - **Text index** on `(title × 10, description × 1)` for the "Check Existing Answers" similarity lookup before a student posts.
 - Personal questions are invisible to other students — only the asker and moderators see them.
 
 ### `answers`
+
 ```
 _id, questionId, body, answeredBy,
 status (pending|approved|rejected|edited_pending),
@@ -75,9 +82,11 @@ embedding: [Number]  ← Phase 6
 eligibleForFaqConversion, convertedFaqId,
 upvoteCount, downvoteCount, createdAt, updatedAt
 ```
+
 - Only `approved` answers with high upvotes will be candidates for the RAG `queries` collection (the 7-day TTL collection maps to this + a `verifiedAt` timestamp to be added in Phase 6).
 
 ### `chatfeedbacks`
+
 ```
 _id, chatSessionId, messageIndex,
 query (snapshot), answer (snapshot),
@@ -86,9 +95,11 @@ comment, userId,
 status (open|reviewed|resolved),
 createdAt, updatedAt
 ```
+
 - `incorrect` rating = flagged chatbot response → feeds the moderator review inbox.
 
 ### `systemsettings` (singleton `_id: "global"`)
+
 ```
 duplicateWarnThreshold: 0.6,      ← warn student if existing match > 60%
 duplicateStrongThreshold: 0.8,    ← block / strongly warn if > 80%
@@ -97,19 +108,23 @@ chatbotMaxSources: 6,             ← max docs bundled into your /generate paylo
 communityAnswerCap: 10,           ← max answers per community question
 urgentIdleDays: 7
 ```
+
 - These are **your thresholds to read.** When we call your `/generate` endpoint we will pre-filter by `chatbotConfidenceThreshold` and cap sources at `chatbotMaxSources` before building the payload.
 
 ### `auditlogs`
+
 ```
 _id, actorId, action, entityType, entityId, before, after, reason, createdAt
 ```
 
 ### `flags`
+
 ```
 _id, entityType (faq|question|answer|chatbot_response), entityId,
 reason, details, status (open|under_review|resolved|dismissed),
 reportedBy, reviewedBy, resolutionNote, createdAt, updatedAt
 ```
+
 - Unique partial index: one active flag per `(user, entityType, entityId)`.
 
 ---
@@ -133,76 +148,87 @@ LLM_INTERNAL_SECRET=<shared-bearer-token>
 ## 4. Current API Surface (All endpoints under `/api`)
 
 ### Auth — `/api/auth`
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/register` | Public | Create student account |
-| POST | `/login` | Public | Returns access + refresh token |
-| POST | `/refresh` | Public | Rotate refresh token |
-| POST | `/logout` | Public | Invalidate session |
-| GET | `/me` | Bearer | Current user profile |
+
+| Method | Path        | Auth   | Description                    |
+| ------ | ----------- | ------ | ------------------------------ |
+| POST   | `/register` | Public | Create student account         |
+| POST   | `/login`    | Public | Returns access + refresh token |
+| POST   | `/refresh`  | Public | Rotate refresh token           |
+| POST   | `/logout`   | Public | Invalidate session             |
+| GET    | `/me`       | Bearer | Current user profile           |
 
 - Login is rate-limited: **10 attempts per 15 minutes per IP**.
 - Access token TTL and refresh token TTL are defined in `@samagama/shared`.
 
 ### FAQs — `/api/faqs`
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/` | Bearer | List/search FAQs (text search, filter by category/tag/status) |
-| GET | `/:id` | Bearer | Single FAQ detail |
-| GET | `/recent` | Bearer | User's recently viewed FAQs |
-| POST | `/` | Mod/Admin | Create FAQ |
-| PATCH | `/:id` | Mod/Admin | Update FAQ |
-| PATCH | `/:id/archive` | Mod/Admin | Archive FAQ |
-| POST | `/:id/view` | Bearer | Record view (increments viewCount) |
-| POST | `/:id/feedback` | Bearer | Submit helpful/unhelpful vote |
+
+| Method | Path            | Auth      | Description                                                   |
+| ------ | --------------- | --------- | ------------------------------------------------------------- |
+| GET    | `/`             | Bearer    | List/search FAQs (text search, filter by category/tag/status) |
+| GET    | `/:id`          | Bearer    | Single FAQ detail                                             |
+| GET    | `/recent`       | Bearer    | User's recently viewed FAQs                                   |
+| POST   | `/`             | Mod/Admin | Create FAQ                                                    |
+| PATCH  | `/:id`          | Mod/Admin | Update FAQ                                                    |
+| PATCH  | `/:id/archive`  | Mod/Admin | Archive FAQ                                                   |
+| POST   | `/:id/view`     | Bearer    | Record view (increments viewCount)                            |
+| POST   | `/:id/feedback` | Bearer    | Submit helpful/unhelpful vote                                 |
 
 ### Community Q&A — `/api/qna`
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/check-existing` | Bearer | Similarity search before posting (returns signed check token) |
-| POST | `/questions` | Bearer | Post a question (requires check token) |
-| GET | `/questions` | Bearer | List questions |
-| GET | `/questions/:id` | Bearer | Question detail |
-| POST | `/questions/:id/tag-me` | Bearer | Express interest in a question |
-| GET | `/questions/:id/answers` | Bearer | List answers on a question |
-| POST | `/questions/:id/answers` | Bearer | Submit an answer |
-| POST | `/answers/:id/vote/:direction` | Bearer | Upvote/downvote an answer |
 
-### Chatbot — `/api/chat` *(Phase 6 write-paths not yet wired)*
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/feedback` | Mod/Admin | List chatbot feedback |
-| GET | `/feedback/stats` | Mod/Admin | Feedback counts |
-| POST | `/query` | Bearer | **Phase 6** — student sends message, we orchestrate RAG + LLM call |
+| Method | Path                           | Auth   | Description                                                   |
+| ------ | ------------------------------ | ------ | ------------------------------------------------------------- |
+| POST   | `/check-existing`              | Bearer | Similarity search before posting (returns signed check token) |
+| POST   | `/questions`                   | Bearer | Post a question (requires check token)                        |
+| GET    | `/questions`                   | Bearer | List questions                                                |
+| GET    | `/questions/:id`               | Bearer | Question detail                                               |
+| POST   | `/questions/:id/tag-me`        | Bearer | Express interest in a question                                |
+| GET    | `/questions/:id/answers`       | Bearer | List answers on a question                                    |
+| POST   | `/questions/:id/answers`       | Bearer | Submit an answer                                              |
+| POST   | `/answers/:id/vote/:direction` | Bearer | Upvote/downvote an answer                                     |
+
+### Chatbot — `/api/chat` _(Phase 6 write-paths not yet wired)_
+
+| Method | Path              | Auth      | Description                                                        |
+| ------ | ----------------- | --------- | ------------------------------------------------------------------ |
+| GET    | `/feedback`       | Mod/Admin | List chatbot feedback                                              |
+| GET    | `/feedback/stats` | Mod/Admin | Feedback counts                                                    |
+| POST   | `/query`          | Bearer    | **Phase 6** — student sends message, we orchestrate RAG + LLM call |
 
 ### Other Existing Routes
-| Route prefix | Auth | Description |
-|---|---|---|
-| `/api/categories` | Mod/Admin (write), Bearer (read) | FAQ category CRUD |
-| `/api/tags` | Mod/Admin (write), Bearer (read) | Tag CRUD |
-| `/api/moderation` | Mod/Admin | Pending answer queue, approve/reject/edit |
-| `/api/flags` | Mod/Admin | Flag inbox |
-| `/api/stats` | Mod/Admin | Dashboard analytics |
-| `/api/users` | Admin | User management |
-| `/api/audit-logs` | Admin | Audit trail |
-| `/api/settings` | Admin (write), Mod (read) | System settings |
+
+| Route prefix      | Auth                             | Description                               |
+| ----------------- | -------------------------------- | ----------------------------------------- |
+| `/api/categories` | Mod/Admin (write), Bearer (read) | FAQ category CRUD                         |
+| `/api/tags`       | Mod/Admin (write), Bearer (read) | Tag CRUD                                  |
+| `/api/moderation` | Mod/Admin                        | Pending answer queue, approve/reject/edit |
+| `/api/flags`      | Mod/Admin                        | Flag inbox                                |
+| `/api/stats`      | Mod/Admin                        | Dashboard analytics                       |
+| `/api/users`      | Admin                            | User management                           |
+| `/api/audit-logs` | Admin                            | Audit trail                               |
+| `/api/settings`   | Admin (write), Mod (read)        | System settings                           |
 
 ---
 
 ## 5. Auth Contract (How the Two Servers Communicate)
 
 ### Frontend → Our Server
+
 All frontend requests use user JWT access tokens in the `Authorization` header:
+
 ```
 Authorization: Bearer <user_access_token>
 ```
+
 Tokens are short-lived (15 min). The frontend uses `POST /api/auth/refresh` to rotate.
 
 ### Our Server → LLM Server (Phase 6)
+
 All calls from our Node.js server to your server use a shared internal Bearer token:
+
 ```
 Authorization: Bearer <LLM_INTERNAL_SECRET>
 ```
+
 This secret is set in both teams' `.env` files and is never exposed to the frontend.
 
 ---
@@ -222,10 +248,7 @@ When a student sends a message via `POST /api/chat/query`, our server will:
 ```json
 {
   "system_instruction": "You are a helpful support bot. Use ONLY the provided context to answer. If the answer is not in the context, reply EXACTLY with: 'I don't have an answer for you at the moment. You can escalate it to backend team: Type #escalate'.",
-  "rag_context": [
-    "FAQ: <title> — <answer>",
-    "Query: <question> Answer: <approved_answer_body>"
-  ],
+  "rag_context": ["FAQ: <title> — <answer>", "Query: <question> Answer: <approved_answer_body>"],
   "conversation_history": [
     { "role": "user", "content": "..." },
     { "role": "assistant", "content": "..." }
@@ -235,6 +258,7 @@ When a student sends a message via `POST /api/chat/query`, our server will:
 ```
 
 6. Receive your response:
+
 ```json
 {
   "status": "success",
@@ -268,6 +292,7 @@ When the backend intercepts an escalation command:
 ```
 
 4. Receive your response:
+
 ```json
 {
   "status": "success",
@@ -284,23 +309,25 @@ When the backend intercepts an escalation command:
 ### TTL Index for Verified Queries Collection
 
 The 7-day auto-expiry for verified community Q&A answers will be implemented as:
+
 ```js
 verifiedQueriesSchema.index(
   { createdAt: 1 },
-  { expireAfterSeconds: 7 * 24 * 60 * 60 }  // 168 hours
+  { expireAfterSeconds: 7 * 24 * 60 * 60 }, // 168 hours
 );
 ```
+
 MongoDB Atlas will automatically purge documents from this collection after 7 days.
 
 ---
 
 ## 7. What We Need From the LLM Team
 
-| Item | Detail |
-|---|---|
-| `LLM_BASE_URL` | The HTTPS base URL of your llama.cpp server |
-| `LLM_INTERNAL_SECRET` | Agreed shared Bearer secret for internal calls |
+| Item                  | Detail                                                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `LLM_BASE_URL`        | The HTTPS base URL of your llama.cpp server                                                                             |
+| `LLM_INTERNAL_SECRET` | Agreed shared Bearer secret for internal calls                                                                          |
 | JSON schema guarantee | Confirm `is_general_query` (boolean) + `summary` (string) are always returned from `/summarize` with no markdown filler |
-| Fallback string | Confirm the exact fallback string your model outputs so we can match it server-side to set `fallback_triggered: true` |
-| Rate limits | Any requests-per-minute cap we should respect when calling your server |
-| Embedding dimensions | The vector dimension size your model uses (so we can create the Atlas vector index with the correct `numDimensions`) |
+| Fallback string       | Confirm the exact fallback string your model outputs so we can match it server-side to set `fallback_triggered: true`   |
+| Rate limits           | Any requests-per-minute cap we should respect when calling your server                                                  |
+| Embedding dimensions  | The vector dimension size your model uses (so we can create the Atlas vector index with the correct `numDimensions`)    |

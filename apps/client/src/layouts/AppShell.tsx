@@ -91,14 +91,15 @@ function NotificationBell() {
   const markRead = useMarkRead();
   const markAllRead = useMarkAllRead();
 
-  // Close on outside click
+  // Close on outside click — only active while dropdown is open
   useEffect(() => {
+    if (!open) return;
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  }, [open]);
 
   const handleClick = (n: PublicNotification) => {
     if (!n.read) markRead.mutate(n.id);
@@ -112,6 +113,7 @@ function NotificationBell() {
     answer_approved: '✅',
     answer_rejected: '❌',
     question_answered: '💬',
+    flag_reviewed: '🏁',
     general: '🔔',
   };
 
@@ -125,30 +127,31 @@ function NotificationBell() {
         onClick={() => setOpen((v) => !v)}
       >
         <Bell size={18} />
-        {unreadCount > 0 && (
-          <span
-            style={{
-              position: 'absolute',
-              top: 5,
-              right: 5,
-              minWidth: 16,
-              height: 16,
-              borderRadius: 8,
-              background: '#ef4444',
-              border: '1.5px solid var(--color-topbar)',
-              fontSize: 9,
-              fontWeight: 800,
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0 3px',
-              lineHeight: 1,
-            }}
-          >
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
+        <span
+          aria-live="polite"
+          aria-atomic="true"
+          aria-label={unreadCount > 0 ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}` : undefined}
+          style={{
+            position: 'absolute',
+            top: 5,
+            right: 5,
+            minWidth: 16,
+            height: 16,
+            borderRadius: 8,
+            background: '#ef4444',
+            border: '1.5px solid var(--color-topbar)',
+            fontSize: 9,
+            fontWeight: 800,
+            color: 'white',
+            display: unreadCount > 0 ? 'flex' : 'none',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '0 3px',
+            lineHeight: 1,
+          }}
+        >
+          {unreadCount > 99 ? '99+' : unreadCount}
+        </span>
       </button>
 
       {open && (

@@ -8,6 +8,7 @@ Date: 2026-05-29 10:24:28
 ## 👤 User
 
 In /Users/ravikumark/anshu/faq/backend, explore the current MongoDB configuration state:
+
 1. Read src/config/db.js and src/config/env.js
 2. Read all 9 model files in src/models/
 3. Check if a .env file exists (not .env.example) and what's in it
@@ -64,11 +65,13 @@ Based on my thorough exploration of the MongoDB configuration state, here's what
 ### What Exists:
 
 **Connection Setup:**
+
 - `/Users/ravikumark/anshu/faq/backend/src/config/db.js` - Configures Mongoose with `MONGODB_URI` from env
 - `/Users/ravikumark/anshu/faq/backend/src/config/env.js` - Requires `MONGODB_URI`, `JWT_SECRET`, `JWT_REFRESH_SECRET` at startup
 - `index.js` calls `connectDB()` immediately on app start (async IIFE)
 
 **9 Model Files Complete:**
+
 1. `User.js` - email, passwordHash, name, role, tokenVersion, spurtiPoints
 2. `Faq.js` - title, answer, categories, tags, status, helpfulCount, embedding field (reserved)
 3. `Answer.js` - questionId, body, status, embedding field (reserved), timestamps
@@ -80,11 +83,13 @@ Based on my thorough exploration of the MongoDB configuration state, here's what
 9. `AuditLog.js` - actorId, action, targetType, metadata
 
 **Text Indexes Present:**
+
 - Faq model: text index on `(title, answer)`
 - Question model: text index on `(title, description)`
 - TTL index on Ticket model: `expiresAt` with `expireAfterSeconds: 0`
 
 **Documentation:**
+
 - `BACKEND_API_CONTRACTS.md` - Comprehensive API specs, schema definitions, Phase 6 RAG workflow
 - `.env.example` - Template with all required variables
 
@@ -147,15 +152,16 @@ Based on my thorough exploration of the MongoDB configuration state, here's what
 ---
 
 ### Current Ready State:
+
 - Server code will connect to MongoDB once `.env` is provided ✓
 - All 9 collections can be created by Mongoose on first write ✓
 - Basic CRUD operations will work without indexes ✓
 
 ### Current Blocked State:
+
 - Vector search (`$vectorSearch`) cannot work without Atlas vector index ✓
 - Text search will be slow/incorrect without proper weighted indexes ✓
 - No seed data means manual testing requires creating users/FAQs manually ✓
 - App has no graceful index initialization on startup ✓
 
 ---
-

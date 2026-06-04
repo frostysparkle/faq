@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { BookOpen, Check, ChevronDown, RotateCcw, Search } from 'lucide-react';
+import { BookOpen, Check, ChevronDown, RotateCcw, Search, X } from 'lucide-react';
 import type { FaqListQuery, FaqStatus } from '@samagama/shared';
 import { FAQ_STATUSES } from '@samagama/shared';
 import { useAuth } from '../auth/AuthProvider';
@@ -16,8 +16,8 @@ export function FaqsPage() {
 
   const [searchInput, setSearchInput] = useState(initialQ);
   const [debouncedSearch, setDebouncedSearch] = useState(initialQ.trim());
-  const [categoryId, setCategoryId] = useState<string | undefined>();
-  const [tagId, setTagId] = useState<string | undefined>();
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [status, setStatus] = useState<FaqStatus | undefined>();
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -31,29 +31,27 @@ export function FaqsPage() {
   const query = useMemo<Partial<FaqListQuery>>(() => {
     const q: Partial<FaqListQuery> = { sort: debouncedSearch ? 'relevance' : 'recent' };
     if (debouncedSearch) q.q = debouncedSearch;
-    if (categoryId) q.category = categoryId;
-    if (tagId) q.tag = tagId;
+    if (categoryIds.length > 0) q.category = categoryIds.join(',');
+    if (tagIds.length > 0) q.tag = tagIds.join(',');
     if (status) q.status = status;
     return q;
-  }, [debouncedSearch, categoryId, tagId, status]);
+  }, [debouncedSearch, categoryIds, tagIds, status]);
 
   const { data: categories } = useCategories();
   const { data: tags } = useTags();
-  const { data, isLoading, isError, error } = useFaqList(query, { refetchInterval: 30_000 });
+  const { data, isLoading, isError, error, refetch } = useFaqList(query, { refetchInterval: 30_000 });
 
   const isMod = user?.role === 'moderator' || user?.role === 'admin';
-  const activeCount = [categoryId, tagId, status].filter(Boolean).length;
+  const activeCount =
+    (categoryIds.length > 0 ? 1 : 0) + (tagIds.length > 0 ? 1 : 0) + (status ? 1 : 0);
 
   const resetAll = () => {
-    setCategoryId(undefined);
-    setTagId(undefined);
+    setCategoryIds([]);
+    setTagIds([]);
     setStatus(undefined);
     setSearchInput('');
     setDebouncedSearch('');
   };
-
-  const activeCatName = categories?.find((c) => c._id === categoryId)?.name;
-  const activeTagName = tags?.find((t) => t._id === tagId)?.name;
 
   if (!user) return null;
 
@@ -101,7 +99,7 @@ export function FaqsPage() {
         </span>
       </div>
 
-      {/* ── Search + Filter row (single line) ───────────────────────── */}
+      {/* ── Search + Filter row ──────────────────────────────────────── */}
       <div
         style={{
           display: 'flex',
@@ -136,29 +134,31 @@ export function FaqsPage() {
           />
         </div>
 
-        {/* Category */}
+        {/* Category — multi-select */}
         {categories && categories.length > 0 && (
-          <FaqFilterSelect
-            value={categoryId}
-            onChange={setCategoryId}
+          <FaqMultiSelect
+            values={categoryIds}
+            onChange={setCategoryIds}
             placeholder="All Categories"
+            countLabel="categories"
             options={categories.map((c) => ({ value: c._id, label: c.name }))}
-            width={150}
+            width={155}
           />
         )}
 
-        {/* Tag */}
+        {/* Tags — multi-select */}
         {tags && tags.length > 0 && (
-          <FaqFilterSelect
-            value={tagId}
-            onChange={setTagId}
+          <FaqMultiSelect
+            values={tagIds}
+            onChange={setTagIds}
             placeholder="All Tags"
+            countLabel="tags"
             options={tags.map((t) => ({ value: t._id, label: `#${t.name}` }))}
             width={130}
           />
         )}
 
-        {/* Status — mods/admins only */}
+        {/* Status — mods/admins only, single-select */}
         {isMod && (
           <FaqFilterSelect
             value={status}
@@ -221,10 +221,33 @@ export function FaqsPage() {
           }}
         >
           <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Active:</span>
+
           {debouncedSearch && <ActiveChip label={`"${debouncedSearch}"`} />}
-          {categoryId && activeCatName && <ActiveChip label={activeCatName} />}
-          {tagId && activeTagName && <ActiveChip label={`#${activeTagName}`} />}
+
+          {categoryIds.map((id) => {
+            const name = categories?.find((c) => c._id === id)?.name;
+            return name ? (
+              <ActiveChip
+                key={id}
+                label={name}
+                onRemove={() => setCategoryIds((prev) => prev.filter((i) => i !== id))}
+              />
+            ) : null;
+          })}
+
+          {tagIds.map((id) => {
+            const name = tags?.find((t) => t._id === id)?.name;
+            return name ? (
+              <ActiveChip
+                key={id}
+                label={`#${name}`}
+                onRemove={() => setTagIds((prev) => prev.filter((i) => i !== id))}
+              />
+            ) : null;
+          })}
+
           {status && <ActiveChip label={status.charAt(0).toUpperCase() + status.slice(1)} />}
+
           <button
             onClick={resetAll}
             style={{
@@ -258,9 +281,28 @@ export function FaqsPage() {
           <div style={{ color: 'var(--color-danger)', fontWeight: 700, marginBottom: 4 }}>
             Couldn't load FAQs.
           </div>
-          <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 10 }}>
             {error instanceof Error ? error.message : 'Unknown error'}
           </div>
+          <button
+            onClick={() => refetch()}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '6px 14px',
+              borderRadius: 8,
+              border: '1px solid var(--color-danger)',
+              background: 'transparent',
+              color: 'var(--color-danger)',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            <RotateCcw size={12} /> Try again
+          </button>
         </div>
       )}
 
@@ -308,13 +350,276 @@ export function FaqsPage() {
   );
 }
 
-// ─── FaqFilterSelect ──────────────────────────────────────────────────────────
-// Custom dropdown capped at ~5 visible rows (≈ 190 px) with internal scrolling.
-// Replaces the native <select> so the OS can no longer render an uncapped list.
+// ─── FaqMultiSelect ───────────────────────────────────────────────────────────
+// Multi-select dropdown for categories and tags.
+// Stays open while selecting; closes on outside click or Escape.
+// Passes comma-joined IDs to the parent for the server query.
 
-const ITEM_H = 36; // px per option row
-const VISIBLE = 5; // rows visible before scroll kicks in
-const MAX_H = ITEM_H * VISIBLE + 8; // +8 for top/bottom panel padding
+const ITEM_H = 36;
+const VISIBLE = 5;
+const MAX_H = ITEM_H * VISIBLE + 8;
+
+function FaqMultiSelect({
+  values,
+  onChange,
+  placeholder,
+  countLabel,
+  options,
+  width,
+}: {
+  values: string[];
+  onChange: (ids: string[]) => void;
+  placeholder: string;
+  countLabel: string;
+  options: { value: string; label: string }[];
+  width?: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const isActive = values.length > 0;
+
+  const triggerLabel =
+    values.length === 0
+      ? placeholder
+      : values.length === 1
+        ? (options.find((o) => o.value === values[0])?.label ?? placeholder)
+        : `${values.length} ${countLabel}`;
+
+  useEffect(() => {
+    if (!open) return;
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const h = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [open]);
+
+  const toggle = (id: string) =>
+    onChange(values.includes(id) ? values.filter((v) => v !== id) : [...values, id]);
+
+  return (
+    <div ref={ref} style={{ position: 'relative', flexShrink: 0, minWidth: width ?? 130 }}>
+      {/* ── Trigger ─────────────────────────────────────────────── */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`${placeholder} filter — ${values.length} selected`}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          height: 36,
+          padding: '0 10px',
+          borderRadius: 8,
+          border: `1.5px solid ${isActive ? 'var(--color-primary)' : 'var(--color-border)'}`,
+          background: isActive ? 'var(--color-purple-bg)' : 'var(--color-input)',
+          color: isActive ? 'var(--color-purple)' : 'var(--color-text)',
+          fontSize: 13,
+          fontWeight: isActive ? 600 : 400,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          gap: 6,
+          outline: 'none',
+          transition: 'border-color 0.15s, background 0.15s',
+          whiteSpace: 'nowrap',
+        }}
+        onMouseEnter={(e) => {
+          if (!isActive)
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-primary)';
+        }}
+        onMouseLeave={(e) => {
+          if (!isActive)
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)';
+        }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, textAlign: 'left' }}>
+          {triggerLabel}
+        </span>
+        {/* Count badge when 2+ selected */}
+        {values.length > 1 && (
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 800,
+              lineHeight: 1,
+              padding: '2px 5px',
+              borderRadius: 10,
+              background: 'var(--color-purple)',
+              color: 'white',
+              flexShrink: 0,
+            }}
+          >
+            {values.length}
+          </span>
+        )}
+        <ChevronDown
+          size={13}
+          style={{
+            flexShrink: 0,
+            transition: 'transform 0.18s',
+            transform: open ? 'rotate(180deg)' : 'none',
+          }}
+          color="var(--color-text-muted)"
+        />
+      </button>
+
+      {/* ── Dropdown panel ──────────────────────────────────────── */}
+      {open && (
+        <div
+          role="listbox"
+          aria-multiselectable="true"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            left: 0,
+            minWidth: '100%',
+            zIndex: 1200,
+            background: 'var(--color-card)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 10,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)',
+            maxHeight: MAX_H,
+            overflowY: 'auto',
+            padding: '4px 0',
+          }}
+        >
+          {/* Clear selection row — only shown when something is selected */}
+          {isActive && (
+            <div
+              role="option"
+              aria-selected={false}
+              tabIndex={0}
+              onClick={() => onChange([])}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onChange([]);
+                }
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '0 14px',
+                height: ITEM_H,
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--color-danger)',
+                borderBottom: '1px solid var(--color-border)',
+                outline: 'none',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'var(--color-danger-bg)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'transparent';
+              }}
+            >
+              <X size={12} />
+              Clear selection
+            </div>
+          )}
+
+          {options.map((o) => {
+            const selected = values.includes(o.value);
+            return (
+              <MultiDropdownOption
+                key={o.value}
+                label={o.label}
+                selected={selected}
+                onToggle={() => toggle(o.value)}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MultiDropdownOption({
+  label,
+  selected,
+  onToggle,
+}: {
+  label: string;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div
+      role="option"
+      aria-selected={selected}
+      tabIndex={0}
+      onClick={onToggle}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '0 14px',
+        height: ITEM_H,
+        cursor: 'pointer',
+        background: selected ? 'var(--color-purple-bg)' : 'transparent',
+        fontSize: 13,
+        fontWeight: selected ? 600 : 400,
+        color: selected ? 'var(--color-purple)' : 'var(--color-text)',
+        outline: 'none',
+        transition: 'background 0.1s',
+        whiteSpace: 'nowrap',
+        userSelect: 'none',
+      }}
+      onMouseEnter={(e) => {
+        if (!selected) (e.currentTarget as HTMLElement).style.background = 'var(--color-input)';
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.background = selected
+          ? 'var(--color-purple-bg)'
+          : 'transparent';
+      }}
+    >
+      {/* Checkbox indicator */}
+      <span
+        style={{
+          width: 15,
+          height: 15,
+          borderRadius: 4,
+          border: `1.5px solid ${selected ? 'var(--color-purple)' : 'var(--color-border)'}`,
+          background: selected ? 'var(--color-purple)' : 'transparent',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          transition: 'background 0.12s, border-color 0.12s',
+        }}
+      >
+        {selected && <Check size={9} color="white" strokeWidth={3} />}
+      </span>
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+    </div>
+  );
+}
+
+// ─── FaqFilterSelect ──────────────────────────────────────────────────────────
+// Single-select dropdown (used for Status by mods/admins).
 
 function FaqFilterSelect({
   value,
@@ -497,19 +802,45 @@ function DropdownOption({
 
 // ─── ActiveChip ───────────────────────────────────────────────────────────────
 
-function ActiveChip({ label }: { label: string }) {
+function ActiveChip({ label, onRemove }: { label: string; onRemove?: () => void }) {
   return (
     <span
       style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
         fontSize: 12,
         fontWeight: 600,
         background: 'var(--color-purple-bg)',
         color: 'var(--color-purple)',
         borderRadius: 20,
-        padding: '3px 10px',
+        padding: onRemove ? '3px 6px 3px 10px' : '3px 10px',
       }}
     >
       {label}
+      {onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={`Remove filter: ${label}`}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 14,
+            height: 14,
+            borderRadius: '50%',
+            background: 'var(--color-purple)',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+            color: 'white',
+            flexShrink: 0,
+          }}
+        >
+          <X size={9} strokeWidth={2.5} />
+        </button>
+      )}
     </span>
   );
 }

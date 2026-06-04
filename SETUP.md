@@ -2,23 +2,23 @@
 
 > **Note — this is a Node.js / TypeScript project (MERN stack), not Python.**
 > There is no `requirements.txt` because Node.js uses `package.json` for dependency
-> management and `npm install` to install them.  The workflow below is the direct
+> management and `npm install` to install them. The workflow below is the direct
 > equivalent of the Python `venv → pip install → run` cycle.
 
 ---
 
 ## Prerequisites
 
-Install the following tools before you begin.  Exact minimum versions are listed;
+Install the following tools before you begin. Exact minimum versions are listed;
 newer versions work unless noted otherwise.
 
-| Tool | Minimum version | Install guide |
-|------|----------------|---------------|
-| **Node.js** | 20.x LTS | https://nodejs.org (use the LTS installer) |
-| **npm** | 10.x | Bundled with Node.js 20 — no separate install needed |
-| **MongoDB Community** | 7.0 | https://www.mongodb.com/try/download/community |
-| **Git** | any recent | https://git-scm.com |
-| **Ollama** *(optional — local LLM)* | latest | https://ollama.com |
+| Tool                                | Minimum version | Install guide                                        |
+| ----------------------------------- | --------------- | ---------------------------------------------------- |
+| **Node.js**                         | 20.x LTS        | https://nodejs.org (use the LTS installer)           |
+| **npm**                             | 10.x            | Bundled with Node.js 20 — no separate install needed |
+| **MongoDB Community**               | 7.0             | https://www.mongodb.com/try/download/community       |
+| **Git**                             | any recent      | https://git-scm.com                                  |
+| **Ollama** _(optional — local LLM)_ | latest          | https://ollama.com                                   |
 
 > **Tip — Node version manager (recommended)**
 > If you maintain multiple projects, use `nvm` (macOS / Linux) or `nvm-windows` to
@@ -48,7 +48,7 @@ cd samagama-portal
 
 ---
 
-## 2 — Install all dependencies  *(the "requirements.txt" step)*
+## 2 — Install all dependencies _(the "requirements.txt" step)_
 
 A single command installs every package for the server, client, and shared
 library in one shot because the project uses **npm workspaces**:
@@ -58,14 +58,14 @@ npm install
 ```
 
 This is equivalent to creating a Python virtual environment and running
-`pip install -r requirements.txt`.  Node.js keeps all packages inside the
+`pip install -r requirements.txt`. Node.js keeps all packages inside the
 project's own `node_modules/` folder — no global pollution.
 
 ---
 
 ## 3 — Configure environment variables
 
-The server reads a `.env` file at startup.  A template with every supported
+The server reads a `.env` file at startup. A template with every supported
 variable is provided at the project root.
 
 ```bash
@@ -119,7 +119,7 @@ EMBEDDING_PROVIDER=mock
 
 > **MongoDB URI**
 > If MongoDB Community is running on its default port (27017) you do not need to
-> change `MONGODB_URI`.  Start it with `mongod` or through the MongoDB Compass
+> change `MONGODB_URI`. Start it with `mongod` or through the MongoDB Compass
 > GUI before running the app.
 
 ---
@@ -155,7 +155,7 @@ ollama pull gemma3:4b      # lightweight, good for local testing (~3 GB)
 
 ## 6 — Seed the database
 
-Run these commands in order.  Every seed script is **idempotent** — safe to
+Run these commands in order. Every seed script is **idempotent** — safe to
 re-run without creating duplicates.
 
 ```bash
@@ -229,38 +229,38 @@ Use these credentials to log in and test different roles.
 
 The login page has a one-click dev credentials panel (development only):
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | `admin@samagama.test` | `AdminDev!2024` |
-| Moderator | `moderator@samagama.test` | `ModDev!2024` |
-| Student | `student@samagama.test` | `StudentDev!2024` |
+| Role      | Email                     | Password          |
+| --------- | ------------------------- | ----------------- |
+| Admin     | `admin@samagama.test`     | `AdminDev!2024`   |
+| Moderator | `moderator@samagama.test` | `ModDev!2024`     |
+| Student   | `student@samagama.test`   | `StudentDev!2024` |
 
 ### Named student accounts
 
-All 25 students share the password **`Student@2026`**.  Email format is
+All 25 students share the password **`Student@2026`**. Email format is
 `<first-name-lowercase>@samagama.test`.
 
-| Name | Email |
-|------|-------|
-| Aditya | `aditya@samagama.test` |
-| Priya | `priya@samagama.test` |
-| Arjun | `arjun@samagama.test` |
-| Sneha | `sneha@samagama.test` |
-| Vikram | `vikram@samagama.test` |
-| Kavya | `kavya@samagama.test` |
-| Rohit | `rohit@samagama.test` |
-| Ananya | `ananya@samagama.test` |
-| *(+ 17 more)* | `<name>@samagama.test` |
+| Name          | Email                  |
+| ------------- | ---------------------- |
+| Aditya        | `aditya@samagama.test` |
+| Priya         | `priya@samagama.test`  |
+| Arjun         | `arjun@samagama.test`  |
+| Sneha         | `sneha@samagama.test`  |
+| Vikram        | `vikram@samagama.test` |
+| Kavya         | `kavya@samagama.test`  |
+| Rohit         | `rohit@samagama.test`  |
+| Ananya        | `ananya@samagama.test` |
+| _(+ 17 more)_ | `<name>@samagama.test` |
 
 ### Named moderator / admin accounts
 
-| Role | Email | Password |
-|------|-------|----------|
+| Role      | Email                    | Password         |
+| --------- | ------------------------ | ---------------- |
 | Moderator | `kushagra@samagama.test` | `Moderator@2026` |
-| Moderator | `jahnvi@samagama.test` | `Moderator@2026` |
-| Moderator | `joyita@samagama.test` | `Moderator@2026` |
-| Admin | `divy@samagama.test` | `Admin@2026` |
-| Admin | `anshuman@samagama.test` | `Admin@2026` |
+| Moderator | `jahnvi@samagama.test`   | `Moderator@2026` |
+| Moderator | `joyita@samagama.test`   | `Moderator@2026` |
+| Admin     | `divy@samagama.test`     | `Admin@2026`     |
+| Admin     | `anshuman@samagama.test` | `Admin@2026`     |
 
 ---
 
@@ -289,26 +289,26 @@ samagama-portal/
 
 ## Available npm scripts (root workspace)
 
-| Command | What it does |
-|---------|--------------|
-| `npm run dev` | Start server + client concurrently |
-| `npm run dev:server` | Start server only |
-| `npm run dev:client` | Start client only |
-| `npm run build` | Production build for all workspaces |
-| `npm run typecheck` | TypeScript type-check all workspaces |
-| `npm run lint` | ESLint across the entire repo |
-| `npm run format` | Prettier format check |
+| Command              | What it does                         |
+| -------------------- | ------------------------------------ |
+| `npm run dev`        | Start server + client concurrently   |
+| `npm run dev:server` | Start server only                    |
+| `npm run dev:client` | Start client only                    |
+| `npm run build`      | Production build for all workspaces  |
+| `npm run typecheck`  | TypeScript type-check all workspaces |
+| `npm run lint`       | ESLint across the entire repo        |
+| `npm run format`     | Prettier format check                |
 
 ### Server-only scripts
 
-| Command | What it does |
-|---------|--------------|
-| `npm --workspace @samagama/server run seed:dev-users` | Seed dev login accounts |
-| `npm --workspace @samagama/server run seed:accounts` | Seed real student/mod/admin accounts |
-| `npm --workspace @samagama/server run seed:faqs` | Seed FAQ content |
-| `npm --workspace @samagama/server run seed:chat-conversations` | Seed extended chatbot test data |
-| `npm --workspace @samagama/server run simulate:full` | Full student activity simulation |
-| `npm --workspace @samagama/server run test:search` | Run semantic search accuracy tests |
+| Command                                                        | What it does                         |
+| -------------------------------------------------------------- | ------------------------------------ |
+| `npm --workspace @samagama/server run seed:dev-users`          | Seed dev login accounts              |
+| `npm --workspace @samagama/server run seed:accounts`           | Seed real student/mod/admin accounts |
+| `npm --workspace @samagama/server run seed:faqs`               | Seed FAQ content                     |
+| `npm --workspace @samagama/server run seed:chat-conversations` | Seed extended chatbot test data      |
+| `npm --workspace @samagama/server run simulate:full`           | Full student activity simulation     |
+| `npm --workspace @samagama/server run test:search`             | Run semantic search accuracy tests   |
 
 ---
 
@@ -316,12 +316,12 @@ samagama-portal/
 
 ### `MongoServerError: connect ECONNREFUSED`
 
-MongoDB is not running.  Start it with `mongod` or your system service manager
+MongoDB is not running. Start it with `mongod` or your system service manager
 (see step 4).
 
 ### `Error: Cannot find module '@samagama/shared'`
 
-Run `npm install` from the project root.  The shared package must be built
+Run `npm install` from the project root. The shared package must be built
 before the server can import it:
 
 ```bash
@@ -352,7 +352,7 @@ ollama list
 ### JWT errors / `invalid signature`
 
 Make sure `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` in your `.env` are
-different from each other and at least 32 characters long.  Generate fresh
+different from each other and at least 32 characters long. Generate fresh
 values with:
 
 ```bash
@@ -363,15 +363,15 @@ node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 
 ## Dependency summary
 
-All npm packages are declared in the workspace `package.json` files.  You never
+All npm packages are declared in the workspace `package.json` files. You never
 need to install them individually.
 
-| Workspace | Key packages |
-|-----------|-------------|
-| **server** | express, mongoose, jsonwebtoken, bcryptjs, zod, pino, tsx |
-| **client** | react, vite, @tanstack/react-query, react-router-dom, lucide-react, axios |
-| **shared** | zod (types and validation schemas shared across client and server) |
-| **rag/llm-server** | express, axios, dotenv, cors |
+| Workspace          | Key packages                                                              |
+| ------------------ | ------------------------------------------------------------------------- |
+| **server**         | express, mongoose, jsonwebtoken, bcryptjs, zod, pino, tsx                 |
+| **client**         | react, vite, @tanstack/react-query, react-router-dom, lucide-react, axios |
+| **shared**         | zod (types and validation schemas shared across client and server)        |
+| **rag/llm-server** | express, axios, dotenv, cors                                              |
 
 Full version-pinned lists live in each workspace's `package.json`.
 `package-lock.json` at the root guarantees reproducible installs across machines.

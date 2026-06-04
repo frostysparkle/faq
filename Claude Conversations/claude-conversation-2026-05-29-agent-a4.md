@@ -8,6 +8,7 @@ Date: 2026-05-29 10:06:20
 ## 👤 User
 
 Explore the project at /Users/ravikumark/anshu/faq. Give me a comprehensive overview of:
+
 1. Directory structure (all top-level dirs and key files)
 2. What's in the frontend/ folder (tech stack, key files, how it makes API calls)
 3. What's in any backend/ folder or server files
@@ -110,6 +111,7 @@ Perfect! Now I have a comprehensive understanding. Let me provide the final repo
 ```
 
 **Key Files Summary:**
+
 - `GEMINI.md`: Project overview, tech stack, building/running instructions
 - `initial_implementation_doc.md`: Detailed PRD with product goals, scope, specs
 - `why_this_project.md`: Context on student support challenges
@@ -121,6 +123,7 @@ Perfect! Now I have a comprehensive understanding. Let me provide the final repo
 ### 2. Frontend (`frontend/`)
 
 **Tech Stack:**
+
 - React 18 + TypeScript + Vite
 - TanStack Query (React Query) v5 for server state
 - React Hook Form + Zod for forms/validation
@@ -130,12 +133,14 @@ Perfect! Now I have a comprehensive understanding. Let me provide the final repo
 - Vanilla CSS with design tokens
 
 **Key Architecture:**
+
 - Feature-based structure (`src/features/`) — each feature has `api.ts` and `queries.ts`
 - Features include: `auth`, `faq`, `qna`, `admin`, `moderation`, `flag`, `analytics`
 - Central Axios instance in `src/lib/api-client.ts` with JWT auth interceptor
 - Token storage: `localStorage` keys `samagama:accessToken` and `samagama:refreshToken`
 
 **API Calls:**
+
 - All requests go through `apiClient` with base URL from `VITE_API_URL` env var
 - Default: `http://localhost:4000` (backend)
 - Bearer token automatically injected from localStorage
@@ -143,6 +148,7 @@ Perfect! Now I have a comprehensive understanding. Let me provide the final repo
 - Credentials enabled (withCredentials: true)
 
 **Key API Endpoints Called:**
+
 ```
 Auth: /api/auth/login, /api/auth/refresh, /api/auth/me
 FAQs: /api/faqs, /api/categories, /api/tags, /api/stats/faqs
@@ -153,6 +159,7 @@ Flags: /api/flags
 ```
 
 **Chatbot Status:**
+
 - `/chatbot` route exists but currently shows `<ComingSoonPage>` (line 47 in App.tsx)
 - ChatbotFab button navigates to `/chatbot`
 - ChatbotFeedbackPage exists in admin for feedback review
@@ -164,12 +171,14 @@ Flags: /api/flags
 **Current Status:** DESIGN PHASE ONLY — No implementation files yet. Contains only documentation.
 
 **Architecture (From BACKEND_API_CONTRACTS.md):**
+
 - Node.js 20 + Express 5
 - MongoDB Atlas with Mongoose ODM
 - Acts as ORCHESTRATOR between frontend and LLM server
 - Handles: Auth (JWT), RBAC (student/moderator/admin), FAQ CRUD, Q&A moderation, audit logging
 
 **MongoDB Collections:**
+
 - `users`: email, role, tokenVersion, spurtiPoints
 - `faqs`: title, answer, embedding (Phase 6), categories, tags, status, feedback counts
 - `questions`: title, description, type (personal/community), status, askedBy
@@ -180,6 +189,7 @@ Flags: /api/flags
 - `auditlogs`: all mod/admin actions recorded
 
 **Environment Variables (Expected):**
+
 ```env
 MONGODB_URI=...
 JWT_SECRET=...
@@ -192,6 +202,7 @@ LLM_INTERNAL_SECRET=<bearer-token>              # Phase 6
 ```
 
 **API Routes (Defined):**
+
 ```
 Auth:       POST /api/auth/{register,login,refresh,logout}, GET /me
 FAQs:       GET /api/faqs, POST/PATCH/GET/:id, POST/:id/{view,feedback}, DELETE categories/tags
@@ -207,12 +218,14 @@ Flags:      /api/flags with review workflow
 ### 4. RAG & LLM Server (`rag/llm-server/`)
 
 **Tech Stack:**
+
 - Node.js with Express 5
 - Axios for calling LM Studio
 - CORS enabled
 - Dotenv for config
 
 **Running:**
+
 ```bash
 cd rag/llm-server
 npm install
@@ -220,6 +233,7 @@ npm start  # Runs on port 5000 by default
 ```
 
 **Environment Variables:**
+
 ```env
 PORT=5000
 INTERNAL_SECRET=<bearer-token>  # Shared with backend
@@ -239,6 +253,7 @@ LM_STUDIO_URL=http://localhost:1234  # Local LLM endpoint
    - Used when user escalates or forces escalation
 
 **Interaction with Backend:**
+
 - Backend calls LLM server for RAG generation & escalation
 - LLM server calls LM Studio's `/chat/completions` endpoint
 - Response must be JSON (handles markdown code block cleanup)
@@ -249,6 +264,7 @@ LM_STUDIO_URL=http://localhost:1234  # Local LLM endpoint
 ### 5. Configuration Files
 
 **Frontend (`frontend/package.json`):**
+
 ```json
 {
   "name": "@samagama/client",
@@ -269,6 +285,7 @@ LM_STUDIO_URL=http://localhost:1234  # Local LLM endpoint
 ```
 
 **LLM Server (`rag/llm-server/package.json`):**
+
 ```json
 {
   "name": "llm-server",
@@ -287,6 +304,7 @@ LM_STUDIO_URL=http://localhost:1234  # Local LLM endpoint
 ```
 
 **Frontend `.env.example`:**
+
 ```env
 VITE_API_URL=http://localhost:4000
 ```
@@ -325,23 +343,25 @@ VITE_API_URL=http://localhost:4000
 ### 7. Frontend-to-Backend API Connection
 
 **How Frontend Makes Calls:**
+
 ```typescript
 // Central Axios client (src/lib/api-client.ts)
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? '',  // Default: http://localhost:4000
+  baseURL: import.meta.env.VITE_API_URL ?? '', // Default: http://localhost:4000
   withCredentials: true,
   timeout: 15_000,
 });
 
 // Auto-injects Bearer token
 apiClient.interceptors.request.use((config) => {
-  const token = tokenStorage.getAccess();  // From localStorage
+  const token = tokenStorage.getAccess(); // From localStorage
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 ```
 
 **Feature-based API Organization:**
+
 - `src/features/faq/api.ts`: FAQ CRUD, categories, tags, stats
 - `src/features/qna/api.ts`: Community Q&A, moderation, answers
 - `src/features/admin/api.ts`: Users, audit logs, intelligence stats
@@ -373,6 +393,7 @@ apiClient.interceptors.request.use((config) => {
    - Frontend notified of ticket creation
 
 **LLM Server Requirements:**
+
 - Must use HTTP Bearer token: `Authorization: Bearer <LLM_INTERNAL_SECRET>`
 - Must return exact JSON structure (no markdown filler)
 - Fallback string detection: `"I don't have an answer for you at the moment. You can escalate it to backend team: Type #escalate"`
@@ -380,6 +401,7 @@ apiClient.interceptors.request.use((config) => {
 - Max tokens: 500 for generate, structured for summarize
 
 **Embedding Dimensions:**
+
 - Not yet specified in docs (needs coordination with LLM team)
 - MongoDB Atlas vector index requires explicit `numDimensions`
 
@@ -404,6 +426,7 @@ apiClient.interceptors.request.use((config) => {
 ✗ Audit logging system
 
 **Ready for Integration:**
+
 - Frontend can call backend once `/api/` endpoints are implemented
 - LLM server can be started and tested with `test-llm-server.js`
 - All API contracts & data models are documented
@@ -413,4 +436,3 @@ apiClient.interceptors.request.use((config) => {
 This is a comprehensive full-stack platform where the **frontend** is feature-complete and the **LLM server** is operational, but the **backend orchestrator** remains in the design phase awaiting implementation.
 
 ---
-

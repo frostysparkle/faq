@@ -4,7 +4,7 @@
 //   - Persists the flag in localStorage so the badge survives page reloads.
 //   - If the FAQ's updatedAt timestamp is newer than when the user flagged it,
 //     shows an "Updated since you flagged" notice so the user knows it was addressed.
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Flag, Bell } from 'lucide-react';
 import { FLAG_REASONS, type FlagReason } from '@samagama/shared';
 import { Button } from '../../components/ui/Button';
@@ -49,6 +49,27 @@ export function FlagFaqButton({ faqId, faqUpdatedAt = '' }: Props) {
   const [reason, setReason] = useState<FlagReason>('outdated');
   const [details, setDetails] = useState('');
   const flag = useCreateFlag();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const firstReasonRef = useRef<HTMLButtonElement>(null);
+
+  // Move focus into dialog on open; restore to trigger on close
+  useEffect(() => {
+    if (open) {
+      firstReasonRef.current?.focus();
+    } else {
+      triggerRef.current?.focus();
+    }
+  }, [open]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open]);
 
   // Read persisted flag state from localStorage on mount.
   const [persisted, setPersisted] = useState<FlagRecord | null>(() => {
@@ -114,6 +135,7 @@ export function FlagFaqButton({ faqId, faqUpdatedAt = '' }: Props) {
   if (!open) {
     return (
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         style={{
@@ -161,6 +183,7 @@ export function FlagFaqButton({ faqId, faqUpdatedAt = '' }: Props) {
   return (
     <div
       role="dialog"
+      aria-modal="true"
       aria-label="Flag this FAQ"
       style={{
         background: 'var(--color-input)',
@@ -177,9 +200,10 @@ export function FlagFaqButton({ faqId, faqUpdatedAt = '' }: Props) {
         Flag this FAQ
       </div>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-        {FLAG_REASONS.map((r) => (
+        {FLAG_REASONS.map((r, i) => (
           <button
             key={r}
+            ref={i === 0 ? firstReasonRef : undefined}
             type="button"
             onClick={() => setReason(r)}
             style={{

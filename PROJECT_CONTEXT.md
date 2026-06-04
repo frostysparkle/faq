@@ -161,34 +161,34 @@ Surfaces:
 
 ## Data Model Summaries
 
-| Collection   | Key Fields                                                                                                                   | Notes                                                              |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| User         | name, email, passwordHash, role, status, tokenVersion, **spurtiPoints**, recentlyViewedFaqs[]                                | `email` unique index. `spurtiPoints` indexed for leaderboard sort. |
+| Collection   | Key Fields                                                                                                                   | Notes                                                                                  |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| User         | name, email, passwordHash, role, status, tokenVersion, **spurtiPoints**, recentlyViewedFaqs[]                                | `email` unique index. `spurtiPoints` indexed for leaderboard sort.                     |
 | Faq          | title, answer, summary, categories[], tags[], status, embedding[], helpfulCount, unhelpfulCount, flagCount, viewCount        | Status: draft/published/outdated/archived. Counts are denormalized for fast filtering. |
-| Category     | name, slug, keywords[], isActive                                                                                             |                                                                    |
-| Tag          | name, slug, keywords[], isActive                                                                                             |                                                                    |
-| Question     | title, description, type, status, category, tags[], askedBy, taggedStudents[], moderatorViewedAt, screenshotUrl, answerCount | `type`: personal/community (Change Spec §8.1).                     |
-| Answer       | questionId, body, answeredBy, status, upvotes[], downvotes[], embedding[], moderationNote                                    | Status: pending/approved/rejected/needs_changes.                   |
-| Flag         | entityType, entityId, reason, status, reportedBy                                                                             | Reasons: incorrect/outdated/duplicate/unclear/other.               |
-| ChatSession  | userId, messages[]                                                                                                           | Each message records sources + confidence.                         |
-| ChatFeedback | chatSessionId, messageIndex, rating, comment                                                                                 |                                                                    |
+| Category     | name, slug, keywords[], isActive                                                                                             |                                                                                        |
+| Tag          | name, slug, keywords[], isActive                                                                                             |                                                                                        |
+| Question     | title, description, type, status, category, tags[], askedBy, taggedStudents[], moderatorViewedAt, screenshotUrl, answerCount | `type`: personal/community (Change Spec §8.1).                                         |
+| Answer       | questionId, body, answeredBy, status, upvotes[], downvotes[], embedding[], moderationNote                                    | Status: pending/approved/rejected/needs_changes.                                       |
+| Flag         | entityType, entityId, reason, status, reportedBy                                                                             | Reasons: incorrect/outdated/duplicate/unclear/other.                                   |
+| ChatSession  | userId, messages[]                                                                                                           | Each message records sources + confidence.                                             |
+| ChatFeedback | chatSessionId, messageIndex, rating, comment                                                                                 |                                                                                        |
 
 ---
 
 ## Implementation Status
 
-| Phase                                                                    | Status                                                                 |
-| ------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| 0. Foundation (monorepo, tooling, shared, docs)                          | ✅ Done                                                                |
-| 1. Backend core (Express, Mongo, error handling, auth, RBAC)             | ✅ Done                                                                |
-| 2. Frontend core (Vite, routing, layout, theme, auth flow, query client) | ✅ Done                                                                |
-| 3. FAQ system                                                            | ✅ Done (text search; vector search deferred to Phase 6)               |
-| 4. Community Q&A (Change Spec §5–§6)                                     | ✅ Done (multi-step Ask, My Questions, moderation approve flow)        |
-| 5. Admin + Moderator dashboards (Dashboard Spec)                         | ✅ Done (FAQ Management, Unresolved Questions, Chatbot Feedback shell) |
-| 5b. Student Home + Analytics + Spurti Points                             | ✅ Done (4 home cards, content tabs, leaderboard, range filters)       |
+| Phase                                                                    | Status                                                                                                               |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| 0. Foundation (monorepo, tooling, shared, docs)                          | ✅ Done                                                                                                              |
+| 1. Backend core (Express, Mongo, error handling, auth, RBAC)             | ✅ Done                                                                                                              |
+| 2. Frontend core (Vite, routing, layout, theme, auth flow, query client) | ✅ Done                                                                                                              |
+| 3. FAQ system                                                            | ✅ Done (text search; vector search deferred to Phase 6)                                                             |
+| 4. Community Q&A (Change Spec §5–§6)                                     | ✅ Done (multi-step Ask, My Questions, moderation approve flow)                                                      |
+| 5. Admin + Moderator dashboards (Dashboard Spec)                         | ✅ Done (FAQ Management, Unresolved Questions, Chatbot Feedback shell)                                               |
+| 5b. Student Home + Analytics + Spurti Points                             | ✅ Done (4 home cards, content tabs, leaderboard, range filters)                                                     |
 | 5c. UI Polish Sprint                                                     | ✅ Done (FAQ table redesign, column toggle, search, filter panel, moderator dashboard upgrades, flag Spurti rewards) |
-| 6. RAG chatbot                                                           | ⏳ Planned (only this blocks the remaining checklist gaps)             |
-| 7. Hardening (security review, perf, a11y, full test coverage)           | ⏳ Planned                                                             |
+| 6. RAG chatbot                                                           | ⏳ Planned (only this blocks the remaining checklist gaps)                                                           |
+| 7. Hardening (security review, perf, a11y, full test coverage)           | ⏳ Planned                                                                                                           |
 
 ### Spec coverage at a glance
 

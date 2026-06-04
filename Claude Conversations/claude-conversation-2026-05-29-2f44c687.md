@@ -86,6 +86,7 @@ Everything is implemented. Here's a summary of what was built:
 ## What was created
 
 ### Backend (`backend/`) — fully new
+
 - **[package.json](backend/package.json)** — Express 5, Mongoose, bcryptjs, jsonwebtoken, etc.
 - **[index.js](backend/index.js)** — App entry: CORS, helmet, morgan, route mounts
 - **[src/config/env.js](backend/src/config/env.js)** — Validated env vars
@@ -96,10 +97,12 @@ Everything is implemented. Here's a summary of what was built:
 - **[src/services/llmService.js](backend/src/services/llmService.js)** — Calls LLM server `/generate` and `/summarize`
 
 ### Frontend
+
 - **[src/pages/ChatbotPage.tsx](frontend/src/pages/ChatbotPage.tsx)** — New chat UI (was `<ComingSoonPage>`)
 - **[.env.local](frontend/.env.local)** — `VITE_API_URL=http://localhost:4000`
 
 ### LLM Server
+
 - **[rag/llm-server/.env.example](rag/llm-server/.env.example)** — Template with PORT, INTERNAL_SECRET, LM_STUDIO_URL
 
 ---
@@ -139,26 +142,28 @@ All done. Here's what was implemented:
 
 **Files created/modified:**
 
-| File | What changed |
-|------|-------------|
-| [backend/.env](backend/.env) | Created with placeholders — **you must fill in real values** |
-| [src/models/Faq.js](backend/src/models/Faq.js) | Weighted text index (`title×10, tags×5, answer×1`) + 2 compound indexes |
-| [src/models/Question.js](backend/src/models/Question.js) | Weighted text index + 2 compound indexes |
-| [src/models/Answer.js](backend/src/models/Answer.js) | 2 compound indexes added |
-| [src/models/AuditLog.js](backend/src/models/AuditLog.js) | 2 compound indexes added |
-| [src/config/db.js](backend/src/config/db.js) | Index conflict error now points to `setup-indexes.js` |
-| [scripts/seed.js](backend/scripts/seed.js) | Seeds admin + moderator users + SystemSettings + 5 FAQs |
-| [scripts/setup-indexes.js](backend/scripts/setup-indexes.js) | Drops/re-creates all indexes cleanly |
+| File                                                         | What changed                                                            |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| [backend/.env](backend/.env)                                 | Created with placeholders — **you must fill in real values**            |
+| [src/models/Faq.js](backend/src/models/Faq.js)               | Weighted text index (`title×10, tags×5, answer×1`) + 2 compound indexes |
+| [src/models/Question.js](backend/src/models/Question.js)     | Weighted text index + 2 compound indexes                                |
+| [src/models/Answer.js](backend/src/models/Answer.js)         | 2 compound indexes added                                                |
+| [src/models/AuditLog.js](backend/src/models/AuditLog.js)     | 2 compound indexes added                                                |
+| [src/config/db.js](backend/src/config/db.js)                 | Index conflict error now points to `setup-indexes.js`                   |
+| [scripts/seed.js](backend/scripts/seed.js)                   | Seeds admin + moderator users + SystemSettings + 5 FAQs                 |
+| [scripts/setup-indexes.js](backend/scripts/setup-indexes.js) | Drops/re-creates all indexes cleanly                                    |
 
 ---
 
 ## To get started
 
 **1. Set up MongoDB Atlas** (free M0 cluster):
+
 - Sign up at mongodb.com/atlas → Create cluster → Add DB user → Whitelist `0.0.0.0/0`
 - Copy connection string, set database to `samagama`
 
 **2. Fill in `backend/.env`:**
+
 ```
 MONGODB_URI=mongodb+srv://samagama:yourpassword@cluster0.xxxxx.mongodb.net/samagama?retryWrites=true&w=majority
 JWT_SECRET=<run: openssl rand -hex 32>
@@ -167,6 +172,7 @@ LLM_INTERNAL_SECRET=any_shared_secret
 ```
 
 **3. Run setup scripts:**
+
 ```bash
 cd backend
 node scripts/setup-indexes.js   # Creates all indexes
@@ -175,6 +181,7 @@ npm run dev                     # Start server on port 4000
 ```
 
 **4. Verify:**
+
 ```bash
 curl http://localhost:4000/api/faqs
 # → returns 5 seeded FAQs
@@ -247,4 +254,3 @@ Continue!
 [Request interrupted by user]
 
 ---
-
