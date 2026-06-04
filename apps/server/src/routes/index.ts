@@ -39,4 +39,3 @@ router.use('/help-data', helpRouter);
 router.use('/notifications', notificationRouter);
 
 export const apiRouter = router;
-

@@ -81,7 +81,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'What is VINS?',
     answer:
       'VINS is the Vicharanashala Internship — an online programme open to anyone who clears our interview. The work is real open-source contribution under a mentor, the certificate is from the Vicharanashala Lab for Education Design at IIT Ropar, and the programme itself is free (we charge nothing). There is no stipend. If you are seeing a yellow VINS panel on your result page, you are selected.',
-    summary: 'VINS = online internship track; free, no stipend, real open-source work, IIT Ropar certificate.',
+    summary:
+      'VINS = online internship track; free, no stipend, real open-source work, IIT Ropar certificate.',
     categoryName: 'Internship Guidelines',
     tags: ['selection', 'eligibility', 'online', 'iit-ropar'],
   },
@@ -94,7 +95,8 @@ const SEED_FAQS: SeedFaq[] = [
       '• Gold (Phase 3) — a recognition awarded during Silver if your contribution stands on its own as a meaningful feature, not just a small fix.\n' +
       '• Platinum (Phase 4) — a standing invitation to visit the lab any time during the year after your internship ends. We help with travel through a small visit stipend.\n\n' +
       'Most interns finish at Bronze + Silver, and that is exactly what the certificate is for. Gold and Platinum are extras you can pick up if your work makes the case for them.',
-    summary: 'Bronze = training, Silver = main project (earns cert), Gold = significant feature, Platinum = lab visit.',
+    summary:
+      'Bronze = training, Silver = main project (earns cert), Gold = significant feature, Platinum = lab visit.',
     categoryName: 'Internship Guidelines',
     tags: ['phase', 'cohort', 'certificate'],
   },
@@ -107,10 +109,10 @@ const SEED_FAQS: SeedFaq[] = [
     tags: ['eligibility', 'policy'],
   },
   {
-    title: 'Is this the same as IIT Ropar\'s official Summer Research Internship?',
+    title: "Is this the same as IIT Ropar's official Summer Research Internship?",
     answer:
       'No. Summership 2026 is a VLED Lab initiative. The certificate is issued by the Vicharanashala Lab for Education Design, not centrally by the institute. IIT Ropar runs a separate institutional summer research internship through its own office. Do not represent Summership 2026 as equivalent to that programme.',
-    summary: 'No — this is a VLED Lab initiative, not IIT Ropar\'s central summer internship.',
+    summary: "No — this is a VLED Lab initiative, not IIT Ropar's central summer internship.",
     categoryName: 'Internship Guidelines',
     tags: ['iit-ropar', 'certificate', 'policy'],
   },
@@ -118,7 +120,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'I have to attend my class during the internship — can I take leave?',
     answer:
       'Leave is not permitted. If you are also attending classes or exams, you will be relieved from the internship immediately and will need to join the next batch when it starts.',
-    summary: 'No leave for classes; attending classes during the internship results in immediate termination.',
+    summary:
+      'No leave for classes; attending classes during the internship results in immediate termination.',
     categoryName: 'Internship Guidelines',
     tags: ['leave', 'policy', 'exam'],
   },
@@ -130,7 +133,8 @@ const SEED_FAQS: SeedFaq[] = [
       'You can start any time in 2026 — VINS is flexible on the start date — but there are two things you must hold in mind together, and one strong recommendation.\n\n' +
       'The hard rule: your internship must finish by 31 December 2026. That date is non-negotiable. Whatever start you pick, your end date (start + 2 months, with up to 1 month grace) must land on or before 31 December 2026.\n\n' +
       'The strong recommendation: start as soon as possible. The earlier you join, the more of the May–July main cohort you catch. Cohort networking, TA support, and training rollout are all concentrated in this window.',
-    summary: 'Any time in 2026; must finish by 31 Dec 2026. Start early to catch the May–July cohort.',
+    summary:
+      'Any time in 2026; must finish by 31 Dec 2026. Start early to catch the May–July cohort.',
     categoryName: 'Deadlines',
     tags: ['start-date', 'dates', 'deadline', 'cohort'],
   },
@@ -188,7 +192,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'Who can sign the NOC?',
     answer:
       'Any authorised signatory at your college: HOD, Acting HOD (during holidays), Principal, Dean, Director, or Training & Placement Officer. For dual-degree students, either institution can sign — pick whichever is easier. For IITM BS Online Degree (standalone) students, any officer from the BS office can sign.',
-    summary: 'HOD, Principal, Dean, Director, or T&P Officer; dual-degree students can use either institution.',
+    summary:
+      'HOD, Principal, Dean, Director, or T&P Officer; dual-degree students can use either institution.',
     categoryName: 'NOC',
     tags: ['noc', 'signature', 'upload'],
   },
@@ -204,23 +209,26 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'What format should the NOC be in? Do I need to design it myself?',
     answer:
       'No — we provide a printable NOC format. Once your result is out and you log in to samagama.in, you will see a "Download blank NOC" button on your dashboard. Take a printout, get it physically signed and stamped by your authorised signatory, scan it, and upload the signed PDF. You do not need to draft anything yourself, and you do not need college letterhead.',
-    summary: 'Download blank NOC from dashboard, print, sign, scan, upload — no custom format needed.',
+    summary:
+      'Download blank NOC from dashboard, print, sign, scan, upload — no custom format needed.',
     categoryName: 'NOC',
     tags: ['noc', 'download', 'upload', 'dashboard'],
   },
   {
     title: 'What if my college gives me an NOC in their own format?',
     answer:
-      'A college\'s own NOC format is acceptable, as long as all four required entries are present: the signing authority\'s handwritten signature, the signing authority\'s official email address (we cross-check to verify), your full name, and your signature.',
-    summary: 'College format accepted if it has: authority signature, authority email, your name, your signature.',
+      "A college's own NOC format is acceptable, as long as all four required entries are present: the signing authority's handwritten signature, the signing authority's official email address (we cross-check to verify), your full name, and your signature.",
+    summary:
+      'College format accepted if it has: authority signature, authority email, your name, your signature.',
     categoryName: 'NOC',
     tags: ['noc', 'signature', 'email'],
   },
   {
     title: 'Does the NOC need to be signed by hand?',
     answer:
-      'Yes. Three things are required: the authorised signatory\'s handwritten signature, the institutional rubber stamp/seal applied in the designated area, and the signatory\'s email address filled in the designated field — we automatically cross-check to verify the signature is genuine. Digital signatures are not accepted on the PDF path.',
-    summary: 'Handwritten signature + institutional stamp + signatory email required; no digital signatures.',
+      "Yes. Three things are required: the authorised signatory's handwritten signature, the institutional rubber stamp/seal applied in the designated area, and the signatory's email address filled in the designated field — we automatically cross-check to verify the signature is genuine. Digital signatures are not accepted on the PDF path.",
+    summary:
+      'Handwritten signature + institutional stamp + signatory email required; no digital signatures.',
     categoryName: 'NOC',
     tags: ['noc', 'signature'],
   },
@@ -232,7 +240,8 @@ const SEED_FAQS: SeedFaq[] = [
       '2. Fill in the student-side fields, then email the file to your HOD and ask them to forward it.\n' +
       '3. Your HOD forwards the email to sudarshan@iitrpr.ac.in from their official institutional email address, with the subject line: "NOC for my student <Your Full Name>"\n\n' +
       'Two non-negotiable conditions: the forward must come from the HOD\'s official institutional email address (not a personal Gmail), and the subject line must start with "NOC for my student" so it routes correctly.',
-    summary: 'Yes — HOD forwards text NOC email from official address to sudarshan@iitrpr.ac.in with subject "NOC for my student <Name>".',
+    summary:
+      'Yes — HOD forwards text NOC email from official address to sudarshan@iitrpr.ac.in with subject "NOC for my student <Name>".',
     categoryName: 'NOC',
     tags: ['noc', 'email', 'upload'],
   },
@@ -240,7 +249,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'How do I download and upload the NOC?',
     answer:
       'Both happen on your dashboard at samagama.in once your result is out. Two buttons: "Download blank NOC" saves the printable NOC format PDF; "Upload signed NOC (PDF)" opens a file picker — the file must be a PDF of at most 1 MB.',
-    summary: 'Dashboard: "Download blank NOC" button to get template; "Upload signed NOC (PDF)" to submit (max 1 MB).',
+    summary:
+      'Dashboard: "Download blank NOC" button to get template; "Upload signed NOC (PDF)" to submit (max 1 MB).',
     categoryName: 'NOC',
     tags: ['noc', 'download', 'upload', 'dashboard'],
   },
@@ -248,15 +258,17 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'What if my NOC is not formally verified yet?',
     answer:
       'NOC verification takes time — typically anywhere between an hour and one full working day from the moment you upload. If you are planning to start soon and need your offer letter sooner, there is a tentative route: upload a self-declaration on your profile and a tentative offer letter will be issued to you immediately. The formal offer letter follows once your NOC clears verification.',
-    summary: 'Verification takes up to 1 working day; upload self-declaration to get tentative offer letter immediately.',
+    summary:
+      'Verification takes up to 1 working day; upload self-declaration to get tentative offer letter immediately.',
     categoryName: 'NOC',
     tags: ['noc', 'offer-letter', 'dashboard'],
   },
   {
-    title: 'My online course (Masai, NPTEL, Coursera) won\'t issue an NOC. What do I do?',
+    title: "My online course (Masai, NPTEL, Coursera) won't issue an NOC. What do I do?",
     answer:
       'The internship is open only to candidates currently enrolled in a full-time degree programme at a recognised college or university. Online-only courses — Masai Institute, NPTEL/MOOC enrolments, Coursera, Udacity, bootcamps, and similar — do not by themselves make a candidate eligible.',
-    summary: 'Online-only courses do not qualify; must be enrolled in a full-time degree programme.',
+    summary:
+      'Online-only courses do not qualify; must be enrolled in a full-time degree programme.',
     categoryName: 'NOC',
     tags: ['noc', 'eligibility', 'online'],
   },
@@ -264,7 +276,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'My HOD wants written confirmation before signing my NOC. What do I show them?',
     answer:
       'Use the tentative offer letter route: log in to samagama.in and open your profile, upload a brief self-declaration, and a tentative offer letter on Vicharanashala letterhead is issued to your dashboard immediately. Hand the tentative offer letter to your HOD/college official — it serves as the written confirmation they need to sign your NOC.',
-    summary: 'Upload self-declaration on dashboard → instant tentative offer letter to show your HOD.',
+    summary:
+      'Upload self-declaration on dashboard → instant tentative offer letter to show your HOD.',
     categoryName: 'NOC',
     tags: ['noc', 'offer-letter', 'dashboard'],
   },
@@ -272,7 +285,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'Can Prof. Sudarshan Iyengar or an IIT Ropar faculty member sign my NOC?',
     answer:
       'No. Your NOC must be signed by an authorised signatory at the institution where you are enrolled as a student. Sudarshan Iyengar is a faculty member at IIT Ropar and cannot sign your NOC in a personal capacity. An online-only certification course (even if offered jointly with an IIT) does not meet the eligibility requirement on its own.',
-    summary: 'No — NOC must be from your own institution\'s authorised signatory, not IIT Ropar faculty.',
+    summary:
+      "No — NOC must be from your own institution's authorised signatory, not IIT Ropar faculty.",
     categoryName: 'NOC',
     tags: ['noc', 'signature', 'iit-ropar'],
   },
@@ -301,7 +315,8 @@ const SEED_FAQS: SeedFaq[] = [
       'Path 1 — Formal offer letter (default): issued once your signed NOC has been verified (typically 1 hour to 1 working day after upload) AND you have confirmed your internship start and end dates on the dashboard.\n\n' +
       'Path 2 — Tentative offer letter (faster): upload a self-declaration on your profile instead. A tentative offer letter is issued immediately, and the formal offer letter follows once your NOC clears verification.\n\n' +
       'The offer letter lives on your dashboard at samagama.in, not in your email. You will receive a notification email from no-reply@vicharanashala.ai when it is ready.',
-    summary: 'Formal: after NOC verification + dates confirmed. Tentative: upload self-declaration for immediate issue. Both live on your dashboard.',
+    summary:
+      'Formal: after NOC verification + dates confirmed. Tentative: upload self-declaration for immediate issue. Both live on your dashboard.',
     categoryName: 'Selection & Offer',
     tags: ['offer-letter', 'noc', 'dashboard', 'dates'],
   },
@@ -325,7 +340,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'I am a minor/major in AI student at IIT Ropar — can I join?',
     answer:
       'Minor/Major in AI course from IIT Ropar is a certification course and there will be a different track of internship equivalent to them. Kindly write to us separately for this. You should be a registered student in a UG/PG programme with some university.',
-    summary: 'IIT Ropar AI minor/major has a separate track; write to us separately. Must be UG/PG registered.',
+    summary:
+      'IIT Ropar AI minor/major has a separate track; write to us separately. Must be UG/PG registered.',
     categoryName: 'Selection & Offer',
     tags: ['eligibility', 'iit-ropar'],
   },
@@ -333,7 +349,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'How do I accept the offer letter?',
     answer:
       'Reply to the offer-letter email from no-reply@vicharanashala.ai. In the body, paste the following acceptance statement exactly as printed, with your full name inserted and a date added:\n\n"I, [Full Name], confirm that I have read, understood, and accepted all terms, conditions, and obligations set out in this offer letter and in the program FAQ at samagama.in. I formally accept the offer of Summer Internship 2026."\n\nCopy-paste this sentence as-is. Do not paraphrase. The reply must reach us within 5 days of the offer letter being sent. Use Reply All.',
-    summary: 'Reply to offer email within 5 days using the exact acceptance statement (copy-paste, don\'t paraphrase).',
+    summary:
+      "Reply to offer email within 5 days using the exact acceptance statement (copy-paste, don't paraphrase).",
     categoryName: 'Selection & Offer',
     tags: ['offer-letter', 'email', 'policy'],
   },
@@ -341,12 +358,14 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'What if I reply to the offer letter without using the exact acceptance format?',
     answer:
       'The offer is withdrawn, effective immediately, with no further correspondence. The withdrawal is final. Non-compliant examples include paraphrasing, a bare "I accept", missing the date, or missing the FAQ-reference clause.',
-    summary: 'Offer withdrawn immediately and permanently for any deviation from the exact acceptance format.',
+    summary:
+      'Offer withdrawn immediately and permanently for any deviation from the exact acceptance format.',
     categoryName: 'Selection & Offer',
     tags: ['offer-letter', 'email', 'policy'],
   },
   {
-    title: 'I received a withdrawal email because I didn\'t accept the offer letter correctly. Can it be reversed?',
+    title:
+      "I received a withdrawal email because I didn't accept the offer letter correctly. Can it be reversed?",
     answer:
       'Once withdrawn, the offer cannot be reversed. Please read the FAQ carefully and follow the process precisely.',
     summary: 'Withdrawn offers are final and cannot be reversed.',
@@ -354,10 +373,10 @@ const SEED_FAQS: SeedFaq[] = [
     tags: ['offer-letter', 'policy'],
   },
   {
-    title: 'What happens after I send my acceptance? My dashboard doesn\'t update.',
+    title: "What happens after I send my acceptance? My dashboard doesn't update.",
     answer:
       'The dashboard does not display a live acceptance status. Once your correctly formatted reply is received, processing happens on the admin side. You will receive a follow-up communication. Allow 24–48 hours.',
-    summary: 'Dashboard doesn\'t show live acceptance status; allow 24–48 hours for follow-up.',
+    summary: "Dashboard doesn't show live acceptance status; allow 24–48 hours for follow-up.",
     categoryName: 'Selection & Offer',
     tags: ['offer-letter', 'dashboard'],
   },
@@ -365,14 +384,15 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'How do I change my internship dates before the offer letter is issued?',
     answer:
       'Edit the dates on the "Confirm your internship dates" card on your dashboard anytime before the offer letter is generated.',
-    summary: 'Edit via the "Confirm your internship dates" dashboard card before offer letter is generated.',
+    summary:
+      'Edit via the "Confirm your internship dates" dashboard card before offer letter is generated.',
     categoryName: 'Selection & Offer',
     tags: ['dates', 'dashboard', 'offer-letter'],
   },
   {
     title: 'When and how do I get the Zoom link for the kickoff meeting?',
     answer:
-      'The Zoom link for the kickoff meeting (orientation) is sent via email to your registered email address, typically 24–48 hours before the meeting. Check your spam/promotions folder if you don\'t see it.',
+      "The Zoom link for the kickoff meeting (orientation) is sent via email to your registered email address, typically 24–48 hours before the meeting. Check your spam/promotions folder if you don't see it.",
     summary: 'Zoom link sent by email 24–48 hours before kickoff; check spam if not received.',
     categoryName: 'Selection & Offer',
     tags: ['kickoff', 'orientation', 'email'],
@@ -381,7 +401,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'How to proceed if NOC is not available and my internship start date is approaching?',
     answer:
       'Upload a self-declaration on your profile to receive a tentative offer letter immediately. Pursue your NOC in parallel and upload it as soon as it is available. The formal offer letter will be issued automatically once the NOC is verified.',
-    summary: 'Upload self-declaration for tentative offer letter; formal offer letter follows after NOC verification.',
+    summary:
+      'Upload self-declaration for tentative offer letter; formal offer letter follows after NOC verification.',
     categoryName: 'Selection & Offer',
     tags: ['noc', 'offer-letter', 'start-date', 'dashboard'],
   },
@@ -389,7 +410,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'When does my internship actually begin? Will I receive a notification?',
     answer:
       'Your internship begins on your confirmed start date. There is no automated "start day" notification — your dashboard will reflect your active internship status. You are expected to be ready and working from that date.',
-    summary: 'Starts on your confirmed date; no automated notification — check dashboard for active status.',
+    summary:
+      'Starts on your confirmed date; no automated notification — check dashboard for active status.',
     categoryName: 'Selection & Offer',
     tags: ['start-date', 'dashboard'],
   },
@@ -405,7 +427,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'Can I change my internship dates after the offer letter has been issued?',
     answer:
       'Date changes after offer letter issuance require a fresh NOC matching the new dates and admin approval. Reach out via Yaksha chat on your dashboard.',
-    summary: 'Date changes after offer letter need a new NOC and admin approval; contact via Yaksha.',
+    summary:
+      'Date changes after offer letter need a new NOC and admin approval; contact via Yaksha.',
     categoryName: 'Selection & Offer',
     tags: ['dates', 'noc', 'offer-letter', 'yaksha'],
   },
@@ -455,7 +478,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'I am using a different email on GitHub / Zoom / the learning platform. Is that okay?',
     answer:
       'Ideally use the same email as your Samagama registration. If you must use a different one, inform your mentor and the admin team via Yaksha chat so your activity can be tracked correctly.',
-    summary: 'Use your Samagama email where possible; if different, notify mentor and admin via Yaksha.',
+    summary:
+      'Use your Samagama email where possible; if different, notify mentor and admin via Yaksha.',
     categoryName: 'Internship Guidelines',
     tags: ['email', 'yaksha', 'mentor'],
   },
@@ -463,7 +487,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'Why has my mentor not been assigned yet or contacted me on day 1?',
     answer:
       'Mentor assignments are finalised after team formation (which happens during the first days of Bronze). If you are past team formation and still have no mentor contact, raise it via Yaksha chat on your dashboard.',
-    summary: 'Mentors assigned after team formation in Bronze; contact Yaksha if still unassigned after that.',
+    summary:
+      'Mentors assigned after team formation in Bronze; contact Yaksha if still unassigned after that.',
     categoryName: 'Internship Guidelines',
     tags: ['mentor', 'team-formation', 'yaksha', 'phase'],
   },
@@ -473,7 +498,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'Are unofficial WhatsApp groups or Telegram channels for the cohort allowed?',
     answer:
       'Unofficial cohort-wide channels that purport to act on behalf of Vicharanashala or the wider internship cohort are not permitted. A four-person team thread for project coordination is fine. Any group that claims to speak for or represent the programme is not.',
-    summary: 'Small team threads fine; cohort-wide unofficial groups claiming to represent the programme are not permitted.',
+    summary:
+      'Small team threads fine; cohort-wide unofficial groups claiming to represent the programme are not permitted.',
     categoryName: 'Internship Guidelines',
     tags: ['conduct', 'policy', 'cohort', 'team-formation'],
   },
@@ -493,7 +519,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'Does Vicharanashala send a grade report to my university for internship credit?',
     answer:
       'No. Vicharanashala issues a completion certificate but does not send grade reports or evaluations to universities. If your university requires additional documentation for credit transfer, you will need to coordinate that separately.',
-    summary: 'No grade reports sent; certificate only. Coordinate credit transfer with your university separately.',
+    summary:
+      'No grade reports sent; certificate only. Coordinate credit transfer with your university separately.',
     categoryName: 'Certificates',
     tags: ['certificate', 'completion'],
   },
@@ -507,8 +534,7 @@ const SEED_FAQS: SeedFaq[] = [
   },
   {
     title: 'Will the completion certificate be a physical hardcopy or an e-certificate?',
-    answer:
-      'An e-certificate is issued. There is no physical hardcopy by default.',
+    answer: 'An e-certificate is issued. There is no physical hardcopy by default.',
     summary: 'E-certificate only; no physical hardcopy.',
     categoryName: 'Certificates',
     tags: ['certificate', 'completion'],
@@ -535,7 +561,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'Why does the Rosetta journal exist? Is it just busywork?',
     answer:
       'It is not busywork. The thinking routines embedded in Rosetta are a core part of the Vicharanashala pedagogy. Consistent reflection accelerates learning, improves problem-solving, and makes your work legible — to yourself first, and to your mentor.',
-    summary: 'Core pedagogy tool; consistent reflection accelerates learning and benefits mentor communication.',
+    summary:
+      'Core pedagogy tool; consistent reflection accelerates learning and benefits mentor communication.',
     categoryName: 'Rosetta',
     tags: ['rosetta', 'journal', 'mentor'],
   },
@@ -543,7 +570,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'What is a "thinking routine" in Rosetta?',
     answer:
       'A short, structured prompt that directs your attention to a specific aspect of your learning or work — for example, "what surprised me today", "what I would do differently", or "what I still don\'t understand". Think of it as cognitive scaffolding.',
-    summary: 'Short structured prompts guiding your reflection — e.g., what surprised you, what you\'d do differently.',
+    summary:
+      "Short structured prompts guiding your reflection — e.g., what surprised you, what you'd do differently.",
     categoryName: 'Rosetta',
     tags: ['rosetta', 'journal'],
   },
@@ -558,8 +586,9 @@ const SEED_FAQS: SeedFaq[] = [
   {
     title: 'How do I use Rosetta day to day?',
     answer:
-      'At the end of each working day, open your journal and respond to the day\'s prompts. Keep it brief and honest. The point is consistent, genuine reflection — not a polished essay.',
-    summary: 'Fill in prompts at end of each working day; brief and honest is better than polished.',
+      "At the end of each working day, open your journal and respond to the day's prompts. Keep it brief and honest. The point is consistent, genuine reflection — not a polished essay.",
+    summary:
+      'Fill in prompts at end of each working day; brief and honest is better than polished.',
     categoryName: 'Rosetta',
     tags: ['rosetta', 'journal'],
   },
@@ -582,7 +611,7 @@ const SEED_FAQS: SeedFaq[] = [
   {
     title: 'Can I use ChatGPT or any AI tool to write my Rosetta entries?',
     answer:
-      'No. Using AI to write your journal entries defeats the entire purpose and is a violation of the internship\'s academic integrity expectations.',
+      "No. Using AI to write your journal entries defeats the entire purpose and is a violation of the internship's academic integrity expectations.",
     summary: 'No AI tools for Rosetta entries — violates academic integrity.',
     categoryName: 'Rosetta',
     tags: ['rosetta', 'journal', 'policy', 'conduct'],
@@ -606,7 +635,7 @@ const SEED_FAQS: SeedFaq[] = [
   {
     title: 'Can Rosetta prompts change mid-internship?',
     answer:
-      'Yes. Prompts may be updated to reflect the phase of the internship or to address emerging themes in the cohort\'s work. Updates will be communicated.',
+      "Yes. Prompts may be updated to reflect the phase of the internship or to address emerging themes in the cohort's work. Updates will be communicated.",
     summary: 'Yes, prompts may update mid-internship; changes will be communicated.',
     categoryName: 'Rosetta',
     tags: ['rosetta', 'journal', 'cohort'],
@@ -620,17 +649,19 @@ const SEED_FAQS: SeedFaq[] = [
     tags: ['rosetta', 'journal', 'submission', 'dashboard'],
   },
   {
-    title: 'My college needs written confirmation that the internship won\'t clash with classes. What do I share?',
+    title:
+      "My college needs written confirmation that the internship won't clash with classes. What do I share?",
     answer:
       'The offer letter (tentative or formal) on Vicharanashala letterhead serves as the official documentation. If your college needs additional assurance, you may also point them to the public programme page at samagama.in/internship.',
-    summary: 'Provide the offer letter from dashboard; also point to samagama.in/internship if needed.',
+    summary:
+      'Provide the offer letter from dashboard; also point to samagama.in/internship if needed.',
     categoryName: 'Rosetta',
     tags: ['offer-letter', 'policy'],
   },
 
   // ── Section 10: Phase 1 — Coursework, Vibe LMS, and Live Sessions ────────────
   {
-    title: 'I\'ve previously interned with VLED — am I exempt from Phase 1 coursework?',
+    title: "I've previously interned with VLED — am I exempt from Phase 1 coursework?",
     answer:
       'Exemptions from Phase 1 coursework are assessed on a case-by-case basis by your mentor. Raise it at your first mentor check-in with specifics of what you have already covered.',
     summary: 'Exemptions are case-by-case; raise with your mentor at first check-in.',
@@ -654,17 +685,17 @@ const SEED_FAQS: SeedFaq[] = [
     tags: ['vibe', 'email', 'yaksha'],
   },
   {
-    title: 'Are live sessions mandatory if I\'m on the viva route?',
+    title: "Are live sessions mandatory if I'm on the viva route?",
     answer:
       'The viva route exempts you from the Vibe course assessments, not from live sessions. Live sessions attendance expectations are communicated by your mentor at the start of Phase 1.',
-    summary: 'Viva route skips Vibe assessments only; live sessions still apply per mentor guidance.',
+    summary:
+      'Viva route skips Vibe assessments only; live sessions still apply per mentor guidance.',
     categoryName: 'ViBe Platform',
     tags: ['vibe', 'phase', 'mentor', 'attendance'],
   },
   {
     title: 'Where do I find the daily live-session schedule?',
-    answer:
-      'The schedule is shared via email and on your dashboard. Check both regularly.',
+    answer: 'The schedule is shared via email and on your dashboard. Check both regularly.',
     summary: 'Schedule shared via email and dashboard; check both regularly.',
     categoryName: 'ViBe Platform',
     tags: ['vibe', 'dashboard', 'email'],
@@ -672,7 +703,7 @@ const SEED_FAQS: SeedFaq[] = [
 
   // ── Section 11: Yaksha Chat ───────────────────────────────────────────────────
   {
-    title: 'I\'m unable to type in the Yaksha chat — what should I do?',
+    title: "I'm unable to type in the Yaksha chat — what should I do?",
     answer:
       'Try the following in order:\n1. Refresh the page.\n2. Clear your browser cache and reload.\n3. Try a different browser (Chrome or Firefox on desktop are preferred).\n4. If none of the above work, report the issue via the Flag option if visible, or email the support address listed on the dashboard.',
     summary: 'Refresh → clear cache → try Chrome/Firefox → flag or email support.',
@@ -701,7 +732,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'Why are ViBe videos stuck or repeating?',
     answer:
       'Common causes: switching tabs (which the proctoring system detects), browser compatibility issues, or slow internet. See the full troubleshooting guide for video issues.',
-    summary: 'Usually caused by tab switching, browser issues, or slow internet; see troubleshooting steps.',
+    summary:
+      'Usually caused by tab switching, browser issues, or slow internet; see troubleshooting steps.',
     categoryName: 'ViBe Platform',
     tags: ['vibe', 'video', 'proctoring', 'bug'],
   },
@@ -714,15 +746,18 @@ const SEED_FAQS: SeedFaq[] = [
     tags: ['vibe', 'proctoring'],
   },
   {
-    title: 'I\'m experiencing video issues (stuck, looping, skipping) on ViBe. How do I troubleshoot?',
+    title:
+      "I'm experiencing video issues (stuck, looping, skipping) on ViBe. How do I troubleshoot?",
     answer:
       'Try in order:\n1. Stay on the ViBe tab — do not switch tabs or minimise the window.\n2. Use Chrome or Firefox on a desktop/laptop.\n3. Clear browser cache, then reload.\n4. Check your internet connection stability.\n5. Disable browser extensions (especially ad-blockers or privacy extensions).\n6. If the issue persists, use the Flag option on ViBe to report the specific video/quiz, or raise via Yaksha chat.',
-    summary: 'Stay on tab → Chrome/Firefox desktop → clear cache → check internet → disable extensions → Flag or Yaksha.',
+    summary:
+      'Stay on tab → Chrome/Firefox desktop → clear cache → check internet → disable extensions → Flag or Yaksha.',
     categoryName: 'ViBe Platform',
     tags: ['vibe', 'video', 'bug', 'proctoring'],
   },
   {
-    title: 'I completed all ViBe videos and quizzes but my progress shows less than 100%. What do I do?',
+    title:
+      'I completed all ViBe videos and quizzes but my progress shows less than 100%. What do I do?',
     answer:
       'Progress updates can lag. Wait a few hours and refresh. If still not resolved, use the Flag option on ViBe or raise via Yaksha chat with your registered email and a screenshot.',
     summary: 'Wait a few hours; if unresolved, flag on ViBe or contact Yaksha with screenshot.',
@@ -738,7 +773,7 @@ const SEED_FAQS: SeedFaq[] = [
     tags: ['vibe', 'policy'],
   },
   {
-    title: 'Is the ViBe consent form compulsory? What if I don\'t want to grant camera access?',
+    title: "Is the ViBe consent form compulsory? What if I don't want to grant camera access?",
     answer:
       'The consent form is compulsory for participation in the ViBe course as part of this internship. Camera access is required for the proctoring system.',
     summary: 'Consent form is compulsory; camera access required for proctoring.',
@@ -781,7 +816,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'I am seeing a red "Access Restricted" banner on ViBe. Is this a bug?',
     answer:
       'No — it is intentional. "Access Restricted" appears when you attempt to access content before completing the prerequisite. Complete the prior video and/or quiz fully (including achieving the pass threshold if a quiz is involved), then proceed. If you believe you have completed the prerequisite and the banner persists, use the Flag option or Yaksha chat.',
-    summary: 'Not a bug; complete the prerequisite video/quiz to unlock. Use Flag or Yaksha if it persists incorrectly.',
+    summary:
+      'Not a bug; complete the prerequisite video/quiz to unlock. Use Flag or Yaksha if it persists incorrectly.',
     categoryName: 'ViBe Platform',
     tags: ['vibe', 'bug', 'video', 'quiz'],
   },
@@ -789,7 +825,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'Why does ViBe sometimes make me re-watch a clip after a quiz?',
     answer:
       'If you score below the pass threshold on a quiz, the system loops you back to the relevant video section so you can review the material before re-attempting the quiz. This is by design.',
-    summary: 'Scoring below pass threshold on a quiz loops you back to review the video — by design.',
+    summary:
+      'Scoring below pass threshold on a quiz loops you back to review the video — by design.',
     categoryName: 'ViBe Platform',
     tags: ['vibe', 'quiz', 'video'],
   },
@@ -805,12 +842,13 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'What does the "quiet helper" on ViBe actually do?',
     answer:
       'The quiet helper is a low-visibility overlay that gives you real-time, unobtrusive feedback when the proctoring system detects a potential issue (e.g., face not visible). It nudges you to correct the issue before a penalty is logged.',
-    summary: 'Real-time subtle overlay that warns you of proctoring issues before a penalty is issued.',
+    summary:
+      'Real-time subtle overlay that warns you of proctoring issues before a penalty is issued.',
     categoryName: 'ViBe Platform',
     tags: ['vibe', 'proctoring'],
   },
   {
-    title: 'Does ViBe record continuous video of me while I\'m learning?',
+    title: "Does ViBe record continuous video of me while I'm learning?",
     answer:
       'ViBe takes periodic snapshots for proctoring — it does not record continuous video. Snapshots are reviewed if a violation is flagged.',
     summary: 'Periodic snapshots only, not continuous video; reviewed only on flagged violations.',
@@ -826,10 +864,11 @@ const SEED_FAQS: SeedFaq[] = [
     tags: ['vibe', 'proctoring'],
   },
   {
-    title: 'Why does ViBe keep pausing or restarting even when I\'m paying attention?',
+    title: "Why does ViBe keep pausing or restarting even when I'm paying attention?",
     answer:
       'The most likely cause is a brief moment where your face was not visible to the camera (looking down at notes, moving away from the screen, etc.). Keep your face visible and centred in the camera view throughout the session.',
-    summary: 'Face must stay visible and centred in camera; looking away briefly can trigger a pause.',
+    summary:
+      'Face must stay visible and centred in camera; looking away briefly can trigger a pause.',
     categoryName: 'ViBe Platform',
     tags: ['vibe', 'proctoring'],
   },
@@ -842,7 +881,7 @@ const SEED_FAQS: SeedFaq[] = [
     tags: ['vibe', 'proctoring'],
   },
   {
-    title: 'Can I study with a friend on camera since we\'re learning together on ViBe?',
+    title: "Can I study with a friend on camera since we're learning together on ViBe?",
     answer:
       'No. Multiple faces visible to the camera will trigger a proctoring flag. Study individually, even if you are in the same room as a friend.',
     summary: 'Multiple faces triggers a proctoring flag; study alone on camera.',
@@ -869,7 +908,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'What should my study environment look like before starting a ViBe session?',
     answer:
       'Single, well-lit room — no other people in camera view. Face clearly visible and centred in the webcam. ViBe tab as the only active tab (or at least in foreground). Stable internet connection. Headphones preferred to reduce audio distraction flags. Phone face-down and notifications silenced.',
-    summary: 'Well-lit room, alone on camera, ViBe tab in focus, stable internet, headphones, phone silenced.',
+    summary:
+      'Well-lit room, alone on camera, ViBe tab in focus, stable internet, headphones, phone silenced.',
     categoryName: 'ViBe Platform',
     tags: ['vibe', 'proctoring'],
   },
@@ -877,16 +917,14 @@ const SEED_FAQS: SeedFaq[] = [
   // ── Section 13: Team Formation ────────────────────────────────────────────────
   {
     title: 'Is team formation compulsory?',
-    answer:
-      'Yes. Team formation is a mandatory part of the Phase 1 — Phase 2 transition.',
+    answer: 'Yes. Team formation is a mandatory part of the Phase 1 — Phase 2 transition.',
     summary: 'Mandatory part of the Phase 1 to Phase 2 transition.',
     categoryName: 'Team Formation',
     tags: ['team-formation', 'phase'],
   },
   {
     title: 'What is the size of a team?',
-    answer:
-      'Teams are typically four members.',
+    answer: 'Teams are typically four members.',
     summary: 'Typically 4 members per team.',
     categoryName: 'Team Formation',
     tags: ['team-formation'],
@@ -900,10 +938,11 @@ const SEED_FAQS: SeedFaq[] = [
     tags: ['team-formation', 'cohort'],
   },
   {
-    title: 'I started on May 15/16 but couldn\'t form a team during the activity. What happens now?',
+    title: "I started on May 15/16 but couldn't form a team during the activity. What happens now?",
     answer:
       'Raise it immediately via Yaksha chat on your dashboard. Admin will either assign you to an existing team with an opening or wait for the next formation window.',
-    summary: 'Contact Yaksha immediately; admin will assign you to a team or next formation window.',
+    summary:
+      'Contact Yaksha immediately; admin will assign you to a team or next formation window.',
     categoryName: 'Team Formation',
     tags: ['team-formation', 'yaksha', 'dashboard'],
   },
@@ -941,24 +980,21 @@ const SEED_FAQS: SeedFaq[] = [
   },
   {
     title: 'Can we change our team name after submission?',
-    answer:
-      'No. Team names are locked after submission.',
+    answer: 'No. Team names are locked after submission.',
     summary: 'Team names are locked after submission; no changes allowed.',
     categoryName: 'Team Formation',
     tags: ['team-formation', 'policy'],
   },
   {
     title: 'What if multiple teams choose the same team name?',
-    answer:
-      'Admin will contact the teams involved and ask one to choose a different name.',
+    answer: 'Admin will contact the teams involved and ask one to choose a different name.',
     summary: 'Admin contacts teams with duplicate names and asks one to change.',
     categoryName: 'Team Formation',
     tags: ['team-formation'],
   },
   {
     title: 'What should I do if I face issues within my team?',
-    answer:
-      'Raise it with your mentor first. If unresolved, escalate via Yaksha chat to admin.',
+    answer: 'Raise it with your mentor first. If unresolved, escalate via Yaksha chat to admin.',
     summary: 'Raise with mentor first; escalate to admin via Yaksha if unresolved.',
     categoryName: 'Team Formation',
     tags: ['team-formation', 'mentor', 'yaksha'],
@@ -988,7 +1024,8 @@ const SEED_FAQS: SeedFaq[] = [
     tags: ['team-formation', 'yaksha', 'email'],
   },
   {
-    title: 'We selected Project X as our top priority but were assigned Project Y. Can we change it?',
+    title:
+      'We selected Project X as our top priority but were assigned Project Y. Can we change it?',
     answer:
       'Project assignments are final. The assignment process balances multiple factors across all teams and cannot accommodate individual reassignment requests.',
     summary: 'Project assignments are final; no individual reassignments.',
@@ -999,7 +1036,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'I just started the internship. Can I form my own team now?',
     answer:
       'Team formation happens at defined windows during Phase 1. If you have just started, check your dashboard and Yaksha chat for the current status and next steps.',
-    summary: 'Team formation happens at defined Phase 1 windows; check dashboard and Yaksha for status.',
+    summary:
+      'Team formation happens at defined Phase 1 windows; check dashboard and Yaksha for status.',
     categoryName: 'Team Formation',
     tags: ['team-formation', 'phase', 'dashboard', 'yaksha'],
   },
@@ -1013,8 +1051,7 @@ const SEED_FAQS: SeedFaq[] = [
   },
   {
     title: 'Can I request a specific teammate after teams are assigned?',
-    answer:
-      'No. Team assignments are final and requests for changes are not entertained.',
+    answer: 'No. Team assignments are final and requests for changes are not entertained.',
     summary: 'Team assignments are final; no teammate change requests.',
     categoryName: 'Team Formation',
     tags: ['team-formation', 'policy'],
@@ -1039,7 +1076,8 @@ const SEED_FAQS: SeedFaq[] = [
     title: 'Will team performance affect individual evaluation?',
     answer:
       'Yes. While some components may be individual, team deliverables are a key part of evaluation.',
-    summary: 'Yes — team deliverables are a key part of evaluation alongside individual components.',
+    summary:
+      'Yes — team deliverables are a key part of evaluation alongside individual components.',
     categoryName: 'Team Formation',
     tags: ['team-formation', 'policy', 'submission'],
   },
@@ -1061,8 +1099,7 @@ const SEED_FAQS: SeedFaq[] = [
   },
   {
     title: 'Can a team be dissolved and reformed after finalisation?',
-    answer:
-      'No. Once finalized, teams are locked and cannot be dissolved.',
+    answer: 'No. Once finalized, teams are locked and cannot be dissolved.',
     summary: 'Teams are permanently locked after finalisation.',
     categoryName: 'Team Formation',
     tags: ['team-formation', 'policy'],

@@ -18,7 +18,12 @@ export function CategoriesAdminTab() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-        <Button onClick={() => { setCreating((v) => !v); setEditingId(null); }}>
+        <Button
+          onClick={() => {
+            setCreating((v) => !v);
+            setEditingId(null);
+          }}
+        >
           <Plus size={14} /> {creating ? 'Cancel' : 'Add Category'}
         </Button>
       </div>
@@ -58,7 +63,15 @@ export function CategoriesAdminTab() {
               }}
             >
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 600,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {c.name}
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>
@@ -66,7 +79,13 @@ export function CategoriesAdminTab() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginLeft: 10 }}>
-                <IconBtn ariaLabel="Edit" onClick={() => { setEditingId(c._id); setCreating(false); }}>
+                <IconBtn
+                  ariaLabel="Edit"
+                  onClick={() => {
+                    setEditingId(c._id);
+                    setCreating(false);
+                  }}
+                >
                   <Edit size={12} />
                 </IconBtn>
                 <DeleteBtn id={c._id} />
@@ -102,7 +121,7 @@ function CategoryForm({
     if (existing?.name) {
       inputRef.current?.setSelectionRange(existing.name.length, existing.name.length);
     }
-  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Escape to cancel
   useEffect(() => {
@@ -130,7 +149,9 @@ function CategoryForm({
     <Card style={{ padding: '18px 20px' }}>
       <form onSubmit={submit}>
         {/* Title row */}
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', marginBottom: 10 }}>
+        <div
+          style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', marginBottom: 10 }}
+        >
           {isEdit ? `Editing: ${existing.name}` : 'New Category'}
         </div>
 
@@ -138,7 +159,13 @@ function CategoryForm({
         <div style={{ marginBottom: 12 }}>
           <label
             htmlFor="category-name-input"
-            style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-text-muted)', display: 'block', marginBottom: 6 }}
+            style={{
+              fontSize: 12,
+              fontWeight: 500,
+              color: 'var(--color-text-muted)',
+              display: 'block',
+              marginBottom: 6,
+            }}
           >
             Category Name
           </label>
@@ -175,7 +202,8 @@ function CategoryForm({
             }}
           />
           <div style={{ marginTop: 5, fontSize: 11, color: 'var(--color-text-muted)' }}>
-            Press <kbd style={kbdStyle}>Enter</kbd> to save · <kbd style={kbdStyle}>Esc</kbd> to cancel
+            Press <kbd style={kbdStyle}>Enter</kbd> to save · <kbd style={kbdStyle}>Esc</kbd> to
+            cancel
           </div>
         </div>
 
@@ -230,7 +258,11 @@ function DeleteBtn({ id }: { id: string }) {
 // ─── IconBtn ──────────────────────────────────────────────────────────────────
 
 function IconBtn({
-  children, onClick, ariaLabel, danger, disabled,
+  children,
+  onClick,
+  ariaLabel,
+  danger,
+  disabled,
 }: {
   children: React.ReactNode;
   onClick: () => void;

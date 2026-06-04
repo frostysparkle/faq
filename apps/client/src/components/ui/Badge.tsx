@@ -8,11 +8,15 @@ interface BadgeProps {
 }
 
 const COLOR_VARS: Record<BadgeColor, { bg: string; text: string; border: string }> = {
-  default: { bg: 'var(--color-pill)',       text: 'var(--color-pill-text)',   border: 'transparent' },
-  accent:  { bg: 'var(--color-primary-bg)', text: 'var(--color-primary-text)',border: 'transparent' },
-  success: { bg: 'var(--color-success-bg)', text: 'var(--color-success)',     border: 'transparent' },
-  warning: { bg: 'var(--color-warning-bg)', text: 'var(--color-warning)',     border: 'transparent' },
-  danger:  { bg: 'var(--color-danger-bg)',  text: 'var(--color-danger)',      border: 'transparent' },
+  default: { bg: 'var(--color-pill)', text: 'var(--color-pill-text)', border: 'transparent' },
+  accent: {
+    bg: 'var(--color-primary-bg)',
+    text: 'var(--color-primary-text)',
+    border: 'transparent',
+  },
+  success: { bg: 'var(--color-success-bg)', text: 'var(--color-success)', border: 'transparent' },
+  warning: { bg: 'var(--color-warning-bg)', text: 'var(--color-warning)', border: 'transparent' },
+  danger: { bg: 'var(--color-danger-bg)', text: 'var(--color-danger)', border: 'transparent' },
 };
 
 export function Badge({ children, color = 'default' }: BadgeProps) {

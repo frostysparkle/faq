@@ -23,7 +23,17 @@ export const notificationService = {
     const docs = await NotificationModel.find({ userId: new Types.ObjectId(userId) })
       .sort({ createdAt: -1 })
       .limit(limit)
-      .lean<Array<{ _id: Types.ObjectId; type: NotificationType; title: string; body: string; read: boolean; relatedId?: string; createdAt: Date }>>();
+      .lean<
+        Array<{
+          _id: Types.ObjectId;
+          type: NotificationType;
+          title: string;
+          body: string;
+          read: boolean;
+          relatedId?: string;
+          createdAt: Date;
+        }>
+      >();
 
     return docs.map((d) => ({
       id: d._id.toString(),

@@ -191,10 +191,13 @@ export const analyticsService = {
    * Returns an array of 7 objects sorted oldest → newest.
    * Each day that had zero events still appears (filled with 0s).
    */
-  async getVotesTrend(): Promise<{ date: string; helpful: number; unhelpful: number; flagged: number }[]> {
+  async getVotesTrend(): Promise<
+    { date: string; helpful: number; unhelpful: number; flagged: number }[]
+  > {
     const cacheKey = 'stats:votes-trend';
     const cached = await readCache(cacheKey);
-    if (cached) return cached as { date: string; helpful: number; unhelpful: number; flagged: number }[];
+    if (cached)
+      return cached as { date: string; helpful: number; unhelpful: number; flagged: number }[];
 
     const days = 7;
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -235,7 +238,10 @@ export const analyticsService = {
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
       const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      result.push({ date: dateStr, ...(map.get(dateStr) ?? { helpful: 0, unhelpful: 0, flagged: 0 }) });
+      result.push({
+        date: dateStr,
+        ...(map.get(dateStr) ?? { helpful: 0, unhelpful: 0, flagged: 0 }),
+      });
     }
 
     await writeCache(cacheKey, result);
@@ -411,14 +417,16 @@ export const analyticsService = {
    * Audit log query — paginated, filterable by actor, entityType, action, date range.
    * Mirrors remote GET /api/admin/audit-logs.
    */
-  async getAuditLogs(opts: {
-    page?: number;
-    limit?: number;
-    actorId?: string;
-    entityType?: string;
-    action?: string;
-    dateRange?: { start?: Date; end?: Date };
-  } = {}) {
+  async getAuditLogs(
+    opts: {
+      page?: number;
+      limit?: number;
+      actorId?: string;
+      entityType?: string;
+      action?: string;
+      dateRange?: { start?: Date; end?: Date };
+    } = {},
+  ) {
     const page = Math.max(opts.page ?? 1, 1);
     const limit = Math.min(Math.max(opts.limit ?? 20, 1), 100);
     const skip = (page - 1) * limit;

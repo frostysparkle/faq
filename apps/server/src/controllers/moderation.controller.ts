@@ -108,4 +108,3 @@ export const moderationController = {
     return ok(res, result);
   },
 };
-

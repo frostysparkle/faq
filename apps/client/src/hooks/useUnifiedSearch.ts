@@ -37,10 +37,9 @@ export function useUnifiedSearch(dataEndpoint: string) {
 
   useEffect(() => {
     // Vite module worker — bundled at build time, not a CDN import.
-    workerRef.current = new Worker(
-      new URL('../workers/searchEngine.worker.ts', import.meta.url),
-      { type: 'module' },
-    );
+    workerRef.current = new Worker(new URL('../workers/searchEngine.worker.ts', import.meta.url), {
+      type: 'module',
+    });
 
     workerRef.current.onmessage = (event: MessageEvent<WorkerResponse>) => {
       const msg = event.data;

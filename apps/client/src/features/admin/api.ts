@@ -102,7 +102,9 @@ export const adminApi = {
     return { items: res.data.data, meta: res.data.meta ?? {} };
   },
   async changeRole(userId: string, role: string): Promise<PublicUserAdmin> {
-    const res = await apiClient.patch<ApiSuccess<PublicUserAdmin>>(`/api/users/${userId}/role`, { role });
+    const res = await apiClient.patch<ApiSuccess<PublicUserAdmin>>(`/api/users/${userId}/role`, {
+      role,
+    });
     return res.data.data;
   },
   async suspendUser(userId: string): Promise<PublicUserAdmin> {
@@ -131,7 +133,9 @@ export const adminApi = {
 
   // Admin intelligence
   async getIntelligenceStats(): Promise<AdminIntelligenceStats> {
-    const res = await apiClient.get<ApiSuccess<AdminIntelligenceStats>>('/api/stats/admin-intelligence');
+    const res = await apiClient.get<ApiSuccess<AdminIntelligenceStats>>(
+      '/api/stats/admin-intelligence',
+    );
     return res.data.data;
   },
 
@@ -143,7 +147,9 @@ export const adminApi = {
 
   // Moderator personal stats
   async getModeratorPersonalStats(): Promise<ModeratorPersonalStats> {
-    const res = await apiClient.get<ApiSuccess<ModeratorPersonalStats>>('/api/stats/moderator-personal');
+    const res = await apiClient.get<ApiSuccess<ModeratorPersonalStats>>(
+      '/api/stats/moderator-personal',
+    );
     return res.data.data;
   },
 
@@ -157,21 +163,31 @@ export const adminApi = {
 
   // FAQ candidates
   async listFaqCandidates(): Promise<FaqCandidateRow[]> {
-    const res = await apiClient.get<ApiSuccess<FaqCandidateRow[]>>('/api/moderation/faq-candidates');
+    const res = await apiClient.get<ApiSuccess<FaqCandidateRow[]>>(
+      '/api/moderation/faq-candidates',
+    );
     return res.data.data;
   },
   async convertToFaq(answerId: string): Promise<{ faqId: string }> {
-    const res = await apiClient.post<ApiSuccess<{ faqId: string }>>(`/api/moderation/faq-candidates/${answerId}/convert`);
+    const res = await apiClient.post<ApiSuccess<{ faqId: string }>>(
+      `/api/moderation/faq-candidates/${answerId}/convert`,
+    );
     return res.data.data;
   },
 
   // Bulk moderation
   async bulkApprove(ids: string[]): Promise<{ approved: number }> {
-    const res = await apiClient.post<ApiSuccess<{ approved: number }>>('/api/moderation/bulk-approve', { ids });
+    const res = await apiClient.post<ApiSuccess<{ approved: number }>>(
+      '/api/moderation/bulk-approve',
+      { ids },
+    );
     return res.data.data;
   },
   async bulkReject(ids: string[], note?: string): Promise<{ rejected: number }> {
-    const res = await apiClient.post<ApiSuccess<{ rejected: number }>>('/api/moderation/bulk-reject', { ids, note });
+    const res = await apiClient.post<ApiSuccess<{ rejected: number }>>(
+      '/api/moderation/bulk-reject',
+      { ids, note },
+    );
     return res.data.data;
   },
 

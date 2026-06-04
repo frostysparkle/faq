@@ -175,7 +175,13 @@ export const faqService = {
         { _id: 1 },
       )
         .select('+helpfulVotes +unhelpfulVotes')
-        .lean<{ _id: Types.ObjectId; helpfulVotes?: Types.ObjectId[]; unhelpfulVotes?: Types.ObjectId[] }[]>();
+        .lean<
+          {
+            _id: Types.ObjectId;
+            helpfulVotes?: Types.ObjectId[];
+            unhelpfulVotes?: Types.ObjectId[];
+          }[]
+        >();
 
       for (const f of voted) {
         if (f.helpfulVotes?.some((v) => v.equals(userObjectId))) {
@@ -189,9 +195,7 @@ export const faqService = {
     return {
       items: items.map((faq) => {
         const userVote =
-          userId && role === 'student'
-            ? (voteMap.get(faq._id.toString()) ?? null)
-            : undefined;
+          userId && role === 'student' ? (voteMap.get(faq._id.toString()) ?? null) : undefined;
         return projectFaq(faq, role, userVote);
       }),
       total,
@@ -240,7 +244,11 @@ export const faqService = {
     // Mirrors remote embeddingBackfillJob pattern — non-blocking.
     if (input.status === 'published') {
       void scheduleEmbedding(doc._id.toString(), input.title);
-      void analyticsService.track('faq_viewed', { entityType: 'faq', entityId: doc._id.toString(), userId: actorId });
+      void analyticsService.track('faq_viewed', {
+        entityType: 'faq',
+        entityId: doc._id.toString(),
+        userId: actorId,
+      });
     }
 
     return doc;
@@ -274,9 +282,17 @@ export const faqService = {
 
     // Moderator-triggered manual resets (independent of answer change).
     if (!answerChanged) {
-      if (input.resetHelpful) { current.helpfulCount = 0; current.helpfulVotes = []; }
-      if (input.resetUnhelpful) { current.unhelpfulCount = 0; current.unhelpfulVotes = []; }
-      if (input.resetFlags) { current.flagCount = 0; }
+      if (input.resetHelpful) {
+        current.helpfulCount = 0;
+        current.helpfulVotes = [];
+      }
+      if (input.resetUnhelpful) {
+        current.unhelpfulCount = 0;
+        current.unhelpfulVotes = [];
+      }
+      if (input.resetFlags) {
+        current.flagCount = 0;
+      }
     }
 
     await current.save();
@@ -341,7 +357,11 @@ export const faqService = {
     faqId: string,
     userId: string,
     rating: 'helpful' | 'unhelpful',
-  ): Promise<{ helpfulCount: number; unhelpfulCount: number; userVote: 'helpful' | 'unhelpful' | null }> {
+  ): Promise<{
+    helpfulCount: number;
+    unhelpfulCount: number;
+    userVote: 'helpful' | 'unhelpful' | null;
+  }> {
     const userObjectId = new Types.ObjectId(userId);
     const faq = await FaqModel.findById(faqId).select('+helpfulVotes +unhelpfulVotes');
     if (!faq) throw ApiError.notFound('FAQ not found');
@@ -421,7 +441,11 @@ export const faqService = {
 
     const scored = faqs
       .filter((f) => f.embedding && f.embedding.length === 384)
-      .map((f) => ({ id: f._id.toString(), title: f.title, similarity: cosineSimilarity(queryEmbedding, f.embedding!) }))
+      .map((f) => ({
+        id: f._id.toString(),
+        title: f.title,
+        similarity: cosineSimilarity(queryEmbedding, f.embedding!),
+      }))
       .filter((r) => r.similarity >= threshold)
       .sort((a, b) => b.similarity - a.similarity)
       .slice(0, limit);

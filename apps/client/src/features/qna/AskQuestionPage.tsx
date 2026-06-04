@@ -111,12 +111,34 @@ export function AskQuestionPage() {
     <div style={{ maxWidth: 720, margin: '0 auto' }}>
       {/* Section heading */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-        <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--color-card)', boxShadow: '0 2px 8px rgba(124,58,237,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            background: 'var(--color-card)',
+            boxShadow: '0 2px 8px rgba(124,58,237,0.18)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <HelpCircle size={18} color="var(--color-purple)" />
         </div>
         <div>
-          <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>Ask a Question</span>
-          <span style={{ fontSize: 13, color: 'var(--color-text-muted)', marginLeft: 10 }}>We'll check existing answers before posting</span>
+          <span
+            style={{
+              fontSize: 19,
+              fontWeight: 800,
+              color: 'var(--color-text)',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Ask a Question
+          </span>
+          <span style={{ fontSize: 13, color: 'var(--color-text-muted)', marginLeft: 10 }}>
+            We'll check existing answers before posting
+          </span>
         </div>
       </div>
 
@@ -125,116 +147,140 @@ export function AskQuestionPage() {
       {step === 'write' && (
         <div className="mod-card mod-card-purple">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 20px 0' }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--color-purple-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                background: 'var(--color-purple-bg)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               <HelpCircle size={17} color="var(--color-purple)" />
             </div>
-            <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>Describe your question</span>
+            <span
+              style={{
+                fontSize: 16,
+                fontWeight: 800,
+                color: 'var(--color-text)',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              Describe your question
+            </span>
           </div>
           <div style={{ padding: '14px 20px 20px' }}>
-          <form onSubmit={onWrite}>
-            <FormField label="Description *" error={errors.description?.message}>
-              <textarea
-                rows={5}
-                {...register('description')}
-                placeholder="Describe your issue in detail. Include any error messages or steps you've tried."
-                style={{ ...inputStyle, resize: 'vertical' }}
-              />
-            </FormField>
+            <form onSubmit={onWrite}>
+              <FormField label="Description *" error={errors.description?.message}>
+                <textarea
+                  rows={5}
+                  {...register('description')}
+                  placeholder="Describe your issue in detail. Include any error messages or steps you've tried."
+                  style={{ ...inputStyle, resize: 'vertical' }}
+                />
+              </FormField>
 
-            <FormField label="Category *" error={errors.category?.message}>
-              <select {...register('category')} style={inputStyle} defaultValue="">
-                <option value="" disabled>
-                  Select a category
-                </option>
-                {categories?.map((c) => (
-                  <option key={c._id} value={c._id}>
-                    {c.name}
+              <FormField label="Category *" error={errors.category?.message}>
+                <select {...register('category')} style={inputStyle} defaultValue="">
+                  <option value="" disabled>
+                    Select a category
                   </option>
-                ))}
-              </select>
-            </FormField>
+                  {categories?.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
 
-            <FormField label="Screenshot (optional)">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={(e) => {
-                  const file = e.target.files?.[0] ?? null;
-                  setPhotoFile(file);
-                  setPhotoPreview(file ? URL.createObjectURL(file) : null);
-                }}
-              />
-              {photoPreview ? (
-                <div style={{ position: 'relative', display: 'inline-block' }}>
-                  <img
-                    src={photoPreview}
-                    alt="Screenshot preview"
-                    style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, display: 'block' }}
-                  />
+              <FormField label="Screenshot (optional)">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    setPhotoFile(file);
+                    setPhotoPreview(file ? URL.createObjectURL(file) : null);
+                  }}
+                />
+                {photoPreview ? (
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <img
+                      src={photoPreview}
+                      alt="Screenshot preview"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: 200,
+                        borderRadius: 8,
+                        display: 'block',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPhotoFile(null);
+                        setPhotoPreview(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: 6,
+                        right: 6,
+                        background: 'rgba(0,0,0,0.6)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: 24,
+                        height: 24,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: 'white',
+                      }}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
                   <button
                     type="button"
-                    onClick={() => {
-                      setPhotoFile(null);
-                      setPhotoPreview(null);
-                      if (fileInputRef.current) fileInputRef.current.value = '';
-                    }}
+                    onClick={() => fileInputRef.current?.click()}
                     style={{
-                      position: 'absolute',
-                      top: 6,
-                      right: 6,
-                      background: 'rgba(0,0,0,0.6)',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: 24,
-                      height: 24,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
+                      gap: 8,
+                      padding: '10px 16px',
+                      border: '1px dashed var(--color-border)',
+                      borderRadius: 8,
+                      background: 'var(--color-input)',
+                      color: 'var(--color-text-muted)',
                       cursor: 'pointer',
-                      color: 'white',
+                      fontSize: 13,
+                      fontFamily: 'inherit',
                     }}
                   >
-                    <X size={12} />
+                    <ImagePlus size={16} /> Upload photo
                   </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '10px 16px',
-                    border: '1px dashed var(--color-border)',
-                    borderRadius: 8,
-                    background: 'var(--color-input)',
-                    color: 'var(--color-text-muted)',
-                    cursor: 'pointer',
-                    fontSize: 13,
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  <ImagePlus size={16} /> Upload photo
-                </button>
+                )}
+              </FormField>
+
+              {checkMutation.isError && (
+                <ErrorBanner>
+                  {checkMutation.error instanceof Error
+                    ? checkMutation.error.message
+                    : 'Could not run existing-answer check'}
+                </ErrorBanner>
               )}
-            </FormField>
 
-            {checkMutation.isError && (
-              <ErrorBanner>
-                {checkMutation.error instanceof Error
-                  ? checkMutation.error.message
-                  : 'Could not run existing-answer check'}
-              </ErrorBanner>
-            )}
-
-            <Button type="submit" disabled={isSubmitting || checkMutation.isPending}>
-              {checkMutation.isPending ? 'Checking…' : 'Check Existing Answers'}{' '}
-              <ChevronRight size={14} />
-            </Button>
-          </form>
+              <Button type="submit" disabled={isSubmitting || checkMutation.isPending}>
+                {checkMutation.isPending ? 'Checking…' : 'Check Existing Answers'}{' '}
+                <ChevronRight size={14} />
+              </Button>
+            </form>
           </div>
         </div>
       )}
@@ -242,12 +288,18 @@ export function AskQuestionPage() {
       {step === 'faq-match' && check && (
         <div>
           <Banner color="warning" icon={<AlertTriangle size={18} />}>
-            <strong>We found {Math.min(check.matchedFaqs.length, 3)} possibly related FAQ(s).</strong> Check if
-            any of these answers your question.
+            <strong>
+              We found {Math.min(check.matchedFaqs.length, 3)} possibly related FAQ(s).
+            </strong>{' '}
+            Check if any of these answers your question.
           </Banner>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
             {check.matchedFaqs.slice(0, 3).map((faq) => (
-              <div key={faq.id} className="mod-card mod-card-orange" style={{ padding: '16px 18px' }}>
+              <div
+                key={faq.id}
+                className="mod-card mod-card-orange"
+                style={{ padding: '16px 18px' }}
+              >
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>{faq.title}</div>
                 {faq.summary && (
                   <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 8 }}>
@@ -273,21 +325,52 @@ export function AskQuestionPage() {
             <button
               type="button"
               onClick={() => setStep('write')}
-              style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: 'var(--color-primary)', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{
+                padding: '9px 20px',
+                borderRadius: 10,
+                border: 'none',
+                background: 'var(--color-primary)',
+                color: 'white',
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
             >
               ← Edit Question
             </button>
             <button
               type="button"
               onClick={onFaqDoesntAnswer}
-              style={{ padding: '9px 20px', borderRadius: 10, border: '1.5px solid var(--color-border)', background: 'var(--color-pill)', color: 'var(--color-text-muted)', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{
+                padding: '9px 20px',
+                borderRadius: 10,
+                border: '1.5px solid var(--color-border)',
+                background: 'var(--color-pill)',
+                color: 'var(--color-text-muted)',
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
             >
               None of these – Continue
             </button>
             <button
               type="button"
               onClick={() => navigate('/faqs')}
-              style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: '#16a34a', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(22,163,74,0.3)' }}
+              style={{
+                padding: '9px 20px',
+                borderRadius: 10,
+                border: 'none',
+                background: '#16a34a',
+                color: 'white',
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                boxShadow: '0 3px 10px rgba(22,163,74,0.3)',
+              }}
             >
               ✓ This answers it
             </button>
@@ -304,10 +387,21 @@ export function AskQuestionPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
             {check.matchedQuestions.map((q) => (
               <div key={q.id} className="mod-card mod-card-blue" style={{ padding: '16px 18px' }}>
-                <div style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 10, color: 'var(--color-text)' }}>
-                  {(!q.description || q.description.trim() === '' || q.description.trim().toLowerCase() === q.title.trim().toLowerCase())
+                <div
+                  style={{
+                    fontSize: 14,
+                    lineHeight: 1.6,
+                    marginBottom: 10,
+                    color: 'var(--color-text)',
+                  }}
+                >
+                  {!q.description ||
+                  q.description.trim() === '' ||
+                  q.description.trim().toLowerCase() === q.title.trim().toLowerCase()
                     ? q.title
-                    : (q.description.length > 200 ? q.description.slice(0, 200) + '…' : q.description)}
+                    : q.description.length > 200
+                      ? q.description.slice(0, 200) + '…'
+                      : q.description}
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <Badge color="accent">{q.answerCount} answers</Badge>
@@ -423,17 +517,57 @@ function StepIndicator({ current }: { current: Step }) {
       {steps.map((s, i) => {
         const isCurrent = current === s.key;
         const isPast = i < currentIdx || current === 'done';
-        const dotColor = isCurrent ? 'var(--color-purple)' : isPast ? 'var(--color-success)' : 'var(--color-border)';
+        const dotColor = isCurrent
+          ? 'var(--color-purple)'
+          : isPast
+            ? 'var(--color-success)'
+            : 'var(--color-border)';
         return (
           <div key={s.key} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: dotColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: isCurrent || isPast ? 'white' : 'var(--color-text-muted)', transition: 'all 0.2s', boxShadow: isCurrent ? '0 2px 8px rgba(124,58,237,0.35)' : 'none' }}>
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  background: dotColor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: isCurrent || isPast ? 'white' : 'var(--color-text-muted)',
+                  transition: 'all 0.2s',
+                  boxShadow: isCurrent ? '0 2px 8px rgba(124,58,237,0.35)' : 'none',
+                }}
+              >
                 {isPast && !isCurrent ? '✓' : s.num}
               </div>
-              <div style={{ fontSize: 11, fontWeight: isCurrent ? 700 : 500, color: isCurrent ? 'var(--color-purple)' : isPast ? 'var(--color-success)' : 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>{s.label}</div>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: isCurrent ? 700 : 500,
+                  color: isCurrent
+                    ? 'var(--color-purple)'
+                    : isPast
+                      ? 'var(--color-success)'
+                      : 'var(--color-text-muted)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {s.label}
+              </div>
             </div>
             {i < steps.length - 1 && (
-              <div style={{ flex: 1, height: 2, background: isPast ? 'var(--color-success)' : 'var(--color-border)', marginBottom: 14, transition: 'background 0.2s' }} />
+              <div
+                style={{
+                  flex: 1,
+                  height: 2,
+                  background: isPast ? 'var(--color-success)' : 'var(--color-border)',
+                  marginBottom: 14,
+                  transition: 'background 0.2s',
+                }}
+              />
             )}
           </div>
         );
@@ -455,7 +589,17 @@ function FormField({
 }) {
   return (
     <div style={{ marginBottom: 16 }}>
-      <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--color-text-muted)', display: 'block', marginBottom: 7 }}>
+      <label
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+          color: 'var(--color-text-muted)',
+          display: 'block',
+          marginBottom: 7,
+        }}
+      >
         {label}
       </label>
       {children}

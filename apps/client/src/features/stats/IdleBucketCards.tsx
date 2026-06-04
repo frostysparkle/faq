@@ -44,7 +44,16 @@ export function IdleBucketCards({ style }: { style?: React.CSSProperties }) {
   ];
 
   return (
-    <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 24, display: 'flex', flexDirection: 'column', ...style }}>
+    <Card
+      style={{
+        padding: 0,
+        overflow: 'hidden',
+        marginBottom: 24,
+        display: 'flex',
+        flexDirection: 'column',
+        ...style,
+      }}
+    >
       {/* Header */}
       <div
         style={{
@@ -71,7 +80,9 @@ export function IdleBucketCards({ style }: { style?: React.CSSProperties }) {
           <Activity size={18} color="#7c3aed" />
         </div>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', lineHeight: 1.3 }}>
-          Open<br />Community Q&A
+          Open
+          <br />
+          Community Q&A
         </div>
       </div>
 
@@ -111,20 +122,27 @@ export function IdleBucketCards({ style }: { style?: React.CSSProperties }) {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', lineHeight: 1, marginBottom: 8, width: 24 }}>
+              <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  lineHeight: 1,
+                  marginBottom: 8,
+                  width: 24,
+                }}
+              >
                 {value}
               </div>
               <div style={{ alignSelf: 'flex-start', color: '#cbd5e1', marginLeft: 'auto' }}>
                 <ChevronRight size={18} />
               </div>
             </div>
-            
+
             <div style={{ fontSize: 13, color: '#334155', fontWeight: 600, marginBottom: 2 }}>
               {label}
             </div>
-            <div style={{ fontSize: 12, color, fontWeight: 500 }}>
-              {sub}
-            </div>
+            <div style={{ fontSize: 12, color, fontWeight: 500 }}>{sub}</div>
           </div>
         </button>
       ))}

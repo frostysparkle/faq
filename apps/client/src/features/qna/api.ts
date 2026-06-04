@@ -100,7 +100,12 @@ export const moderationApi = {
   },
   async approveAnswer(
     id: string,
-    input: { editedBody?: string; note?: string; spurtiPoints?: number; visibilityDays?: 2 | 3 | 7 | null } = {},
+    input: {
+      editedBody?: string;
+      note?: string;
+      spurtiPoints?: number;
+      visibilityDays?: 2 | 3 | 7 | null;
+    } = {},
   ): Promise<void> {
     await apiClient.patch(`/api/moderation/answers/${id}/approve`, input);
   },

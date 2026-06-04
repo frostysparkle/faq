@@ -21,7 +21,10 @@ export const faqKeys = {
   tags: ['tags'] as const,
 };
 
-export function useFaqList(query: Partial<FaqListQuery>, options: { refetchInterval?: number } = {}) {
+export function useFaqList(
+  query: Partial<FaqListQuery>,
+  options: { refetchInterval?: number } = {},
+) {
   return useQuery({
     queryKey: faqKeys.list(query),
     queryFn: () => faqApi.list(query),
@@ -52,10 +55,7 @@ export function useRecordFaqView() {
 type ListCache = { items: PublicFaq[]; meta: Record<string, unknown> };
 
 /** Compute the expected new state when a user votes on an FAQ. Mirrors server logic. */
-function applyOptimisticVote(
-  faq: PublicFaq,
-  rating: 'helpful' | 'unhelpful',
-): PublicFaq {
+function applyOptimisticVote(faq: PublicFaq, rating: 'helpful' | 'unhelpful'): PublicFaq {
   const prev = faq.userVote ?? null;
   let helpfulCount = faq.helpfulCount ?? 0;
   let unhelpfulCount = faq.unhelpfulCount ?? 0;

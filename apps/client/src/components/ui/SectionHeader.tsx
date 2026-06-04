@@ -29,11 +29,26 @@ export function SectionHeader({ title, sub, action }: SectionHeaderProps) {
           }}
         />
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+          <div
+            style={{
+              fontSize: 20,
+              fontWeight: 800,
+              color: 'var(--color-text)',
+              letterSpacing: '-0.02em',
+              lineHeight: 1.2,
+            }}
+          >
             {title}
           </div>
           {sub && (
-            <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 3, lineHeight: 1.4 }}>
+            <div
+              style={{
+                fontSize: 13,
+                color: 'var(--color-text-muted)',
+                marginTop: 3,
+                lineHeight: 1.4,
+              }}
+            >
               {sub}
             </div>
           )}

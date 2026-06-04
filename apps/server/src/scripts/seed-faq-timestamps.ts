@@ -15,7 +15,10 @@ import { connectDatabase, disconnectDatabase } from '../config/database.js';
 import { logger } from '../config/logger.js';
 import { FaqModel } from '../models/Faq.model.js';
 
-interface Window { start: Date; end: Date }
+interface Window {
+  start: Date;
+  end: Date;
+}
 
 const WINDOWS: Window[] = [
   { start: new Date('2026-04-21T09:00:00+05:30'), end: new Date('2026-04-27T18:00:00+05:30') },
@@ -40,7 +43,7 @@ function randomTimestampInWindow(win: Window, usedMs: Set<number>): Date {
     dayStart.setHours(9, 0, 0, 0);
 
     // Pick a random second within 09:00–18:00.
-    const secOffset = Math.floor(Math.random() * workdayMs / 1000) * 1000;
+    const secOffset = Math.floor((Math.random() * workdayMs) / 1000) * 1000;
     const candidate = dayStart.getTime() + secOffset;
 
     if (!usedMs.has(candidate)) {
@@ -82,7 +85,15 @@ async function run() {
       );
     }
 
-    logger.info({ window: wi + 1, count: batch.length, from: win.start.toDateString(), to: win.end.toDateString() }, 'Window updated');
+    logger.info(
+      {
+        window: wi + 1,
+        count: batch.length,
+        from: win.start.toDateString(),
+        to: win.end.toDateString(),
+      },
+      'Window updated',
+    );
   }
 
   await disconnectDatabase();

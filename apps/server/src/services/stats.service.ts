@@ -218,59 +218,59 @@ export const statsService = {
     return { range, entries: top, myRank };
   },
 
-/**
- * Single-aggregation idle bucket counts for the open community queue.
- * Used by both the dashboard cards and the community-page filter chips, so the
- * card and the filter always agree.
- *
- * Bucket math (mutually exclusive — every open community question fits exactly one):
- *   - last24h:   updatedAt within the last 24 hours
- *   - over3days: updatedAt is older than 24h but newer than 7 days  (the "needs a nudge" middle)
- *   - over1week: updatedAt is older than 7 days
- *
- * The middle bucket spans 24h–7d so the three counts always sum to totalOpen. The spec
- * literally says "more than 3 days", but a strict > 3d cutoff would leave open questions
- * idle for 1-3 days uncounted on every dashboard, which is worse than a slightly wider
- * middle bucket. Documented here so future readers can see the choice.
- */
-async getCommunityIdleBuckets(): Promise<IdleBuckets> {
-  const settings = await SystemSettingsModel.findById('global').lean();
-  const urgentIdleDays = settings?.urgentIdleDays ?? 7;
-  const now = Date.now();
-  const day = 24 * 60 * 60 * 1000;
-  const threshold24h = new Date(now - day);
-  const threshold7d = new Date(now - urgentIdleDays * day);
+  /**
+   * Single-aggregation idle bucket counts for the open community queue.
+   * Used by both the dashboard cards and the community-page filter chips, so the
+   * card and the filter always agree.
+   *
+   * Bucket math (mutually exclusive — every open community question fits exactly one):
+   *   - last24h:   updatedAt within the last 24 hours
+   *   - over3days: updatedAt is older than 24h but newer than 7 days  (the "needs a nudge" middle)
+   *   - over1week: updatedAt is older than 7 days
+   *
+   * The middle bucket spans 24h–7d so the three counts always sum to totalOpen. The spec
+   * literally says "more than 3 days", but a strict > 3d cutoff would leave open questions
+   * idle for 1-3 days uncounted on every dashboard, which is worse than a slightly wider
+   * middle bucket. Documented here so future readers can see the choice.
+   */
+  async getCommunityIdleBuckets(): Promise<IdleBuckets> {
+    const settings = await SystemSettingsModel.findById('global').lean();
+    const urgentIdleDays = settings?.urgentIdleDays ?? 7;
+    const now = Date.now();
+    const day = 24 * 60 * 60 * 1000;
+    const threshold24h = new Date(now - day);
+    const threshold7d = new Date(now - urgentIdleDays * day);
 
-  const [row] = await QuestionModel.aggregate<{
-    last24h: number;
-    over3days: number;
-    over1week: number;
-    totalOpen: number;
-  }>([
-    { $match: { type: 'community', status: { $in: ['open', 'answered'] } } },
-    {
-      $facet: {
-        last24h: [{ $match: { updatedAt: { $gte: threshold24h } } }, { $count: 'n' }],
-        over3days: [
-          { $match: { updatedAt: { $lt: threshold24h, $gte: threshold7d } } },
-          { $count: 'n' },
-        ],
-        over1week: [{ $match: { updatedAt: { $lt: threshold7d } } }, { $count: 'n' }],
-        totalOpen: [{ $count: 'n' }],
+    const [row] = await QuestionModel.aggregate<{
+      last24h: number;
+      over3days: number;
+      over1week: number;
+      totalOpen: number;
+    }>([
+      { $match: { type: 'community', status: { $in: ['open', 'answered'] } } },
+      {
+        $facet: {
+          last24h: [{ $match: { updatedAt: { $gte: threshold24h } } }, { $count: 'n' }],
+          over3days: [
+            { $match: { updatedAt: { $lt: threshold24h, $gte: threshold7d } } },
+            { $count: 'n' },
+          ],
+          over1week: [{ $match: { updatedAt: { $lt: threshold7d } } }, { $count: 'n' }],
+          totalOpen: [{ $count: 'n' }],
+        },
       },
-    },
-    {
-      $project: {
-        last24h: { $ifNull: [{ $arrayElemAt: ['$last24h.n', 0] }, 0] },
-        over3days: { $ifNull: [{ $arrayElemAt: ['$over3days.n', 0] }, 0] },
-        over1week: { $ifNull: [{ $arrayElemAt: ['$over1week.n', 0] }, 0] },
-        totalOpen: { $ifNull: [{ $arrayElemAt: ['$totalOpen.n', 0] }, 0] },
+      {
+        $project: {
+          last24h: { $ifNull: [{ $arrayElemAt: ['$last24h.n', 0] }, 0] },
+          over3days: { $ifNull: [{ $arrayElemAt: ['$over3days.n', 0] }, 0] },
+          over1week: { $ifNull: [{ $arrayElemAt: ['$over1week.n', 0] }, 0] },
+          totalOpen: { $ifNull: [{ $arrayElemAt: ['$totalOpen.n', 0] }, 0] },
+        },
       },
-    },
-  ]);
+    ]);
 
-  return row ?? { last24h: 0, over3days: 0, over1week: 0, totalOpen: 0 };
-},
+    return row ?? { last24h: 0, over3days: 0, over1week: 0, totalOpen: 0 };
+  },
 
   /**
    * Admin intelligence metrics — single-screen system-health overview.
@@ -345,14 +345,13 @@ async getCommunityIdleBuckets(): Promise<IdleBuckets> {
     const scored = faqs.map((faq) => {
       const total = (faq.helpfulCount ?? 0) + (faq.unhelpfulCount ?? 0);
       const helpfulRatio = total > 0 ? (faq.helpfulCount ?? 0) / total : 0.5;
-      const flagRatio = (faq.viewCount ?? 0) > 0
-        ? (faq.flagCount ?? 0) / (faq.viewCount ?? 1)
-        : 0;
+      const flagRatio = (faq.viewCount ?? 0) > 0 ? (faq.flagCount ?? 0) / (faq.viewCount ?? 1) : 0;
       // Lower score = higher risk
       const qualityScore = Math.round(
         (0.4 * helpfulRatio +
           0.35 * (1 - Math.min(flagRatio * 10, 1)) +
-          0.25 * computeFreshnessScore(faq.updatedAt)) * 100,
+          0.25 * computeFreshnessScore(faq.updatedAt)) *
+          100,
       );
       return {
         id: faq._id.toString(),
@@ -553,9 +552,7 @@ async getCommunityIdleBuckets(): Promise<IdleBuckets> {
   /**
    * FAQs with computed quality scores for the admin FAQ Quality page.
    */
-  async listFaqsForQuality(
-    filter: 'all' | 'rewrite' | 'archive',
-  ): Promise<FaqQualityRow[]> {
+  async listFaqsForQuality(filter: 'all' | 'rewrite' | 'archive'): Promise<FaqQualityRow[]> {
     const faqs = await FaqModel.find({ status: { $in: ['published', 'outdated'] } })
       .select('title helpfulCount unhelpfulCount flagCount viewCount status updatedAt categories')
       .populate('categories', 'name')
@@ -564,14 +561,10 @@ async getCommunityIdleBuckets(): Promise<IdleBuckets> {
     const rows: FaqQualityRow[] = faqs.map((faq) => {
       const total = (faq.helpfulCount ?? 0) + (faq.unhelpfulCount ?? 0);
       const helpfulRatio = total > 0 ? (faq.helpfulCount ?? 0) / total : 0.5;
-      const flagRatio = (faq.viewCount ?? 0) > 0
-        ? (faq.flagCount ?? 0) / (faq.viewCount ?? 1)
-        : 0;
+      const flagRatio = (faq.viewCount ?? 0) > 0 ? (faq.flagCount ?? 0) / (faq.viewCount ?? 1) : 0;
       const freshness = computeFreshnessScore(faq.updatedAt);
       const qualityScore = Math.round(
-        (0.4 * helpfulRatio +
-          0.35 * (1 - Math.min(flagRatio * 10, 1)) +
-          0.25 * freshness) * 100,
+        (0.4 * helpfulRatio + 0.35 * (1 - Math.min(flagRatio * 10, 1)) + 0.25 * freshness) * 100,
       );
 
       let classification: 'good' | 'rewrite' | 'archive' = 'good';
@@ -693,8 +686,16 @@ async getCommunityIdleBuckets(): Promise<IdleBuckets> {
 
     return {
       personal: { total: personalTotal, unanswered: personalUnanswered, today: personalToday },
-      community: { total: communityTotal, answered: communityAnswered, unanswered: communityUnanswered },
-      communityToday: { total: communityTodayTotal, answered: communityTodayAnswered, unanswered: communityTodayUnanswered },
+      community: {
+        total: communityTotal,
+        answered: communityAnswered,
+        unanswered: communityUnanswered,
+      },
+      communityToday: {
+        total: communityTodayTotal,
+        answered: communityTodayAnswered,
+        unanswered: communityTodayUnanswered,
+      },
       faqs: { total: faqTotal, today: faqToday, thisWeek: faqThisWeek },
       flaggedFaqs: { total: flaggedTotal, today: flaggedToday, thisWeek: flaggedThisWeek },
       helpfulFaqs: { percentage: Math.round(helpfulPct * 10) / 10, publishedTotal },
@@ -783,4 +784,3 @@ export interface ModeratorDashboardStats {
   helpfulFaqs: { percentage: number; publishedTotal: number };
   unhelpfulFaqs: { percentage: number; publishedTotal: number };
 }
-

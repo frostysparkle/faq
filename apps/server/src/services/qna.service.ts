@@ -54,7 +54,7 @@ const FAQ_MATCH_LIMIT = 3;
  *
  * Current provider: gemini → threshold set to 0.80.
  */
-const SEMANTIC_THRESHOLD = 0.80;
+const SEMANTIC_THRESHOLD = 0.8;
 
 /**
  * Minimum cosine similarity for community-question duplicate detection (Option C).
@@ -75,8 +75,10 @@ const QUESTION_SEMANTIC_THRESHOLD = 0.78;
  * Invalidation: call faqEmbeddingCache.clear() whenever a FAQ is published
  * or its title/answer is edited (handled in faq.service.ts — see scheduleEmbedding).
  */
-const faqEmbeddingCache = createTtlCache<{ id: string; title: string; summary?: string; answer: string; embedding: number[] }[]>({
-  ttlMs: 60 * 60_000,  // 1 hour
+const faqEmbeddingCache = createTtlCache<
+  { id: string; title: string; summary?: string; answer: string; embedding: number[] }[]
+>({
+  ttlMs: 60 * 60_000, // 1 hour
   maxEntries: 1,
 });
 
@@ -88,13 +90,23 @@ const FAQ_EMBED_CACHE_KEY = 'all';
  * repeated MongoDB round-trips. Falls back to an empty list on DB error so
  * the caller can degrade gracefully to keyword search.
  */
-async function getPublishedFaqEmbeddings(): Promise<{ id: string; title: string; summary?: string; answer: string; embedding: number[] }[]> {
+async function getPublishedFaqEmbeddings(): Promise<
+  { id: string; title: string; summary?: string; answer: string; embedding: number[] }[]
+> {
   const cached = faqEmbeddingCache.get(FAQ_EMBED_CACHE_KEY);
   if (cached) return cached;
 
   const faqs = await FaqModel.find({ status: 'published' })
     .select('title summary answer embedding')
-    .lean<{ _id: Types.ObjectId; title: string; summary?: string; answer: string; embedding?: number[] }[]>();
+    .lean<
+      {
+        _id: Types.ObjectId;
+        title: string;
+        summary?: string;
+        answer: string;
+        embedding?: number[];
+      }[]
+    >();
 
   const withEmbeddings = faqs
     .filter((f) => f.embedding && f.embedding.length === 384)
@@ -191,7 +203,8 @@ function projectQuestion(q: PopulatedQuestion, viewerId?: string): PublicQuestio
     screenshotUrl: q.screenshotUrl ?? undefined,
     answerCount: q.answerCount,
     viewCount: q.viewCount,
-    visibilityExpiresAt: (q as unknown as { visibilityExpiresAt?: Date }).visibilityExpiresAt?.toISOString() ?? null,
+    visibilityExpiresAt:
+      (q as unknown as { visibilityExpiresAt?: Date }).visibilityExpiresAt?.toISOString() ?? null,
     createdAt: q.createdAt.toISOString(),
     updatedAt: q.updatedAt.toISOString(),
   };
@@ -301,7 +314,15 @@ export const qnaService = {
           askedBy: { $ne: new Types.ObjectId(userId) },
         })
           .select('+embedding')
-          .lean<{ _id: Types.ObjectId; title: string; description: string; answerCount: number; embedding?: number[] }[]>(),
+          .lean<
+            {
+              _id: Types.ObjectId;
+              title: string;
+              description: string;
+              answerCount: number;
+              embedding?: number[];
+            }[]
+          >(),
       ]);
 
       // ── Step 1: FAQ cosine scan against server-wide cache ───────────────────
@@ -327,7 +348,15 @@ export const qnaService = {
         )
           .sort({ score: { $meta: 'textScore' } })
           .limit(FAQ_MATCH_LIMIT)
-          .lean<{ _id: Types.ObjectId; title: string; summary?: string; answer: string; score?: number }[]>();
+          .lean<
+            {
+              _id: Types.ObjectId;
+              title: string;
+              summary?: string;
+              answer: string;
+              score?: number;
+            }[]
+          >();
 
         semanticMatches = textRows.map((f) => ({
           id: f._id.toString(),
@@ -377,7 +406,15 @@ export const qnaService = {
         )
           .sort({ score: { $meta: 'textScore' } })
           .limit(2)
-          .lean<{ _id: Types.ObjectId; title: string; description: string; answerCount: number; score?: number }[]>();
+          .lean<
+            {
+              _id: Types.ObjectId;
+              title: string;
+              description: string;
+              answerCount: number;
+              score?: number;
+            }[]
+          >();
 
         questionMatches = keywordRows.map((q) => ({
           id: q._id.toString(),
@@ -390,7 +427,10 @@ export const qnaService = {
 
       matchedQuestions = questionMatches;
 
-      checkExistingCache.set(cacheKey, { faqMatches: matchedFaqs, questionMatches: matchedQuestions });
+      checkExistingCache.set(cacheKey, {
+        faqMatches: matchedFaqs,
+        questionMatches: matchedQuestions,
+      });
     }
 
     // Token is freshly signed every call — never cached. The cached payload is only the
@@ -474,7 +514,10 @@ export const qnaService = {
     if (opts.type) filter.type = opts.type;
     if (opts.status) {
       // Accept either a single value ('open') or a comma-separated list ('open,answered').
-      const parts = opts.status.split(',').map((s) => s.trim()).filter(Boolean);
+      const parts = opts.status
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
       filter.status = parts.length === 1 ? parts[0] : { $in: parts };
     }
 
@@ -641,7 +684,8 @@ export const qnaService = {
     const userObjId = new Types.ObjectId(userId);
     const answer = await AnswerModel.findById(answerId).select('+upvotes +downvotes');
     if (!answer) throw ApiError.notFound('Answer not found');
-    if (answer.status !== 'approved' && !allowPending) throw ApiError.forbidden('Answer is not yet approved');
+    if (answer.status !== 'approved' && !allowPending)
+      throw ApiError.forbidden('Answer is not yet approved');
     if (answer.answeredBy.toString() === userId) {
       throw ApiError.forbidden('You cannot vote on your own answer');
     }
@@ -705,4 +749,3 @@ export const qnaService = {
     };
   },
 };
-

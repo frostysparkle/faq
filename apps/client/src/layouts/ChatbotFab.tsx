@@ -175,18 +175,12 @@ export function ChatbotFab() {
     }
   };
 
-  const handleFeedback = (
-    msgIdx: number,
-    displayIdx: number,
-    rating: 'helpful' | 'incorrect',
-  ) => {
+  const handleFeedback = (msgIdx: number, displayIdx: number, rating: 'helpful' | 'incorrect') => {
     if (!sessionId) return;
     // If the user clicks the already-active rating, do nothing (idempotent).
     const current = messages[displayIdx]?.feedback;
     if (current === rating) return;
-    setMessages((prev) =>
-      prev.map((m, i) => (i === displayIdx ? { ...m, feedback: rating } : m)),
-    );
+    setMessages((prev) => prev.map((m, i) => (i === displayIdx ? { ...m, feedback: rating } : m)));
     feedbackMutation.mutate({ sessionId, messageIndex: msgIdx, rating });
   };
 
@@ -200,7 +194,14 @@ export function ChatbotFab() {
         aria-label="Open Yaksha-mini chat"
         data-tooltip="Open Yaksha-mini chat"
         onClick={() => setOpen(true)}
-        style={{ position: 'fixed', right: '1.5rem', bottom: '1.5rem', left: 'auto', top: 'auto', zIndex: 9000 }}
+        style={{
+          position: 'fixed',
+          right: '1.5rem',
+          bottom: '1.5rem',
+          left: 'auto',
+          top: 'auto',
+          zIndex: 9000,
+        }}
       >
         <span className="ym-launcher-tooltip">Ask Yaksha-mini</span>
         <ChatBubbleIcon />
@@ -215,20 +216,25 @@ export function ChatbotFab() {
       className="yaksha-mini"
       id="ym-panel"
       aria-label="Yaksha-mini chat"
-      style={{
-        position: 'fixed',
-        right: '1.5rem',
-        bottom: '1.5rem',
-        left: 'auto',
-        top: 'auto',
-        zIndex: 9100,
-        '--ym-width': `${dimensions.width}px`,
-        '--ym-height': `${dimensions.height}px`,
-      } as React.CSSProperties}
+      style={
+        {
+          position: 'fixed',
+          right: '1.5rem',
+          bottom: '1.5rem',
+          left: 'auto',
+          top: 'auto',
+          zIndex: 9100,
+          '--ym-width': `${dimensions.width}px`,
+          '--ym-height': `${dimensions.height}px`,
+        } as React.CSSProperties
+      }
     >
       <div className="ym-resize-handle top" onPointerDown={(e) => startResize('top', e)} />
       <div className="ym-resize-handle left" onPointerDown={(e) => startResize('left', e)} />
-      <div className="ym-resize-handle top-left" onPointerDown={(e) => startResize('top-left', e)} />
+      <div
+        className="ym-resize-handle top-left"
+        onPointerDown={(e) => startResize('top-left', e)}
+      />
 
       {/* Header */}
       <div className="yaksha-mini-head">

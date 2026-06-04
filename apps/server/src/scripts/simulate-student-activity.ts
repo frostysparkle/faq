@@ -18,48 +18,182 @@ import { signAccessToken } from '../utils/jwt.js';
 const BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:4000';
 
 const STUDENT_EMAILS = [
-  'aditya@samagama.test', 'priya@samagama.test', 'arjun@samagama.test',
-  'sneha@samagama.test', 'vikram@samagama.test', 'kavya@samagama.test',
-  'rohit@samagama.test', 'ananya@samagama.test', 'siddharth@samagama.test',
-  'deepika@samagama.test', 'karthik@samagama.test', 'mythili@samagama.test',
-  'naveen@samagama.test', 'divya@samagama.test', 'suresh@samagama.test',
-  'meenakshi@samagama.test', 'chandran@samagama.test', 'lavanya@samagama.test',
-  'balaji@samagama.test', 'uma@samagama.test', 'gopinath@samagama.test',
-  'radhika@samagama.test', 'venkat@samagama.test', 'shakthi@samagama.test',
+  'aditya@samagama.test',
+  'priya@samagama.test',
+  'arjun@samagama.test',
+  'sneha@samagama.test',
+  'vikram@samagama.test',
+  'kavya@samagama.test',
+  'rohit@samagama.test',
+  'ananya@samagama.test',
+  'siddharth@samagama.test',
+  'deepika@samagama.test',
+  'karthik@samagama.test',
+  'mythili@samagama.test',
+  'naveen@samagama.test',
+  'divya@samagama.test',
+  'suresh@samagama.test',
+  'meenakshi@samagama.test',
+  'chandran@samagama.test',
+  'lavanya@samagama.test',
+  'balaji@samagama.test',
+  'uma@samagama.test',
+  'gopinath@samagama.test',
+  'radhika@samagama.test',
+  'venkat@samagama.test',
+  'shakthi@samagama.test',
   'nandini@samagama.test',
 ];
 
 const QUESTIONS = [
-  { title: 'NOC format issue', description: 'My college provides NOC in its own format. Will it be accepted by IIT Ropar?' },
-  { title: 'Dashboard shows interview incomplete', description: 'I completed my interview and Yaksha confirmed it, but my dashboard still shows "Incomplete". When will it update?' },
-  { title: 'Interview status shows interrupted', description: 'Yaksha said my interview was completed successfully, but the portal shows "Interview Interrupted". Why?' },
-  { title: 'Offer letter delayed after NOC', description: 'My NOC was uploaded and validated over 48 hours ago but I still have not received the formal offer letter. When will I get it?' },
-  { title: 'Offer letter says NOC pending', description: 'My NOC is showing as validated on the dashboard but my offer letter still says "NOC Pending". Please fix this.' },
-  { title: 'Cannot join Zoom meeting', description: 'I registered for the Zoom meeting but it says registration error or wrong passcode. What is the correct meeting link?' },
-  { title: 'WhatsApp group is full', description: 'The Vicharanashala-Summership WhatsApp group shows as full. How can I join and receive updates?' },
-  { title: 'Acceptance email bounced', description: 'My acceptance email bounced with "address not found". What should I do to confirm my acceptance?' },
-  { title: 'How to sign offer letter', description: 'Do I need to print and sign the offer letter physically, or can I sign it digitally? And which email should I send it to?' },
-  { title: 'Change locked internship dates', description: 'The internship dates on my dashboard are locked. I need to change them due to college exam conflicts. How can I modify them?' },
-  { title: 'College refusing NOC', description: 'My college/university is refusing to give me an NOC for this unpaid internship. Is there an alternative?' },
-  { title: 'No Zoom link received', description: 'I have not received any Zoom meeting link for today\'s session. When will I get the invite?' },
-  { title: 'No ViBe course link', description: 'I received my offer letter but haven\'t received the Phase 1 / Bronze course link on ViBe. When will I get access?' },
-  { title: 'Mentor not assigned', description: 'My internship started but no mentor has been assigned to me yet. When will I receive mentor details?' },
-  { title: 'Dashboard not updating', description: 'I completed all the steps but my portal dashboard is not updating. What should I do?' },
-  { title: 'Internship start date passed', description: 'My internship start date was 3 days ago but I still have not received any onboarding details or access. What to do?' },
-  { title: 'Leaves and weekends policy', description: 'Do we get leaves during the internship? What about weekends and emergency situations?' },
-  { title: 'Internship flexibility', description: 'Is the internship self-paced or are there fixed timings? Can I manage it alongside college classes?' },
-  { title: 'How daily sessions work', description: 'Will we get a Zoom link every day or are sessions conducted through the Samagama dashboard?' },
-  { title: 'Missed orientation recording', description: 'I missed the orientation session. Can I get the recording or make up for the missed content?' },
-  { title: 'Spurti Points showing zero', description: 'My internship started but my Spurti Points are showing as zero. Will they be updated later?' },
-  { title: 'Need selection letter for NOC', description: 'My college requires an official selection/confirmation letter before they will sign the NOC. How can I get one?' },
-  { title: 'Withdraw from internship', description: 'I want to cancel or withdraw from the internship. What is the process?' },
-  { title: 'Spelling mistake in offer letter', description: 'There is a spelling error in my name on the offer letter. How do I get it corrected?' },
-  { title: 'Yaksha chat not working', description: 'I am unable to interact with Yaksha. The chat is not working and shows an interview timer. What should I do?' },
-  { title: 'Cannot access ViBe platform', description: 'I cannot create an account on ViBe or access the course platform. The "create account" button does nothing.' },
-  { title: 'Stipend eligibility query', description: 'I am an NPTEL Gold/Elite student and received an email about a ₹5,000 stipend, but my dashboard shows "VINS (No Stipend)". Am I eligible?' },
-  { title: 'Standup meetings before start date', description: 'My internship starts next month but I received a Zoom standup meeting link. Should I attend even though my start date hasn\'t arrived?' },
-  { title: 'No confirmation after acceptance email', description: 'I signed and sent the acceptance email 3 days ago but received no confirmation. Is that normal?' },
-  { title: 'Mistake in acceptance email format', description: 'I replied with "reply" instead of "reply all" to the acceptance email. Will it still be accepted? Should I resend?' },
+  {
+    title: 'NOC format issue',
+    description: 'My college provides NOC in its own format. Will it be accepted by IIT Ropar?',
+  },
+  {
+    title: 'Dashboard shows interview incomplete',
+    description:
+      'I completed my interview and Yaksha confirmed it, but my dashboard still shows "Incomplete". When will it update?',
+  },
+  {
+    title: 'Interview status shows interrupted',
+    description:
+      'Yaksha said my interview was completed successfully, but the portal shows "Interview Interrupted". Why?',
+  },
+  {
+    title: 'Offer letter delayed after NOC',
+    description:
+      'My NOC was uploaded and validated over 48 hours ago but I still have not received the formal offer letter. When will I get it?',
+  },
+  {
+    title: 'Offer letter says NOC pending',
+    description:
+      'My NOC is showing as validated on the dashboard but my offer letter still says "NOC Pending". Please fix this.',
+  },
+  {
+    title: 'Cannot join Zoom meeting',
+    description:
+      'I registered for the Zoom meeting but it says registration error or wrong passcode. What is the correct meeting link?',
+  },
+  {
+    title: 'WhatsApp group is full',
+    description:
+      'The Vicharanashala-Summership WhatsApp group shows as full. How can I join and receive updates?',
+  },
+  {
+    title: 'Acceptance email bounced',
+    description:
+      'My acceptance email bounced with "address not found". What should I do to confirm my acceptance?',
+  },
+  {
+    title: 'How to sign offer letter',
+    description:
+      'Do I need to print and sign the offer letter physically, or can I sign it digitally? And which email should I send it to?',
+  },
+  {
+    title: 'Change locked internship dates',
+    description:
+      'The internship dates on my dashboard are locked. I need to change them due to college exam conflicts. How can I modify them?',
+  },
+  {
+    title: 'College refusing NOC',
+    description:
+      'My college/university is refusing to give me an NOC for this unpaid internship. Is there an alternative?',
+  },
+  {
+    title: 'No Zoom link received',
+    description:
+      "I have not received any Zoom meeting link for today's session. When will I get the invite?",
+  },
+  {
+    title: 'No ViBe course link',
+    description:
+      "I received my offer letter but haven't received the Phase 1 / Bronze course link on ViBe. When will I get access?",
+  },
+  {
+    title: 'Mentor not assigned',
+    description:
+      'My internship started but no mentor has been assigned to me yet. When will I receive mentor details?',
+  },
+  {
+    title: 'Dashboard not updating',
+    description:
+      'I completed all the steps but my portal dashboard is not updating. What should I do?',
+  },
+  {
+    title: 'Internship start date passed',
+    description:
+      'My internship start date was 3 days ago but I still have not received any onboarding details or access. What to do?',
+  },
+  {
+    title: 'Leaves and weekends policy',
+    description:
+      'Do we get leaves during the internship? What about weekends and emergency situations?',
+  },
+  {
+    title: 'Internship flexibility',
+    description:
+      'Is the internship self-paced or are there fixed timings? Can I manage it alongside college classes?',
+  },
+  {
+    title: 'How daily sessions work',
+    description:
+      'Will we get a Zoom link every day or are sessions conducted through the Samagama dashboard?',
+  },
+  {
+    title: 'Missed orientation recording',
+    description:
+      'I missed the orientation session. Can I get the recording or make up for the missed content?',
+  },
+  {
+    title: 'Spurti Points showing zero',
+    description:
+      'My internship started but my Spurti Points are showing as zero. Will they be updated later?',
+  },
+  {
+    title: 'Need selection letter for NOC',
+    description:
+      'My college requires an official selection/confirmation letter before they will sign the NOC. How can I get one?',
+  },
+  {
+    title: 'Withdraw from internship',
+    description: 'I want to cancel or withdraw from the internship. What is the process?',
+  },
+  {
+    title: 'Spelling mistake in offer letter',
+    description:
+      'There is a spelling error in my name on the offer letter. How do I get it corrected?',
+  },
+  {
+    title: 'Yaksha chat not working',
+    description:
+      'I am unable to interact with Yaksha. The chat is not working and shows an interview timer. What should I do?',
+  },
+  {
+    title: 'Cannot access ViBe platform',
+    description:
+      'I cannot create an account on ViBe or access the course platform. The "create account" button does nothing.',
+  },
+  {
+    title: 'Stipend eligibility query',
+    description:
+      'I am an NPTEL Gold/Elite student and received an email about a ₹5,000 stipend, but my dashboard shows "VINS (No Stipend)". Am I eligible?',
+  },
+  {
+    title: 'Standup meetings before start date',
+    description:
+      "My internship starts next month but I received a Zoom standup meeting link. Should I attend even though my start date hasn't arrived?",
+  },
+  {
+    title: 'No confirmation after acceptance email',
+    description:
+      'I signed and sent the acceptance email 3 days ago but received no confirmation. Is that normal?',
+  },
+  {
+    title: 'Mistake in acceptance email format',
+    description:
+      'I replied with "reply" instead of "reply all" to the acceptance email. Will it still be accepted? Should I resend?',
+  },
 ];
 
 const ANSWER_BODIES = [
@@ -140,7 +274,6 @@ async function post(url: string, token: string, body: unknown) {
   throw new Error(`POST ${url} failed after 3 retries due to rate limiting`);
 }
 
-
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -172,8 +305,11 @@ async function simulate() {
   logger.info({ count: students.length }, 'Fetched student accounts');
 
   // ── Step 0: Fetch categories so we can assign one to new questions ─────────
-  const modToken = (await getStudentToken('kushagra@samagama.test', 'Moderator@2026', tokenCache)).accessToken;
-  const categoriesData = await get('/api/categories', modToken) as { data: { _id: string; name: string }[] };
+  const modToken = (await getStudentToken('kushagra@samagama.test', 'Moderator@2026', tokenCache))
+    .accessToken;
+  const categoriesData = (await get('/api/categories', modToken)) as {
+    data: { _id: string; name: string }[];
+  };
   const categories = categoriesData.data;
   const defaultCategoryId = categories[0]?._id;
   logger.info({ categories: categories.length, defaultCategoryId }, 'Fetched categories');
@@ -197,17 +333,26 @@ async function simulate() {
     const { accessToken } = await getStudentToken(student.email, PASSWORD, tokenCache);
 
     // Run check-existing (required before creating a question)
-    const checkData = await post('/api/qna/check-existing', accessToken, {
+    const checkData = (await post('/api/qna/check-existing', accessToken, {
       title: q.title,
       description: q.description,
-    }) as { data: { token: string; matchedFaqs: { id: string; title: string }[]; matchedQuestions: { id: string }[] } };
+    })) as {
+      data: {
+        token: string;
+        matchedFaqs: { id: string; title: string }[];
+        matchedQuestions: { id: string }[];
+      };
+    };
 
     const { token, matchedFaqs, matchedQuestions } = checkData.data;
 
     // Route 1: FAQ match found → link student to that FAQ (record "helpful" feedback)
     if (matchedFaqs && matchedFaqs.length > 0) {
       const faqId = matchedFaqs[0].id;
-      logger.info({ student: student.email, faqId, question: q.title }, 'FAQ match — linking student to FAQ');
+      logger.info(
+        { student: student.email, faqId, question: q.title },
+        'FAQ match — linking student to FAQ',
+      );
       try {
         // Record view + submit "helpful" feedback = student said "this answered my question"
         await post(`/api/faqs/${faqId}/view`, accessToken, {});
@@ -215,7 +360,10 @@ async function simulate() {
         stats.faqLinked++;
         logger.info({ student: student.email, faqId }, 'Successfully linked to FAQ');
       } catch (e) {
-        logger.warn({ err: (e as Error).message, student: student.email, faqId }, 'FAQ link failed');
+        logger.warn(
+          { err: (e as Error).message, student: student.email, faqId },
+          'FAQ link failed',
+        );
       }
       continue;
     }
@@ -223,21 +371,32 @@ async function simulate() {
     // Route 2: Community question match found → tag onto existing question
     if (matchedQuestions && matchedQuestions.length > 0) {
       const existingQ = matchedQuestions[0];
-      logger.info({ student: student.email, existingQuestionId: existingQ.id }, 'Community match — tagging existing question');
+      logger.info(
+        { student: student.email, existingQuestionId: existingQ.id },
+        'Community match — tagging existing question',
+      );
       try {
-        await post(`/api/qna/questions/${existingQ.id}/tag-me`, accessToken, { existingAnswerCheckToken: token });
+        await post(`/api/qna/questions/${existingQ.id}/tag-me`, accessToken, {
+          existingAnswerCheckToken: token,
+        });
         stats.questionTagged++;
-        logger.info({ student: student.email, questionId: existingQ.id }, 'Successfully tagged existing question');
+        logger.info(
+          { student: student.email, questionId: existingQ.id },
+          'Successfully tagged existing question',
+        );
       } catch (e) {
-        logger.warn({ err: (e as Error).message, student: student.email, questionId: existingQ.id }, 'Tag failed');
+        logger.warn(
+          { err: (e as Error).message, student: student.email, questionId: existingQ.id },
+          'Tag failed',
+        );
         // Fall through to create new question
-        const created = await post('/api/qna/questions', accessToken, {
+        const created = (await post('/api/qna/questions', accessToken, {
           title: q.title,
           description: q.description,
           type: 'community',
           category: defaultCategoryId,
           existingAnswerCheckToken: token,
-        }) as { data: { id: string } };
+        })) as { data: { id: string } };
         createdQuestions.push({ id: created.data.id, authorId: student.email });
         stats.questionCreated++;
       }
@@ -245,16 +404,19 @@ async function simulate() {
     }
 
     // Route 3: No match → create new community question
-    const created = await post('/api/qna/questions', accessToken, {
+    const created = (await post('/api/qna/questions', accessToken, {
       title: q.title,
       description: q.description,
       type: 'community',
       category: defaultCategoryId,
       existingAnswerCheckToken: token,
-    }) as { data: { id: string } };
+    })) as { data: { id: string } };
     createdQuestions.push({ id: created.data.id, authorId: student.email });
     stats.questionCreated++;
-    logger.info({ student: student.email, questionId: created.data.id }, 'New community question created');
+    logger.info(
+      { student: student.email, questionId: created.data.id },
+      'New community question created',
+    );
 
     await new Promise((r) => setTimeout(r, 200));
   }
@@ -264,18 +426,25 @@ async function simulate() {
   await new Promise((r) => setTimeout(r, 500));
 
   // ── Step 2: Get all open community questions ────────────────────────────────
-  const questionsData = await get('/api/qna/questions?type=community', modToken) as { data: { id: string; title: string; answerCount: number; status: string }[] };
-  const openQuestions = questionsData.data.filter((q) => q.status === 'open' || q.status === 'answered');
+  const questionsData = (await get('/api/qna/questions?type=community', modToken)) as {
+    data: { id: string; title: string; answerCount: number; status: string }[];
+  };
+  const openQuestions = questionsData.data.filter(
+    (q) => q.status === 'open' || q.status === 'answered',
+  );
 
   // Sort by answerCount desc to identify top 3 for the moderator dashboard demo
   const sortedByActivity = [...openQuestions].sort((a, b) => b.answerCount - a.answerCount);
   const topQuestions = sortedByActivity.slice(0, 3);
   const otherQuestions = sortedByActivity.slice(3);
 
-  logger.info({
-    totalQuestions: openQuestions.length,
-    topQuestionIds: topQuestions.map((q) => q.id),
-  }, 'Identified top questions for engagement');
+  logger.info(
+    {
+      totalQuestions: openQuestions.length,
+      topQuestionIds: topQuestions.map((q) => q.id),
+    },
+    'Identified top questions for engagement',
+  );
 
   await new Promise((r) => setTimeout(r, 1000));
 
@@ -301,14 +470,20 @@ async function simulate() {
   // Top questions get 5 respondents (each posts 1 answer = 3-5 total per question)
   for (const q of topQuestions) {
     const respondents = shuffle(students).slice(0, 5);
-    await postAnswers(q.id, respondents.map((s) => s.email));
+    await postAnswers(
+      q.id,
+      respondents.map((s) => s.email),
+    );
   }
 
   // Other questions get 3-4 respondents
   for (const q of otherQuestions) {
     const numRespondents = 3 + Math.floor(Math.random() * 2);
     const respondents = shuffle(students).slice(0, numRespondents);
-    await postAnswers(q.id, respondents.map((s) => s.email));
+    await postAnswers(
+      q.id,
+      respondents.map((s) => s.email),
+    );
   }
 
   // ── Step 4: Vote on pending answers (no approval — moderators review manually) ──
@@ -316,7 +491,10 @@ async function simulate() {
 
   const allPendingAnswers: { id: string; questionId: string }[] = [];
   for (const q of openQuestions) {
-    const answersData = await get(`/api/moderation/questions/${q.id}/pending-answers?limit=10`, modToken) as { data: { id: string }[] };
+    const answersData = (await get(
+      `/api/moderation/questions/${q.id}/pending-answers?limit=10`,
+      modToken,
+    )) as { data: { id: string }[] };
     allPendingAnswers.push(...answersData.data.map((a) => ({ id: a.id, questionId: q.id })));
   }
   logger.info({ count: allPendingAnswers.length }, 'Pending answers found for voting');
@@ -328,7 +506,7 @@ async function simulate() {
   for (const answer of allPendingAnswers) {
     const isTopQuestion = topQuestions.some((q) => q.id === answer.questionId);
     const numVoters = isTopQuestion
-      ? 5 + Math.floor(Math.random() * 4)  // 5-8 voters for top questions
+      ? 5 + Math.floor(Math.random() * 4) // 5-8 voters for top questions
       : 3 + Math.floor(Math.random() * 3); // 3-5 voters for others
 
     const voters = shuffle(votingStudents).slice(0, numVoters);
@@ -338,9 +516,15 @@ async function simulate() {
       const { accessToken } = await getStudentToken(voter.email, PASSWORD, tokenCache);
       const direction = Math.random() < 0.8 ? 'up' : 'down';
       try {
-        await post(`/api/qna/answers/${answer.id}/vote/${direction}?allowPending=true`, accessToken, {});
+        await post(
+          `/api/qna/answers/${answer.id}/vote/${direction}?allowPending=true`,
+          accessToken,
+          {},
+        );
         netVotes[answer.id] += direction === 'up' ? 1 : -1;
-      } catch { /* own answer or already voted */ }
+      } catch {
+        /* own answer or already voted */
+      }
     }
     await new Promise((r) => setTimeout(r, 50));
   }
@@ -358,7 +542,9 @@ async function simulate() {
           const { accessToken } = await getStudentToken(voter.email, PASSWORD, tokenCache);
           try {
             await post(`/api/qna/answers/${answer.id}/vote/up?allowPending=true`, accessToken, {});
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
           await new Promise((r) => setTimeout(r, 50));
         }
       }

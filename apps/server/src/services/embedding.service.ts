@@ -33,7 +33,10 @@ export async function generateEmbedding(text: string): Promise<number[]> {
         return mockEmbed(text);
     }
   } catch (err) {
-    logger.warn({ err, provider: env.EMBEDDING_PROVIDER }, 'embedding generation failed — falling back to mock');
+    logger.warn(
+      { err, provider: env.EMBEDDING_PROVIDER },
+      'embedding generation failed — falling back to mock',
+    );
     return mockEmbed(text);
   }
 }
@@ -41,7 +44,9 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 /** Cosine similarity between two equal-length vectors. Returns -1 to 1. */
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length || a.length === 0) return 0;
-  let dot = 0, normA = 0, normB = 0;
+  let dot = 0,
+    normA = 0,
+    normB = 0;
   for (let i = 0; i < a.length; i++) {
     dot += a[i] * b[i];
     normA += a[i] * a[i];
@@ -137,7 +142,8 @@ async function geminiEmbed(text: string): Promise<number[]> {
         outputDimensionality: EMBEDDING_DIM,
       }),
     });
-    if (!retry.ok) throw new Error(`Gemini embedding API error: ${retry.status} ${retry.statusText}`);
+    if (!retry.ok)
+      throw new Error(`Gemini embedding API error: ${retry.status} ${retry.statusText}`);
     const retryJson = (await retry.json()) as { embedding: { values: number[] } };
     return retryJson.embedding.values;
   }

@@ -76,9 +76,17 @@ export const faqApi = {
   async submitFeedback(
     id: string,
     rating: 'helpful' | 'unhelpful',
-  ): Promise<{ helpfulCount: number; unhelpfulCount: number; userVote: 'helpful' | 'unhelpful' | null }> {
+  ): Promise<{
+    helpfulCount: number;
+    unhelpfulCount: number;
+    userVote: 'helpful' | 'unhelpful' | null;
+  }> {
     const res = await apiClient.post<
-      ApiSuccess<{ helpfulCount: number; unhelpfulCount: number; userVote: 'helpful' | 'unhelpful' | null }>
+      ApiSuccess<{
+        helpfulCount: number;
+        unhelpfulCount: number;
+        userVote: 'helpful' | 'unhelpful' | null;
+      }>
     >(`/api/faqs/${id}/feedback`, { rating });
     return res.data.data;
   },
@@ -123,8 +131,13 @@ export const faqApi = {
     const res = await apiClient.get<ApiSuccess<ModeratorDashboardStats>>('/api/stats/moderator');
     return res.data.data;
   },
-  async getVotesTrend(): Promise<{ date: string; helpful: number; unhelpful: number; flagged: number }[]> {
-    const res = await apiClient.get<ApiSuccess<{ date: string; helpful: number; unhelpful: number; flagged: number }[]>>('/api/stats/votes-trend');
+  async getVotesTrend(): Promise<
+    { date: string; helpful: number; unhelpful: number; flagged: number }[]
+  > {
+    const res =
+      await apiClient.get<
+        ApiSuccess<{ date: string; helpful: number; unhelpful: number; flagged: number }[]>
+      >('/api/stats/votes-trend');
     return res.data.data;
   },
 };

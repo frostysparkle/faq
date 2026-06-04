@@ -63,27 +63,38 @@ export function SettingsPage() {
       />
 
       {showSuccess && (
-        <div style={{
-          marginBottom: 16, padding: '10px 16px', borderRadius: 8,
-          background: 'var(--color-success-bg)', color: 'var(--color-success)',
-          fontSize: 13, fontWeight: 500,
-        }}>
+        <div
+          style={{
+            marginBottom: 16,
+            padding: '10px 16px',
+            borderRadius: 8,
+            background: 'var(--color-success-bg)',
+            color: 'var(--color-success)',
+            fontSize: 13,
+            fontWeight: 500,
+          }}
+        >
           ✓ Settings saved successfully.
         </div>
       )}
 
       {save.isError && (
-        <div style={{
-          marginBottom: 16, padding: '10px 16px', borderRadius: 8,
-          background: 'var(--color-danger-bg)', color: 'var(--color-danger)',
-          fontSize: 13, fontWeight: 500,
-        }}>
+        <div
+          style={{
+            marginBottom: 16,
+            padding: '10px 16px',
+            borderRadius: 8,
+            background: 'var(--color-danger-bg)',
+            color: 'var(--color-danger)',
+            fontSize: 13,
+            fontWeight: 500,
+          }}
+        >
           Failed to save settings — please try again.
         </div>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-
         {/* Chatbot */}
         <Card>
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Chatbot</div>
@@ -92,14 +103,19 @@ export function SettingsPage() {
             description="Minimum similarity score for a chatbot FAQ source to be included in the response."
             value={form.chatbotConfidenceThreshold}
             onChange={(v) => setForm((f) => ({ ...f, chatbotConfidenceThreshold: v }))}
-            min={0} max={1} step={0.05}
+            min={0}
+            max={1}
+            step={0.05}
           />
           <SettingField
             label="Max Sources"
             description="Maximum number of FAQ sources shown per chatbot response."
             value={form.chatbotMaxSources}
             onChange={(v) => setForm((f) => ({ ...f, chatbotMaxSources: v }))}
-            min={1} max={20} step={1} isInt
+            min={1}
+            max={20}
+            step={1}
+            isInt
           />
         </Card>
 
@@ -111,7 +127,10 @@ export function SettingsPage() {
             description="Maximum peer answers allowed per community question."
             value={form.communityAnswerCap}
             onChange={(v) => setForm((f) => ({ ...f, communityAnswerCap: v }))}
-            min={1} max={50} step={1} isInt
+            min={1}
+            max={50}
+            step={1}
+            isInt
           />
         </Card>
 
@@ -123,17 +142,26 @@ export function SettingsPage() {
             description="Questions with no activity for this many days are placed in the urgent moderation bucket."
             value={form.urgentIdleDays}
             onChange={(v) => setForm((f) => ({ ...f, urgentIdleDays: v }))}
-            min={1} max={30} step={1} isInt
+            min={1}
+            max={30}
+            step={1}
+            isInt
           />
         </Card>
-
       </div>
     </div>
   );
 }
 
 function SettingField({
-  label, description, value, onChange, min, max, step, isInt,
+  label,
+  description,
+  value,
+  onChange,
+  min,
+  max,
+  step,
+  isInt,
 }: {
   label: string;
   description: string;
@@ -155,11 +183,24 @@ function SettingField({
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <input
           type="range"
-          min={min} max={max} step={step} value={value}
-          onChange={(e) => onChange(isInt ? parseInt(e.target.value, 10) : parseFloat(e.target.value))}
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) =>
+            onChange(isInt ? parseInt(e.target.value, 10) : parseFloat(e.target.value))
+          }
           style={{ flex: 1, accentColor: 'var(--color-primary)' }}
         />
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-primary)', minWidth: 36, textAlign: 'right' }}>
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: 'var(--color-primary)',
+            minWidth: 36,
+            textAlign: 'right',
+          }}
+        >
           {isInt ? value : value.toFixed(2)}
         </span>
       </div>

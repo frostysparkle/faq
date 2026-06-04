@@ -24,23 +24,35 @@ export function Sidebar({ role, userName, open }: SidebarProps) {
 
   return (
     <aside className="sidebar" style={{ width: open ? 236 : 60 }}>
-
       {/* ── Brand ──────────────────────────────────────────────────────── */}
-      <div style={{
-        padding: open ? '16px 16px 14px' : '14px 0',
-        borderBottom: '1px solid var(--color-sidebar-border)',
-        display: 'flex',
-        justifyContent: open ? 'flex-start' : 'center',
-        flexShrink: 0,
-      }}>
+      <div
+        style={{
+          padding: open ? '16px 16px 14px' : '14px 0',
+          borderBottom: '1px solid var(--color-sidebar-border)',
+          display: 'flex',
+          justifyContent: open ? 'flex-start' : 'center',
+          flexShrink: 0,
+        }}
+      >
         {open ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div className="sidebar-logo">S</div>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--color-sidebar-username)', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
+              <div
+                style={{
+                  fontSize: 15,
+                  fontWeight: 800,
+                  color: 'var(--color-sidebar-username)',
+                  letterSpacing: '-0.3px',
+                  lineHeight: 1.2,
+                }}
+              >
                 Samagama
               </div>
-              <div style={{ fontSize: 10, color: 'var(--color-sidebar-sub)', marginTop: 2 }} data-testid="role-label">
+              <div
+                style={{ fontSize: 10, color: 'var(--color-sidebar-sub)', marginTop: 2 }}
+                data-testid="role-label"
+              >
                 Internship Portal · {role}
               </div>
             </div>
@@ -54,9 +66,7 @@ export function Sidebar({ role, userName, open }: SidebarProps) {
       <nav style={{ flex: 1, padding: '8px 8px', overflowY: 'auto' }}>
         {groups.map((group, gi) => (
           <div key={gi} style={{ marginBottom: 8 }}>
-            {open && group.section && (
-              <div className="sidebar-section-label">{group.section}</div>
-            )}
+            {open && group.section && <div className="sidebar-section-label">{group.section}</div>}
             {group.items.map((item) => (
               <SidebarLink key={item.path} item={item} open={open} />
             ))}
@@ -65,15 +75,17 @@ export function Sidebar({ role, userName, open }: SidebarProps) {
       </nav>
 
       {/* ── User footer ────────────────────────────────────────────────── */}
-      <div style={{
-        padding: open ? '10px 12px' : '10px 0',
-        borderTop: '1px solid var(--color-sidebar-border)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: open ? 'flex-start' : 'center',
-        gap: open ? 10 : 0,
-        flexShrink: 0,
-      }}>
+      <div
+        style={{
+          padding: open ? '10px 12px' : '10px 0',
+          borderTop: '1px solid var(--color-sidebar-border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: open ? 'flex-start' : 'center',
+          gap: open ? 10 : 0,
+          flexShrink: 0,
+        }}
+      >
         {/* Avatar */}
         <div
           title={open ? undefined : userName}
@@ -99,29 +111,33 @@ export function Sidebar({ role, userName, open }: SidebarProps) {
         {open ? (
           <>
             <div style={{ flex: 1, overflow: 'hidden' }}>
-              <div style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: 'var(--color-sidebar-username)',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: 'var(--color-sidebar-username)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {userName}
               </div>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                marginTop: 2,
-                fontSize: 9,
-                fontWeight: 700,
-                letterSpacing: '0.07em',
-                textTransform: 'uppercase',
-                color: 'var(--color-sidebar-active-text)',
-                background: 'var(--color-sidebar-active)',
-                borderRadius: 4,
-                padding: '1px 6px',
-              }}>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  marginTop: 2,
+                  fontSize: 9,
+                  fontWeight: 700,
+                  letterSpacing: '0.07em',
+                  textTransform: 'uppercase',
+                  color: 'var(--color-sidebar-active-text)',
+                  background: 'var(--color-sidebar-active)',
+                  borderRadius: 4,
+                  padding: '1px 6px',
+                }}
+              >
                 {role}
               </div>
             </div>
@@ -175,7 +191,8 @@ export function Sidebar({ role, userName, open }: SidebarProps) {
               transition: 'color var(--transition)',
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-sidebar-text-hover)';
+              (e.currentTarget as HTMLButtonElement).style.color =
+                'var(--color-sidebar-text-hover)';
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-sidebar-logout)';
@@ -196,7 +213,9 @@ function SidebarLink({ item, open }: { item: NavItem; open: boolean }) {
       to={item.path}
       end
       title={open ? undefined : item.label}
-      className={({ isActive }) => ['sidebar-link', isActive ? 'active' : ''].filter(Boolean).join(' ')}
+      className={({ isActive }) =>
+        ['sidebar-link', isActive ? 'active' : ''].filter(Boolean).join(' ')
+      }
       style={() => ({
         gap: open ? 10 : 0,
         justifyContent: open ? 'flex-start' : 'center',
@@ -206,17 +225,19 @@ function SidebarLink({ item, open }: { item: NavItem; open: boolean }) {
       {({ isActive }) => (
         <>
           {open ? (
-            <div style={{
-              width: 28,
-              height: 28,
-              borderRadius: 7,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              background: isActive ? 'var(--color-sidebar-active)' : 'transparent',
-              transition: 'background var(--transition)',
-            }}>
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 7,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                background: isActive ? 'var(--color-sidebar-active)' : 'transparent',
+                transition: 'background var(--transition)',
+              }}
+            >
               <Icon size={15} />
             </div>
           ) : (
@@ -224,28 +245,32 @@ function SidebarLink({ item, open }: { item: NavItem; open: boolean }) {
           )}
 
           {open && (
-            <span style={{
-              flex: 1,
-              textAlign: 'left',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}>
+            <span
+              style={{
+                flex: 1,
+                textAlign: 'left',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
               {item.label}
             </span>
           )}
 
           {open && item.badge && (
-            <span style={{
-              background: '#ef4444',
-              color: 'white',
-              borderRadius: 10,
-              padding: '1px 6px',
-              fontSize: 10,
-              fontWeight: 700,
-              minWidth: 18,
-              textAlign: 'center',
-            }}>
+            <span
+              style={{
+                background: '#ef4444',
+                color: 'white',
+                borderRadius: 10,
+                padding: '1px 6px',
+                fontSize: 10,
+                fontWeight: 700,
+                minWidth: 18,
+                textAlign: 'center',
+              }}
+            >
               {item.badge}
             </span>
           )}

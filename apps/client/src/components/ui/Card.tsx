@@ -23,21 +23,30 @@ export function Card({ children, style, onClick, as: Tag = 'div' }: CardProps) {
         cursor: isClickable ? 'pointer' : 'default',
         font: 'inherit',
         color: 'inherit',
-        transition: 'box-shadow var(--transition), transform var(--transition), border-color var(--transition)',
+        transition:
+          'box-shadow var(--transition), transform var(--transition), border-color var(--transition)',
         ...style,
       }}
-      onMouseEnter={isClickable ? (e) => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.boxShadow = 'var(--shadow-hover)';
-        el.style.transform = 'translateY(-1px)';
-        el.style.borderColor = 'var(--color-primary)';
-      } : undefined}
-      onMouseLeave={isClickable ? (e) => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.boxShadow = 'var(--shadow-sm)';
-        el.style.transform = '';
-        el.style.borderColor = '';
-      } : undefined}
+      onMouseEnter={
+        isClickable
+          ? (e) => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.boxShadow = 'var(--shadow-hover)';
+              el.style.transform = 'translateY(-1px)';
+              el.style.borderColor = 'var(--color-primary)';
+            }
+          : undefined
+      }
+      onMouseLeave={
+        isClickable
+          ? (e) => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.boxShadow = 'var(--shadow-sm)';
+              el.style.transform = '';
+              el.style.borderColor = '';
+            }
+          : undefined
+      }
     >
       {children}
     </Tag>

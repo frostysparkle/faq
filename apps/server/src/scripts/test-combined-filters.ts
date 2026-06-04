@@ -53,7 +53,7 @@ async function queryQuestions(opts: {
   }
 
   const docs = await QuestionModel.find(filter).select('_id status updatedAt').lean();
-  return { count: docs.length, ids: docs.map(d => d._id.toString()) };
+  return { count: docs.length, ids: docs.map((d) => d._id.toString()) };
 }
 
 // ─── Assertion helpers ────────────────────────────────────────────────────────
@@ -88,11 +88,7 @@ async function run() {
 
   // ── 1. status=open only ─────────────────────────────────────────────────────
   const openOnly = await queryQuestions({ status: 'open' });
-  assert(
-    '1. status=open only',
-    openOnly.count >= 0,
-    `found ${openOnly.count} open questions`,
-  );
+  assert('1. status=open only', openOnly.count >= 0, `found ${openOnly.count} open questions`);
 
   // ── 2. status=answered only ─────────────────────────────────────────────────
   const answeredOnly = await queryQuestions({ status: 'answered' });
@@ -148,12 +144,18 @@ async function run() {
   );
   // Every returned question must be open
   if (openAnd24h.ids.length > 0) {
-    const docs = await QuestionModel.find({ _id: { $in: openAnd24h.ids } }).select('status updatedAt').lean();
-    const allOpen = docs.every(d => d.status === 'open');
+    const docs = await QuestionModel.find({ _id: { $in: openAnd24h.ids } })
+      .select('status updatedAt')
+      .lean();
+    const allOpen = docs.every((d) => d.status === 'open');
     const threshold = new Date(Date.now() - day);
-    const allRecent = docs.every(d => new Date(d.updatedAt) >= threshold);
+    const allRecent = docs.every((d) => new Date(d.updatedAt) >= threshold);
     assert('7. all results are status=open', allOpen, allOpen ? 'ok' : 'some are not open');
-    assert('7. all results updated within last 24h', allRecent, allRecent ? 'ok' : 'some are older than 24h');
+    assert(
+      '7. all results updated within last 24h',
+      allRecent,
+      allRecent ? 'ok' : 'some are older than 24h',
+    );
   } else {
     logger.info({ test: '7' }, 'ℹ️  No combined results — intersection is empty (acceptable)');
   }
@@ -166,13 +168,21 @@ async function run() {
     `${openAnd3d.count} ≤ ${openOnly.count}`,
   );
   if (openAnd3d.ids.length > 0) {
-    const docs = await QuestionModel.find({ _id: { $in: openAnd3d.ids } }).select('status updatedAt').lean();
-    const allOpen = docs.every(d => d.status === 'open');
+    const docs = await QuestionModel.find({ _id: { $in: openAnd3d.ids } })
+      .select('status updatedAt')
+      .lean();
+    const allOpen = docs.every((d) => d.status === 'open');
     const lo = new Date(Date.now() - 7 * day);
     const hi = new Date(Date.now() - day);
-    const allInWindow = docs.every(d => new Date(d.updatedAt) >= lo && new Date(d.updatedAt) < hi);
+    const allInWindow = docs.every(
+      (d) => new Date(d.updatedAt) >= lo && new Date(d.updatedAt) < hi,
+    );
     assert('8. all results are status=open', allOpen, allOpen ? 'ok' : 'some are not open');
-    assert('8. all results in 3-7d window', allInWindow, allInWindow ? 'ok' : 'some fall outside 3-7d window');
+    assert(
+      '8. all results in 3-7d window',
+      allInWindow,
+      allInWindow ? 'ok' : 'some fall outside 3-7d window',
+    );
   }
 
   // ── 9. status=answered + idle=last24h ───────────────────────────────────────
@@ -183,8 +193,10 @@ async function run() {
     `${answeredAnd24h.count} ≤ ${answeredOnly.count}`,
   );
   if (answeredAnd24h.ids.length > 0) {
-    const docs = await QuestionModel.find({ _id: { $in: answeredAnd24h.ids } }).select('status').lean();
-    const allAnswered = docs.every(d => d.status === 'answered');
+    const docs = await QuestionModel.find({ _id: { $in: answeredAnd24h.ids } })
+      .select('status')
+      .lean();
+    const allAnswered = docs.every((d) => d.status === 'answered');
     assert('9. all results are status=answered', allAnswered, allAnswered ? 'ok' : 'mismatch');
   }
 
@@ -204,8 +216,10 @@ async function run() {
     `${resolvedAnd24h.count} ≤ ${resolvedOnly.count}`,
   );
   if (resolvedAnd24h.ids.length > 0) {
-    const docs = await QuestionModel.find({ _id: { $in: resolvedAnd24h.ids } }).select('status').lean();
-    const allResolved = docs.every(d => d.status === 'resolved');
+    const docs = await QuestionModel.find({ _id: { $in: resolvedAnd24h.ids } })
+      .select('status')
+      .lean();
+    const allResolved = docs.every((d) => d.status === 'resolved');
     assert('11. all results are status=resolved', allResolved, allResolved ? 'ok' : 'mismatch');
   }
 
@@ -228,9 +242,11 @@ async function run() {
   // ── 14. Bucket sum — last24h + over3days + over1week = totalOpen ──────────────
   const totalFromBuckets = idle24h.count + idle3d.count + idle1w.count;
   const totalOpen = await queryQuestions({ status: undefined, idle: undefined });
-  const openAndAnswered = (await QuestionModel.countDocuments({
-    type: 'community', status: { $in: ['open', 'answered'] }, isTrashed: { $ne: true },
-  }));
+  const openAndAnswered = await QuestionModel.countDocuments({
+    type: 'community',
+    status: { $in: ['open', 'answered'] },
+    isTrashed: { $ne: true },
+  });
   assert(
     '14. Bucket sum (24h + 3d + 1w) equals open+answered total',
     totalFromBuckets === openAndAnswered,

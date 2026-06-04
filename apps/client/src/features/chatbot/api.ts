@@ -1,4 +1,10 @@
-import type { ApiSuccess, ChatFeedbackInput, ChatMessage, ChatQueryInput, ChatQueryResponse } from '@samagama/shared';
+import type {
+  ApiSuccess,
+  ChatFeedbackInput,
+  ChatMessage,
+  ChatQueryInput,
+  ChatQueryResponse,
+} from '@samagama/shared';
 import { apiClient } from '../../lib/api-client';
 
 export async function sendChatMessage(input: ChatQueryInput): Promise<ChatQueryResponse> {

@@ -121,9 +121,7 @@ function ReviewCard({ answer }: { answer: PendingAnswerSummary }) {
           marginBottom: 10,
         }}
       >
-        <label
-          style={{ fontSize: 12, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}
-        >
+        <label style={{ fontSize: 12, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
           Spurti Points on approval:
         </label>
         <input
@@ -132,7 +130,9 @@ function ReviewCard({ answer }: { answer: PendingAnswerSummary }) {
           max={5}
           step={1}
           value={spurtiPoints}
-          onChange={(e) => setSpurtiPoints(Math.max(-1, Math.min(5, parseInt(e.target.value, 10) || 0)))}
+          onChange={(e) =>
+            setSpurtiPoints(Math.max(-1, Math.min(5, parseInt(e.target.value, 10) || 0)))
+          }
           style={{
             width: 64,
             background: 'var(--color-input)',

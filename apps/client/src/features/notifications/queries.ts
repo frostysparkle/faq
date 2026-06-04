@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notificationsApi } from './api';
 
 export const notifKeys = {
-  list:        ['notifications', 'list'] as const,
+  list: ['notifications', 'list'] as const,
   unreadCount: ['notifications', 'unread-count'] as const,
 };
 

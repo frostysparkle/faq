@@ -21,7 +21,14 @@ export function ModerationLoadPage() {
       <SectionHeader title="Moderation Load" sub="Per-moderator performance and queue depth." />
 
       {/* Top-line stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 12,
+          marginBottom: 24,
+        }}
+      >
         <StatCard
           label="Pending Queue Depth"
           value={data?.pendingQueueDepth ?? 0}
@@ -68,7 +75,14 @@ export function ModerationLoadPage() {
         </div>
 
         {(data?.moderators.length ?? 0) === 0 && (
-          <div style={{ padding: 24, textAlign: 'center', fontSize: 13, color: 'var(--color-text-muted)' }}>
+          <div
+            style={{
+              padding: 24,
+              textAlign: 'center',
+              fontSize: 13,
+              color: 'var(--color-text-muted)',
+            }}
+          >
             No moderation activity recorded yet.
           </div>
         )}
@@ -81,7 +95,8 @@ export function ModerationLoadPage() {
               gridTemplateColumns: '1.5fr 0.8fr 0.8fr 0.8fr 1fr',
               gap: 10,
               padding: '12px 18px',
-              borderBottom: i < (data.moderators.length - 1) ? '1px solid var(--color-border)' : 'none',
+              borderBottom:
+                i < data.moderators.length - 1 ? '1px solid var(--color-border)' : 'none',
               alignItems: 'center',
             }}
           >
@@ -98,7 +113,15 @@ export function ModerationLoadPage() {
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-primary)' }}>
               {mod.approvalsThisWeek}
             </div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div
+              style={{
+                fontSize: 12,
+                color: 'var(--color-text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
               <Clock size={12} />
               {mod.avgResponseTimeHours}h
             </div>
@@ -108,16 +131,28 @@ export function ModerationLoadPage() {
 
       {/* Category backlog */}
       <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Category Backlog</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+          gap: 10,
+        }}
+      >
         {(data?.categoryBacklog.length ?? 0) === 0 && (
           <Card style={{ padding: '14px 16px' }}>
-            <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>No pending items in any category.</div>
+            <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
+              No pending items in any category.
+            </div>
           </Card>
         )}
         {data?.categoryBacklog.map((cat) => (
           <Card key={cat.category} style={{ padding: '14px 16px' }}>
-            <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-warning)' }}>{cat.count}</div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>{cat.category}</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-warning)' }}>
+              {cat.count}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
+              {cat.category}
+            </div>
           </Card>
         ))}
       </div>
@@ -125,7 +160,12 @@ export function ModerationLoadPage() {
   );
 }
 
-function StatCard({ label, value, icon: Icon, color }: {
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  color,
+}: {
   label: string;
   value: number;
   icon: typeof Shield;

@@ -34,28 +34,36 @@ const GRID = '52px minmax(0,2.5fr) minmax(0,1fr) 120px 100px 110px';
 
 // ─── Colours — all resolved from the app's CSS custom properties ──────────
 const C = {
-  badge:     { bg: 'var(--color-primary-bg)', fg: 'var(--color-primary)' },
-  catText:   'var(--color-primary)',
+  badge: { bg: 'var(--color-primary-bg)', fg: 'var(--color-primary)' },
+  catText: 'var(--color-primary)',
   dotPublished: 'var(--color-success)',
-  dotOutdated:  'var(--color-warning)',
-  dotDraft:     'var(--color-text-muted)',
+  dotOutdated: 'var(--color-warning)',
+  dotDraft: 'var(--color-text-muted)',
   pillPublished: { bg: 'var(--color-success-bg)', fg: 'var(--color-success)' },
-  pillOutdated:  { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning)' },
-  pillDraft:     { bg: 'var(--color-pill)',        fg: 'var(--color-pill-text)' },
-  thumbUp:   'var(--color-success)',
+  pillOutdated: { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning)' },
+  pillDraft: { bg: 'var(--color-pill)', fg: 'var(--color-pill-text)' },
+  thumbUp: 'var(--color-success)',
   thumbDown: 'var(--color-danger)',
   flagBadge: { bg: 'var(--color-danger-bg)', fg: 'var(--color-danger)' },
-  flagNone:  'var(--color-text-muted)',
-  divider:   'var(--color-border)',
-  header:    'var(--color-bg)',
-  rowHover:  'var(--color-sidebar-hover)',
-  border:    'var(--color-border)',
-  muted:     'var(--color-text-muted)',
-  mutedLabel:'var(--color-text-muted)',
-  text:      'var(--color-text)',
-  actionEye:  { bg: 'var(--color-pill)',       fg: 'var(--color-text)',    border: 'var(--color-border)' },
-  actionEdit: { bg: 'var(--color-primary-bg)', fg: 'var(--color-primary)', border: 'var(--color-primary-bg)' },
-  actionDel:  { bg: 'var(--color-danger-bg)',  fg: 'var(--color-danger)',  border: 'var(--color-danger-bg)' },
+  flagNone: 'var(--color-text-muted)',
+  divider: 'var(--color-border)',
+  header: 'var(--color-bg)',
+  rowHover: 'var(--color-sidebar-hover)',
+  border: 'var(--color-border)',
+  muted: 'var(--color-text-muted)',
+  mutedLabel: 'var(--color-text-muted)',
+  text: 'var(--color-text)',
+  actionEye: { bg: 'var(--color-pill)', fg: 'var(--color-text)', border: 'var(--color-border)' },
+  actionEdit: {
+    bg: 'var(--color-primary-bg)',
+    fg: 'var(--color-primary)',
+    border: 'var(--color-primary-bg)',
+  },
+  actionDel: {
+    bg: 'var(--color-danger-bg)',
+    fg: 'var(--color-danger)',
+    border: 'var(--color-danger-bg)',
+  },
 };
 
 export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
@@ -86,10 +94,19 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
   };
 
   const queryParams = useMemo(() => {
-    const q: { filter?: 'helpful' | 'flagged'; page: number; pageSize: number; q?: string; sort?: 'relevance' | 'recent' | 'added' | 'popular' | 'helpful' } = { page, pageSize };
+    const q: {
+      filter?: 'helpful' | 'flagged';
+      page: number;
+      pageSize: number;
+      q?: string;
+      sort?: 'relevance' | 'recent' | 'added' | 'popular' | 'helpful';
+    } = { page, pageSize };
     if (filter === 'helpful') q.filter = 'helpful';
     if (filter === 'flagged') q.filter = 'flagged';
-    if (searchQuery) { q.q = searchQuery; q.sort = 'relevance'; }
+    if (searchQuery) {
+      q.q = searchQuery;
+      q.sort = 'relevance';
+    }
     return q;
   }, [filter, page, pageSize, searchQuery]);
 
@@ -102,22 +119,48 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
   const total = (data?.meta as { total?: number } | undefined)?.total ?? data?.items.length ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const startItem = total === 0 ? 0 : (page - 1) * pageSize + 1;
-  const endItem   = Math.min(page * pageSize, total);
+  const endItem = Math.min(page * pageSize, total);
 
-  const switchFilter = (f: Filter) => { setFilter(f); setPage(1); };
+  const switchFilter = (f: Filter) => {
+    setFilter(f);
+    setPage(1);
+  };
 
   return (
     <div>
       {/* ── Toolbar ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12,
+          marginBottom: 16,
+          flexWrap: 'wrap',
+        }}
+      >
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {(['all', 'helpful', 'flagged'] as Filter[]).map((f) => (
             <FilterChip key={f} active={filter === f} onClick={() => switchFilter(f)}>
-              {f === 'all' ? 'All' : f === 'helpful' ? 'Helpful FAQs' : (
+              {f === 'all' ? (
+                'All'
+              ) : f === 'helpful' ? (
+                'Helpful FAQs'
+              ) : (
                 <>
                   Flagged FAQs
                   {flaggedCount > 0 && (
-                    <span style={{ background: C.thumbDown, color: '#fff', borderRadius: 10, padding: '0 6px', fontSize: 10, fontWeight: 700, marginLeft: 5 }}>
+                    <span
+                      style={{
+                        background: C.thumbDown,
+                        color: '#fff',
+                        borderRadius: 10,
+                        padding: '0 6px',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        marginLeft: 5,
+                      }}
+                    >
                       {flaggedCount}
                     </span>
                   )}
@@ -132,7 +175,13 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
           <Search
             size={15}
             color={searchInput ? 'var(--color-primary)' : 'var(--color-text-muted)'}
-            style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+            style={{
+              position: 'absolute',
+              left: 12,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              pointerEvents: 'none',
+            }}
           />
           <input
             type="text"
@@ -153,15 +202,27 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
               transition: 'border-color .15s',
             }}
             onFocus={(e) => (e.target.style.borderColor = 'var(--color-primary)')}
-            onBlur={(e) => (e.target.style.borderColor = searchInput ? 'var(--color-primary)' : 'var(--color-border)')}
+            onBlur={(e) =>
+              (e.target.style.borderColor = searchInput
+                ? 'var(--color-primary)'
+                : 'var(--color-border)')
+            }
           />
           {searchInput && (
             <button
               onClick={clearSearch}
               style={{
-                position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', cursor: 'pointer', padding: 2,
-                display: 'flex', alignItems: 'center', color: C.muted,
+                position: 'absolute',
+                right: 10,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 2,
+                display: 'flex',
+                alignItems: 'center',
+                color: C.muted,
               }}
             >
               <X size={14} />
@@ -184,17 +245,18 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
 
       {/* ── Table ── */}
       <div className="mod-card mod-card-blue" style={{ overflow: 'hidden', borderRadius: 14 }}>
-
         {/* Header */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: GRID,
-          alignItems: 'center',
-          padding: '14px 20px',
-          background: C.header,
-          borderBottom: `1px solid ${C.divider}`,
-          gap: 0,
-        }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: GRID,
+            alignItems: 'center',
+            padding: '14px 20px',
+            background: C.header,
+            borderBottom: `1px solid ${C.divider}`,
+            gap: 0,
+          }}
+        >
           <ColHead>#</ColHead>
           <ColHead>Question</ColHead>
           <ColHead>Details</ColHead>
@@ -209,13 +271,19 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
 
         {/* Body */}
         {isLoading && (
-          <div style={{ padding: 32, textAlign: 'center', fontSize: 13, color: C.muted }}>Loading…</div>
+          <div style={{ padding: 32, textAlign: 'center', fontSize: 13, color: C.muted }}>
+            Loading…
+          </div>
         )}
         {!isLoading && data?.items.length === 0 && (
           <div style={{ padding: 40, textAlign: 'center', fontSize: 13, color: C.muted }}>
-            {searchQuery
-              ? <>No FAQs matched <strong>"{searchQuery}"</strong>. Try different keywords.</>
-              : 'No FAQs match this filter.'}
+            {searchQuery ? (
+              <>
+                No FAQs matched <strong>"{searchQuery}"</strong>. Try different keywords.
+              </>
+            ) : (
+              'No FAQs match this filter.'
+            )}
           </div>
         )}
 
@@ -243,18 +311,33 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
       </div>
 
       {/* ── Footer ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, flexWrap: 'wrap', gap: 10 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: 16,
+          flexWrap: 'wrap',
+          gap: 10,
+        }}
+      >
         {/* Count */}
         <span style={{ fontSize: 13, color: C.mutedLabel }}>
           {total === 0
             ? 'No FAQs found'
             : `Showing ${startItem} to ${endItem} of ${total} FAQ${total === 1 ? '' : 's'}`}
           {searchQuery && total > 0 && (
-            <span style={{
-              marginLeft: 8, fontSize: 12, fontWeight: 600,
-              background: 'var(--color-primary-bg)', color: 'var(--color-primary)',
-              borderRadius: 6, padding: '2px 8px',
-            }}>
+            <span
+              style={{
+                marginLeft: 8,
+                fontSize: 12,
+                fontWeight: 600,
+                background: 'var(--color-primary-bg)',
+                color: 'var(--color-primary)',
+                borderRadius: 6,
+                padding: '2px 8px',
+              }}
+            >
               "{searchQuery}"
             </span>
           )}
@@ -265,17 +348,39 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
           <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
             <select
               value={pageSize}
-              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
               style={{
-                fontSize: 13, padding: '7px 32px 7px 12px', borderRadius: 8,
-                border: '1px solid var(--color-border)', background: 'var(--color-input)',
-                color: 'var(--color-text)', fontFamily: 'inherit', cursor: 'pointer',
-                appearance: 'none', outline: 'none',
+                fontSize: 13,
+                padding: '7px 32px 7px 12px',
+                borderRadius: 8,
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-input)',
+                color: 'var(--color-text)',
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+                appearance: 'none',
+                outline: 'none',
               }}
             >
-              {PAGE_SIZES.map((s) => <option key={s} value={s}>{s} per page</option>)}
+              {PAGE_SIZES.map((s) => (
+                <option key={s} value={s}>
+                  {s} per page
+                </option>
+              ))}
             </select>
-            <ChevronRight size={13} style={{ position: 'absolute', right: 8, pointerEvents: 'none', rotate: '90deg', color: C.muted }} />
+            <ChevronRight
+              size={13}
+              style={{
+                position: 'absolute',
+                right: 8,
+                pointerEvents: 'none',
+                rotate: '90deg',
+                color: C.muted,
+              }}
+            />
           </div>
 
           {/* Page buttons */}
@@ -284,11 +389,20 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
               <ChevronLeft size={14} />
             </PgBtn>
             {buildPages(page, totalPages).map((p, idx) =>
-              p === '…'
-                ? <span key={`e${idx}`} style={{ padding: '0 4px', color: C.muted, fontSize: 13 }}>…</span>
-                : <PgBtn key={p} active={page === p} onClick={() => setPage(p as number)}>{p}</PgBtn>
+              p === '…' ? (
+                <span key={`e${idx}`} style={{ padding: '0 4px', color: C.muted, fontSize: 13 }}>
+                  …
+                </span>
+              ) : (
+                <PgBtn key={p} active={page === p} onClick={() => setPage(p as number)}>
+                  {p}
+                </PgBtn>
+              ),
             )}
-            <PgBtn onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+            <PgBtn
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
               <ChevronRight size={14} />
             </PgBtn>
           </div>
@@ -301,14 +415,29 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
 // ─── Row ─────────────────────────────────────────────────────────────────────
 
 function FaqRow({
-  faq, rowNum, isLast, expanded, onToggleExpand,
-  flagExpanded, onToggleFlagExpand,
-  editing, onEdit, onCancelEdit, categories, tags,
+  faq,
+  rowNum,
+  isLast,
+  expanded,
+  onToggleExpand,
+  flagExpanded,
+  onToggleFlagExpand,
+  editing,
+  onEdit,
+  onCancelEdit,
+  categories,
+  tags,
 }: {
-  faq: PublicFaq; rowNum: string; isLast: boolean;
-  expanded: boolean; onToggleExpand: () => void;
-  flagExpanded: boolean; onToggleFlagExpand: () => void;
-  editing: boolean; onEdit: () => void; onCancelEdit: () => void;
+  faq: PublicFaq;
+  rowNum: string;
+  isLast: boolean;
+  expanded: boolean;
+  onToggleExpand: () => void;
+  flagExpanded: boolean;
+  onToggleFlagExpand: () => void;
+  editing: boolean;
+  onEdit: () => void;
+  onCancelEdit: () => void;
   categories: { _id: string; name: string }[];
   tags: { _id: string; name: string }[];
 }) {
@@ -321,10 +450,14 @@ function FaqRow({
     return (
       <div style={{ padding: 20, borderBottom: isLast ? 'none' : `1px solid ${C.border}` }}>
         <InlineFaqEditor
-          categories={categories} tags={tags}
+          categories={categories}
+          tags={tags}
           existing={{
-            id: faq.id, title: faq.title, answer: faq.answer,
-            summary: faq.summary, status: faq.status,
+            id: faq.id,
+            title: faq.title,
+            answer: faq.answer,
+            summary: faq.summary,
+            status: faq.status,
             categories: faq.categories.map((c) => c.id),
             tags: faq.tags.map((t) => t.id),
             helpfulCount: faq.helpfulCount,
@@ -354,12 +487,20 @@ function FaqRow({
       >
         {/* # Badge */}
         <div>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: 38, height: 38, borderRadius: 10,
-            background: C.badge.bg, color: C.badge.fg,
-            fontSize: 13, fontWeight: 700,
-          }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 38,
+              height: 38,
+              borderRadius: 10,
+              background: C.badge.bg,
+              color: C.badge.fg,
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
             {rowNum}
           </span>
         </div>
@@ -374,21 +515,36 @@ function FaqRow({
         {/* Details — Category above, Status + time below */}
         <div style={{ paddingRight: 16, minWidth: 0 }}>
           {/* Row 1: Category */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5, minWidth: 0 }}>
+          <div
+            style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5, minWidth: 0 }}
+          >
             <Folder size={12} color={C.muted} strokeWidth={1.5} style={{ flexShrink: 0 }} />
-            <span style={{
-              fontSize: 12, fontWeight: 600, color: C.catText,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: C.catText,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
               {faq.categories[0]?.name ?? '—'}
             </span>
           </div>
           {/* Row 2: Status pill + updated time */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{
-              fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
-              background: pill.bg, color: pill.fg, whiteSpace: 'nowrap',
-            }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                padding: '2px 8px',
+                borderRadius: 20,
+                background: pill.bg,
+                color: pill.fg,
+                whiteSpace: 'nowrap',
+              }}
+            >
               {faq.status.charAt(0).toUpperCase() + faq.status.slice(1)}
             </span>
             <span style={{ fontSize: 11, color: C.mutedLabel, whiteSpace: 'nowrap' }}>
@@ -401,11 +557,15 @@ function FaqRow({
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <ThumbsUp size={14} color={C.thumbUp} strokeWidth={1.8} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: C.thumbUp }}>{faq.helpfulCount ?? 0}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: C.thumbUp }}>
+              {faq.helpfulCount ?? 0}
+            </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <ThumbsDown size={14} color={C.thumbDown} strokeWidth={1.8} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: C.thumbDown }}>{faq.unhelpfulCount ?? 0}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: C.thumbDown }}>
+              {faq.unhelpfulCount ?? 0}
+            </span>
           </div>
         </div>
 
@@ -415,14 +575,28 @@ function FaqRow({
             <button
               type="button"
               onClick={onToggleFlagExpand}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', fontFamily: 'inherit' }}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+                textAlign: 'left',
+                fontFamily: 'inherit',
+              }}
             >
-              <span style={{
-                fontSize: 12, fontWeight: 700, padding: '2px 10px', borderRadius: 20,
-                background: flagExpanded ? C.flagBadge.fg : C.flagBadge.bg,
-                color: flagExpanded ? '#fff' : C.flagBadge.fg,
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-              }}>
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  padding: '2px 10px',
+                  borderRadius: 20,
+                  background: flagExpanded ? C.flagBadge.fg : C.flagBadge.bg,
+                  color: flagExpanded ? '#fff' : C.flagBadge.fg,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
                 Flagged
                 {flagExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
               </span>
@@ -442,34 +616,86 @@ function FaqRow({
               <ABtn
                 label={expanded ? 'Hide answer' : 'View answer'}
                 onClick={onToggleExpand}
-                bg={C.actionEye.bg} fg={C.actionEye.fg} border={C.actionEye.border}
+                bg={C.actionEye.bg}
+                fg={C.actionEye.fg}
+                border={C.actionEye.border}
               >
                 <Eye size={15} strokeWidth={1.8} />
               </ABtn>
-              <ABtn label="Edit" onClick={onEdit} bg={C.actionEdit.bg} fg={C.actionEdit.fg} border={C.actionEdit.border}>
+              <ABtn
+                label="Edit"
+                onClick={onEdit}
+                bg={C.actionEdit.bg}
+                fg={C.actionEdit.fg}
+                border={C.actionEdit.border}
+              >
                 <Pencil size={15} strokeWidth={1.8} />
               </ABtn>
               <ABtn
                 label="Delete (click to confirm)"
                 onClick={() => setConfirmingDelete(true)}
-                bg={C.actionDel.bg} fg={C.actionDel.fg} border={C.actionDel.border}
+                bg={C.actionDel.bg}
+                fg={C.actionDel.fg}
+                border={C.actionDel.border}
               >
                 <Trash2 size={15} strokeWidth={1.8} />
               </ABtn>
             </>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger)', borderRadius: 10, padding: '5px 10px' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-danger)', whiteSpace: 'nowrap' }}>Delete?</span>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                background: 'var(--color-danger-bg)',
+                border: '1px solid var(--color-danger)',
+                borderRadius: 10,
+                padding: '5px 10px',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: 'var(--color-danger)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Delete?
+              </span>
               <button
-                onClick={() => { deleteFaq.mutate(faq.id); setConfirmingDelete(false); }}
+                onClick={() => {
+                  deleteFaq.mutate(faq.id);
+                  setConfirmingDelete(false);
+                }}
                 disabled={deleteFaq.isPending}
-                style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: 'none', background: 'var(--color-danger)', color: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: '3px 10px',
+                  borderRadius: 6,
+                  border: 'none',
+                  background: 'var(--color-danger)',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
               >
                 Yes
               </button>
               <button
                 onClick={() => setConfirmingDelete(false)}
-                style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-card)', color: 'var(--color-text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: '3px 10px',
+                  borderRadius: 6,
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-card)',
+                  color: 'var(--color-text-muted)',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
               >
                 Cancel
               </button>
@@ -480,23 +706,23 @@ function FaqRow({
 
       {/* Expanded answer */}
       {expanded && (
-        <div style={{
-          padding: '16px 20px 16px 80px',
-          background: 'var(--color-bg)',
-          borderBottom: isLast && !flagExpanded ? 'none' : `1px solid ${C.border}`,
-          fontSize: 13, color: 'var(--color-text)', lineHeight: 1.7, whiteSpace: 'pre-wrap',
-        }}>
+        <div
+          style={{
+            padding: '16px 20px 16px 80px',
+            background: 'var(--color-bg)',
+            borderBottom: isLast && !flagExpanded ? 'none' : `1px solid ${C.border}`,
+            fontSize: 13,
+            color: 'var(--color-text)',
+            lineHeight: 1.7,
+            whiteSpace: 'pre-wrap',
+          }}
+        >
           {faq.answer}
         </div>
       )}
 
       {/* Expanded flag feedback */}
-      {flagExpanded && flagCount > 0 && (
-        <FaqFlagPanel
-          faqId={faq.id}
-          isLast={isLast}
-        />
-      )}
+      {flagExpanded && flagCount > 0 && <FaqFlagPanel faqId={faq.id} isLast={isLast} />}
     </>
   );
 }
@@ -524,48 +750,61 @@ function FaqFlagPanel({ faqId, isLast }: { faqId: string; isLast: boolean }) {
   const update = useUpdateFlagStatus();
   const [spurtiMap, setSpurtiMap] = useState<Record<string, number>>({});
 
-  const flags = useMemo(() =>
-    [...(open ?? []), ...(underReview ?? [])]
-      .filter((f) => f.entityId === faqId)
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
+  const flags = useMemo(
+    () =>
+      [...(open ?? []), ...(underReview ?? [])]
+        .filter((f) => f.entityId === faqId)
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
     [open, underReview, faqId],
   );
 
   const getSpurti = (id: string) => spurtiMap[id] ?? 0;
-  const setSpurti = (id: string, pts: number) =>
-    setSpurtiMap((m) => ({ ...m, [id]: pts }));
+  const setSpurti = (id: string, pts: number) => setSpurtiMap((m) => ({ ...m, [id]: pts }));
 
   return (
-    <div style={{
-      padding: '12px 20px 14px 20px',
-      background: 'var(--color-danger-bg)',
-      borderTop: `1px solid var(--color-danger)`,
-      borderBottom: isLast ? 'none' : `1px solid ${C.border}`,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 10,
-    }}>
+    <div
+      style={{
+        padding: '12px 20px 14px 20px',
+        background: 'var(--color-danger-bg)',
+        borderTop: `1px solid var(--color-danger)`,
+        borderBottom: isLast ? 'none' : `1px solid ${C.border}`,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+      }}
+    >
       {flags.length === 0 && (
         <div style={{ fontSize: 12, color: C.muted }}>No open flags for this FAQ.</div>
       )}
 
       {flags.map((f) => (
-        <div key={f.id} style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr auto auto',
-          gap: 0,
-          background: 'var(--color-card)',
-          border: `1px solid var(--color-border)`,
-          borderRadius: 10,
-          overflow: 'hidden',
-        }}>
+        <div
+          key={f.id}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr auto auto',
+            gap: 0,
+            background: 'var(--color-card)',
+            border: `1px solid var(--color-border)`,
+            borderRadius: 10,
+            overflow: 'hidden',
+          }}
+        >
           {/* Left: Student Feedback */}
           <div style={{ padding: '14px 18px', borderRight: `1px solid var(--color-border)` }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 6 }}>
               Student Feedback
             </div>
             {f.details && (
-              <div style={{ fontSize: 12, color: C.mutedLabel, fontStyle: 'italic', lineHeight: 1.6, marginBottom: 6 }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: C.mutedLabel,
+                  fontStyle: 'italic',
+                  lineHeight: 1.6,
+                  marginBottom: 6,
+                }}
+              >
                 "{f.details}"
               </div>
             )}
@@ -580,8 +819,27 @@ function FaqFlagPanel({ faqId, isLast }: { faqId: string; isLast: boolean }) {
           </div>
 
           {/* Middle: Spurti reward */}
-          <div style={{ padding: '14px 20px', borderRight: `1px solid var(--color-border)`, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8, minWidth: 260 }}>
-            <span style={{ fontSize: 11, color: 'var(--color-primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div
+            style={{
+              padding: '14px 20px',
+              borderRight: `1px solid var(--color-border)`,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              gap: 8,
+              minWidth: 260,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 11,
+                color: 'var(--color-primary)',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
               <Sparkles size={11} /> Spurti reward for {f.reportedBy.name}:
             </span>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -591,7 +849,12 @@ function FaqFlagPanel({ faqId, isLast }: { faqId: string; isLast: boolean }) {
                   type="button"
                   onClick={() => setSpurti(f.id, opt.value)}
                   style={{
-                    fontSize: 12, padding: '4px 12px', borderRadius: 20, fontFamily: 'inherit', fontWeight: 600, cursor: 'pointer',
+                    fontSize: 12,
+                    padding: '4px 12px',
+                    borderRadius: 20,
+                    fontFamily: 'inherit',
+                    fontWeight: 600,
+                    cursor: 'pointer',
                     border: `1.5px solid ${getSpurti(f.id) === opt.value ? '#7c3aed' : C.divider}`,
                     background: getSpurti(f.id) === opt.value ? '#ede9fe' : '#fff',
                     color: getSpurti(f.id) === opt.value ? '#7c3aed' : C.muted,
@@ -605,13 +868,37 @@ function FaqFlagPanel({ faqId, isLast }: { faqId: string; isLast: boolean }) {
 
           {/* Right: Actions */}
           <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Button size="sm" variant="success" disabled={update.isPending}
-              onClick={() => update.mutate({ id: f.id, input: { status: 'resolved', resolutionNote: 'Marked resolved by moderator.', spurtiPoints: getSpurti(f.id) } })}
+            <Button
+              size="sm"
+              variant="success"
+              disabled={update.isPending}
+              onClick={() =>
+                update.mutate({
+                  id: f.id,
+                  input: {
+                    status: 'resolved',
+                    resolutionNote: 'Marked resolved by moderator.',
+                    spurtiPoints: getSpurti(f.id),
+                  },
+                })
+              }
             >
               <Check size={12} /> Resolve
             </Button>
-            <Button size="sm" variant="ghost" disabled={update.isPending}
-              onClick={() => update.mutate({ id: f.id, input: { status: 'dismissed', resolutionNote: 'Dismissed by moderator.', spurtiPoints: getSpurti(f.id) } })}
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={update.isPending}
+              onClick={() =>
+                update.mutate({
+                  id: f.id,
+                  input: {
+                    status: 'dismissed',
+                    resolutionNote: 'Dismissed by moderator.',
+                    spurtiPoints: getSpurti(f.id),
+                  },
+                })
+              }
             >
               <X size={12} /> Dismiss
             </Button>
@@ -636,24 +923,56 @@ function flagTimeAgo(iso: string): string {
 
 function ColHead({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', display: 'flex', alignItems: 'center' }}>
+    <div
+      style={{
+        fontSize: 13,
+        fontWeight: 600,
+        color: 'var(--color-text)',
+        display: 'flex',
+        alignItems: 'center',
+      }}
+    >
       {children}
     </div>
   );
 }
 
-function ABtn({ children, label, onClick, bg, fg, border, disabled }: {
-  children: React.ReactNode; label: string; onClick: () => void;
-  bg: string; fg: string; border: string; disabled?: boolean;
+function ABtn({
+  children,
+  label,
+  onClick,
+  bg,
+  fg,
+  border,
+  disabled,
+}: {
+  children: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  bg: string;
+  fg: string;
+  border: string;
+  disabled?: boolean;
 }) {
   return (
     <button
-      aria-label={label} data-tooltip={label} onClick={onClick} disabled={disabled}
+      aria-label={label}
+      data-tooltip={label}
+      onClick={onClick}
+      disabled={disabled}
       style={{
-        width: 36, height: 36, borderRadius: 9, border: `1px solid ${border}`,
-        background: bg, color: fg, cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.4 : 1, display: 'inline-flex',
-        alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        width: 36,
+        height: 36,
+        borderRadius: 9,
+        border: `1px solid ${border}`,
+        background: bg,
+        color: fg,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.4 : 1,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
       }}
     >
       {children}
@@ -661,19 +980,30 @@ function ABtn({ children, label, onClick, bg, fg, border, disabled }: {
   );
 }
 
-function FilterChip({ active, onClick, children }: {
-  active: boolean; onClick: () => void; children: React.ReactNode;
+function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
 }) {
   return (
     <button
       onClick={onClick}
       style={{
-        fontSize: 12, fontWeight: 500, padding: '7px 16px', borderRadius: 20,
+        fontSize: 12,
+        fontWeight: 500,
+        padding: '7px 16px',
+        borderRadius: 20,
         border: `1px solid ${active ? 'var(--color-primary)' : 'var(--color-border)'}`,
         background: active ? 'var(--color-primary)' : 'var(--color-card)',
         color: active ? '#fff' : 'var(--color-text-muted)',
-        cursor: 'pointer', fontFamily: 'inherit',
-        display: 'inline-flex', alignItems: 'center',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        display: 'inline-flex',
+        alignItems: 'center',
       }}
     >
       {children}
@@ -681,20 +1011,36 @@ function FilterChip({ active, onClick, children }: {
   );
 }
 
-function PgBtn({ children, onClick, active, disabled }: {
-  children: React.ReactNode; onClick: () => void; active?: boolean; disabled?: boolean;
+function PgBtn({
+  children,
+  onClick,
+  active,
+  disabled,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  active?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <button
-      onClick={onClick} disabled={disabled}
+      onClick={onClick}
+      disabled={disabled}
       style={{
-        minWidth: 36, height: 36, padding: '0 8px', borderRadius: 8,
+        minWidth: 36,
+        height: 36,
+        padding: '0 8px',
+        borderRadius: 8,
         border: `1px solid ${active ? 'var(--color-primary)' : 'var(--color-border)'}`,
         background: active ? 'var(--color-primary)' : 'var(--color-card)',
         color: active ? '#fff' : disabled ? 'var(--color-text-muted)' : 'var(--color-text)',
-        fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 700 : 400,
+        fontFamily: 'inherit',
+        fontSize: 13,
+        fontWeight: active ? 700 : 400,
         cursor: disabled ? 'not-allowed' : 'pointer',
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
       {children}
@@ -707,8 +1053,8 @@ function PgBtn({ children, onClick, active, disabled }: {
 function statusTokens(status: FaqStatus) {
   const map: Record<FaqStatus, { dotColor: string; pill: { bg: string; fg: string } }> = {
     published: { dotColor: C.dotPublished, pill: C.pillPublished },
-    outdated:  { dotColor: C.dotOutdated,  pill: C.pillOutdated  },
-    draft:     { dotColor: C.dotDraft,     pill: C.pillDraft     },
+    outdated: { dotColor: C.dotOutdated, pill: C.pillOutdated },
+    draft: { dotColor: C.dotDraft, pill: C.pillDraft },
   };
   return map[status] ?? map.draft;
 }
@@ -736,13 +1082,23 @@ function timeAgo(iso: string) {
 }
 
 const labelStyle: React.CSSProperties = {
-  margin: 0, fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 3, letterSpacing: '.2px',
+  margin: 0,
+  fontSize: 10,
+  color: 'var(--color-text-muted)',
+  marginBottom: 3,
+  letterSpacing: '.2px',
 };
 const valueStyle: React.CSSProperties = {
-  margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--color-text)',
+  margin: 0,
+  fontSize: 13,
+  fontWeight: 600,
+  color: 'var(--color-text)',
 };
 const vDivider: React.CSSProperties = {
-  width: 1, alignSelf: 'stretch', background: 'var(--color-border)', margin: '0 0',
+  width: 1,
+  alignSelf: 'stretch',
+  background: 'var(--color-border)',
+  margin: '0 0',
 };
 
 export type { FaqCreateInput };

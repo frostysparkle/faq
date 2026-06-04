@@ -78,10 +78,7 @@ export const moderationService = {
     // Moderator chooses a value in [-1, 5]; falls back to the configured default.
     // Award is idempotent because we early-return above when already approved.
     const pts = input.spurtiPoints ?? SPURTI_POINTS.ANSWER_APPROVED_DEFAULT;
-    await UserModel.updateOne(
-      { _id: answer.answeredBy },
-      { $inc: { spurtiPoints: pts } },
-    );
+    await UserModel.updateOne({ _id: answer.answeredBy }, { $inc: { spurtiPoints: pts } });
 
     // Flip the question to resolved on the first approval and set visibility expiry.
     const question = await QuestionModel.findById(answer.questionId);
@@ -134,7 +131,9 @@ export const moderationService = {
     if (input.note) answer.moderationNote = input.note;
     await answer.save();
 
-    const question = await QuestionModel.findById(answer.questionId).select('title').lean<{ title: string }>();
+    const question = await QuestionModel.findById(answer.questionId)
+      .select('title')
+      .lean<{ title: string }>();
     const questionTitle = question?.title ?? 'a community question';
     void notificationService.create({
       userId: answer.answeredBy.toString(),
@@ -249,14 +248,16 @@ export const moderationService = {
   },
 
   /** Convert an approved answer to a new FAQ draft. Admin only. */
-  async convertToFaq(
-    answerId: string,
-    actorId: string,
-  ): Promise<{ faqId: string }> {
-    const answer = await AnswerModel.findById(answerId).populate('questionId', 'title description category tags');
+  async convertToFaq(answerId: string, actorId: string): Promise<{ faqId: string }> {
+    const answer = await AnswerModel.findById(answerId).populate(
+      'questionId',
+      'title description category tags',
+    );
     if (!answer) throw ApiError.notFound('Answer not found');
-    if (answer.status !== 'approved') throw ApiError.badRequest('Only approved answers can be converted');
-    if (answer.convertedFaqId) throw ApiError.conflict('This answer has already been converted to a FAQ');
+    if (answer.status !== 'approved')
+      throw ApiError.badRequest('Only approved answers can be converted');
+    if (answer.convertedFaqId)
+      throw ApiError.conflict('This answer has already been converted to a FAQ');
 
     const question = answer.questionId as unknown as {
       _id: Types.ObjectId;
@@ -295,10 +296,7 @@ export const moderationService = {
   },
 
   /** Bulk approve multiple pending answers. */
-  async bulkApprove(
-    answerIds: string[],
-    moderatorId: string,
-  ): Promise<{ approved: number }> {
+  async bulkApprove(answerIds: string[], moderatorId: string): Promise<{ approved: number }> {
     let approved = 0;
     for (const id of answerIds) {
       try {
@@ -333,7 +331,8 @@ export const moderationService = {
   async markForFaq(answerId: string): Promise<void> {
     const answer = await AnswerModel.findById(answerId);
     if (!answer) throw ApiError.notFound('Answer not found');
-    if (answer.status !== 'approved') throw ApiError.badRequest('Only approved answers can be marked for FAQ');
+    if (answer.status !== 'approved')
+      throw ApiError.badRequest('Only approved answers can be marked for FAQ');
     answer.eligibleForFaqConversion = true;
     await answer.save();
   },
@@ -343,31 +342,35 @@ export const moderationService = {
     const questions = await QuestionModel.find({ isTrashed: true, type: 'community' })
       .sort({ trashedAt: -1 })
       .populate('askedBy', 'name')
-      .lean<Array<{
-        _id: Types.ObjectId;
-        title: string;
-        description: string;
-        askedBy: { _id: Types.ObjectId; name: string };
-        answerCount: number;
-        trashedAt?: Date;
-        visibilityExpiresAt?: Date;
-        createdAt: Date;
-      }>>();
+      .lean<
+        Array<{
+          _id: Types.ObjectId;
+          title: string;
+          description: string;
+          askedBy: { _id: Types.ObjectId; name: string };
+          answerCount: number;
+          trashedAt?: Date;
+          visibilityExpiresAt?: Date;
+          createdAt: Date;
+        }>
+      >();
 
     if (questions.length === 0) return [];
 
     const questionIds = questions.map((q) => q._id);
     const answers = await AnswerModel.find({ questionId: { $in: questionIds }, status: 'approved' })
       .populate('answeredBy', 'name')
-      .lean<Array<{
-        _id: Types.ObjectId;
-        questionId: Types.ObjectId;
-        body: string;
-        answeredBy: { _id: Types.ObjectId; name: string };
-        upvoteCount: number;
-        downvoteCount: number;
-        createdAt: Date;
-      }>>();
+      .lean<
+        Array<{
+          _id: Types.ObjectId;
+          questionId: Types.ObjectId;
+          body: string;
+          answeredBy: { _id: Types.ObjectId; name: string };
+          upvoteCount: number;
+          downvoteCount: number;
+          createdAt: Date;
+        }>
+      >();
 
     const answersByQuestion = new Map<string, typeof answers>();
     for (const a of answers) {
@@ -420,12 +423,13 @@ export const moderationService = {
   ): Promise<{ faqId: string }> {
     const question = await QuestionModel.findById(questionId);
     if (!question) throw ApiError.notFound('Question not found');
-    if (question.type !== 'community') throw ApiError.badRequest('Only community questions can be converted to FAQ');
+    if (question.type !== 'community')
+      throw ApiError.badRequest('Only community questions can be converted to FAQ');
     if (question.status === 'archived') throw ApiError.conflict('Question is already archived');
 
     const { FaqModel } = await import('../models/Faq.model.js');
 
-    let faqAnswerBody = opts.answerBody ?? question.description;
+    const faqAnswerBody = opts.answerBody ?? question.description;
 
     const faq = await FaqModel.create({
       title: question.title,
@@ -493,4 +497,3 @@ export interface TrashedQuestionRow {
     createdAt: string;
   }>;
 }
-

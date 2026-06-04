@@ -9,11 +9,11 @@ const NOTIFICATION_TYPES = [
 
 const notificationSchema = new Schema(
   {
-    userId:    { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    type:      { type: String, enum: NOTIFICATION_TYPES, required: true },
-    title:     { type: String, required: true, trim: true, maxlength: 200 },
-    body:      { type: String, required: true, trim: true, maxlength: 1000 },
-    read:      { type: Boolean, default: false, index: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    type: { type: String, enum: NOTIFICATION_TYPES, required: true },
+    title: { type: String, required: true, trim: true, maxlength: 200 },
+    body: { type: String, required: true, trim: true, maxlength: 1000 },
+    read: { type: Boolean, default: false, index: true },
     /** Flexible link — usually the community question ID so the UI can navigate there. */
     relatedId: { type: String },
   },

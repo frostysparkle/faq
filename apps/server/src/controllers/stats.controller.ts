@@ -67,4 +67,3 @@ export const statsController = {
     return ok(res, await analyticsService.getVotesTrend());
   },
 };
-

@@ -54,11 +54,12 @@ const CONVERSATIONS: ConversationSeed[] = [
       {
         role: 'assistant',
         content:
-          "Hi Aditya! Congratulations on completing your internship. Your NOC (No Objection Certificate) will be available for download within 7 working days after your internship end date. You can find it under **Documents → NOC Certificate** in the portal.",
+          'Hi Aditya! Congratulations on completing your internship. Your NOC (No Objection Certificate) will be available for download within 7 working days after your internship end date. You can find it under **Documents → NOC Certificate** in the portal.',
       },
       {
         role: 'user',
-        content: 'My end date was 3 days ago. The Documents section still shows "Processing". Is that normal?',
+        content:
+          'My end date was 3 days ago. The Documents section still shows "Processing". Is that normal?',
       },
       {
         role: 'assistant',
@@ -107,7 +108,8 @@ const CONVERSATIONS: ConversationSeed[] = [
       },
       {
         role: 'user',
-        content: 'I checked and it says "Leave Overdraft: 2 days". But I only took 1 leave day this month.',
+        content:
+          'I checked and it says "Leave Overdraft: 2 days". But I only took 1 leave day this month.',
       },
       {
         role: 'assistant',
@@ -151,7 +153,7 @@ const CONVERSATIONS: ConversationSeed[] = [
       {
         role: 'assistant',
         content:
-          "For remote work days, use the **Remote Attendance** button located under **Attendance → Mark Today**. You must mark it before 10:00 AM IST. If you miss the window, it will be recorded as absent for that day.",
+          'For remote work days, use the **Remote Attendance** button located under **Attendance → Mark Today**. You must mark it before 10:00 AM IST. If you miss the window, it will be recorded as absent for that day.',
       },
       {
         role: 'user',
@@ -164,7 +166,8 @@ const CONVERSATIONS: ConversationSeed[] = [
       },
       {
         role: 'user',
-        content: 'Does marking remote attendance count the same as in-office attendance for stipend calculation?',
+        content:
+          'Does marking remote attendance count the same as in-office attendance for stipend calculation?',
       },
       {
         role: 'assistant',
@@ -195,7 +198,8 @@ const CONVERSATIONS: ConversationSeed[] = [
     messages: [
       {
         role: 'user',
-        content: 'I need to take emergency leave for a family bereavement. Does Samagama have a compassionate leave policy?',
+        content:
+          'I need to take emergency leave for a family bereavement. Does Samagama have a compassionate leave policy?',
       },
       {
         role: 'assistant',
@@ -204,7 +208,8 @@ const CONVERSATIONS: ConversationSeed[] = [
       },
       {
         role: 'user',
-        content: 'So will those emergency days be deducted from my monthly leave quota or are they separate?',
+        content:
+          'So will those emergency days be deducted from my monthly leave quota or are they separate?',
       },
       {
         role: 'assistant',
@@ -227,7 +232,7 @@ const CONVERSATIONS: ConversationSeed[] = [
       {
         role: 'assistant',
         content:
-          '✅ Your issue has been escalated to the moderation team. They\'ll review it shortly.\n\n**Summary:** Student Arjun is requesting clarification on the compassionate/bereavement leave policy — specifically whether emergency leave days are deducted from the monthly quota or handled separately, and whether provisional approvals are available. This topic is not covered in the current FAQ and requires HR guidance.',
+          "✅ Your issue has been escalated to the moderation team. They'll review it shortly.\n\n**Summary:** Student Arjun is requesting clarification on the compassionate/bereavement leave policy — specifically whether emergency leave days are deducted from the monthly quota or handled separately, and whether provisional approvals are available. This topic is not covered in the current FAQ and requires HR guidance.",
       },
     ],
   },
@@ -242,7 +247,8 @@ const CONVERSATIONS: ConversationSeed[] = [
     messages: [
       {
         role: 'user',
-        content: 'I need my internship completion certificate for a job application. Where do I get it?',
+        content:
+          'I need my internship completion certificate for a job application. Where do I get it?',
       },
       {
         role: 'assistant',
@@ -256,7 +262,7 @@ const CONVERSATIONS: ConversationSeed[] = [
       {
         role: 'assistant',
         content:
-          "A greyed-out download button usually means one of two things: (1) the 5-working-day processing window has not elapsed yet, or (2) there is a pending item on your account such as an unsubmitted exit report or outstanding attendance correction. Check **Profile → Pending Actions** to see if anything is blocking generation.",
+          'A greyed-out download button usually means one of two things: (1) the 5-working-day processing window has not elapsed yet, or (2) there is a pending item on your account such as an unsubmitted exit report or outstanding attendance correction. Check **Profile → Pending Actions** to see if anything is blocking generation.',
       },
       {
         role: 'user',
@@ -300,7 +306,8 @@ const CONVERSATIONS: ConversationSeed[] = [
       },
       {
         role: 'user',
-        content: 'What is the deadline to apply for an extension? My current end date is in 10 days.',
+        content:
+          'What is the deadline to apply for an extension? My current end date is in 10 days.',
       },
       {
         role: 'assistant',
@@ -344,7 +351,7 @@ const CONVERSATIONS: ConversationSeed[] = [
       {
         role: 'assistant',
         content:
-          "VINS stands for Virtual Internship Navigation System. It is the task and milestone tracking module within the Samagama portal where you log your daily work, submit weekly reports, and view assignments set by your mentor. You can access it from the main dashboard under the **VINS** tab in the left sidebar.",
+          'VINS stands for Virtual Internship Navigation System. It is the task and milestone tracking module within the Samagama portal where you log your daily work, submit weekly reports, and view assignments set by your mentor. You can access it from the main dashboard under the **VINS** tab in the left sidebar.',
       },
       {
         role: 'user',
@@ -357,7 +364,8 @@ const CONVERSATIONS: ConversationSeed[] = [
       },
       {
         role: 'user',
-        content: 'It has been 4 days already. I emailed my mentor and they said they already activated it.',
+        content:
+          'It has been 4 days already. I emailed my mentor and they said they already activated it.',
       },
       {
         role: 'assistant',
@@ -366,7 +374,8 @@ const CONVERSATIONS: ConversationSeed[] = [
       },
       {
         role: 'user',
-        content: 'Logging out and back in worked! Now I can see my tasks. How do I submit a weekly report?',
+        content:
+          'Logging out and back in worked! Now I can see my tasks. How do I submit a weekly report?',
       },
       {
         role: 'assistant',
@@ -380,7 +389,7 @@ const CONVERSATIONS: ConversationSeed[] = [
       {
         role: 'assistant',
         content:
-          "Missing a weekly report is flagged to your mentor and recorded in your performance log. Two or more missed reports in a month may affect your final evaluation rating. If you know in advance that you will miss a deadline, inform your mentor before the Friday cutoff so they can note a valid reason against the record.",
+          'Missing a weekly report is flagged to your mentor and recorded in your performance log. Two or more missed reports in a month may affect your final evaluation rating. If you know in advance that you will miss a deadline, inform your mentor before the Friday cutoff so they can note a valid reason against the record.',
       },
     ],
   },
@@ -411,7 +420,7 @@ const CONVERSATIONS: ConversationSeed[] = [
       {
         role: 'assistant',
         content:
-          "The portal FAQ does not document a specific exception for medical emergencies under the standard leave reset policy. However, if you have a documented medical situation, it is worth discussing with your HR coordinator — they may be able to apply a discretionary adjustment outside the automated system.",
+          'The portal FAQ does not document a specific exception for medical emergencies under the standard leave reset policy. However, if you have a documented medical situation, it is worth discussing with your HR coordinator — they may be able to apply a discretionary adjustment outside the automated system.',
       },
       {
         role: 'user',
@@ -462,7 +471,8 @@ const CONVERSATIONS: ConversationSeed[] = [
       },
       {
         role: 'user',
-        content: 'I tried my college email and it worked! Now I have a new password. But the portal says my account is "Inactive".',
+        content:
+          'I tried my college email and it worked! Now I have a new password. But the portal says my account is "Inactive".',
       },
       {
         role: 'assistant',
@@ -471,7 +481,8 @@ const CONVERSATIONS: ConversationSeed[] = [
       },
       {
         role: 'user',
-        content: 'Found the onboarding email in an old folder. Activated successfully. I can log in now!',
+        content:
+          'Found the onboarding email in an old folder. Activated successfully. I can log in now!',
       },
       {
         role: 'assistant',
@@ -498,7 +509,7 @@ const CONVERSATIONS: ConversationSeed[] = [
       {
         role: 'assistant',
         content:
-          'Stipends are processed on the 5th of every month for the previous month\'s attendance. For example, your June stipend (covering June attendance) will be credited on July 5th. Credits usually appear in your registered bank account by end of business on that date.',
+          "Stipends are processed on the 5th of every month for the previous month's attendance. For example, your June stipend (covering June attendance) will be credited on July 5th. Credits usually appear in your registered bank account by end of business on that date.",
       },
       {
         role: 'user',
@@ -542,16 +553,18 @@ const CONVERSATIONS: ConversationSeed[] = [
     messages: [
       {
         role: 'user',
-        content: 'I accidentally submitted my weekly VINS report to the wrong project. Can I delete or recall it?',
+        content:
+          'I accidentally submitted my weekly VINS report to the wrong project. Can I delete or recall it?',
       },
       {
         role: 'assistant',
         content:
-          "Hi Deepika! I understand the urgency. Once a VINS weekly report is submitted, the portal does not currently show a self-service delete or recall option. However, you may be able to submit a correction report for the same week to overwrite the earlier entry — try **VINS → Weekly Reports → New Report** and select the same reporting week to see if it allows resubmission.",
+          'Hi Deepika! I understand the urgency. Once a VINS weekly report is submitted, the portal does not currently show a self-service delete or recall option. However, you may be able to submit a correction report for the same week to overwrite the earlier entry — try **VINS → Weekly Reports → New Report** and select the same reporting week to see if it allows resubmission.',
       },
       {
         role: 'user',
-        content: 'It does not let me submit for the same week — it says "Report already exists for this period".',
+        content:
+          'It does not let me submit for the same week — it says "Report already exists for this period".',
       },
       {
         role: 'assistant',
@@ -590,7 +603,8 @@ const CONVERSATIONS: ConversationSeed[] = [
     messages: [
       {
         role: 'user',
-        content: 'What is the Certificate of Appreciation? Is it different from the completion certificate?',
+        content:
+          'What is the Certificate of Appreciation? Is it different from the completion certificate?',
       },
       {
         role: 'assistant',
@@ -661,7 +675,7 @@ async function seed(): Promise<void> {
 
     // The query is the user turn immediately before the rated assistant turn.
     const queryMsg = conv.messages[conv.ratedMessageIndex - 1];
-    const query = queryMsg?.content ?? conv.messages.find(m => m.role === 'user')?.content ?? '';
+    const query = queryMsg?.content ?? conv.messages.find((m) => m.role === 'user')?.content ?? '';
 
     await ChatFeedbackModel.findOneAndUpdate(
       { userId: user._id, query },

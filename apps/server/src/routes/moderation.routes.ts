@@ -28,10 +28,7 @@ router.patch(
 
 // FAQ candidates (approved answers eligible for conversion)
 router.get('/faq-candidates', asyncHandler(moderationController.listFaqCandidates));
-router.post(
-  '/faq-candidates/:id/convert',
-  asyncHandler(moderationController.convertToFaq),
-);
+router.post('/faq-candidates/:id/convert', asyncHandler(moderationController.convertToFaq));
 router.patch('/answers/:id/mark-for-faq', asyncHandler(moderationController.markForFaq));
 
 // Bulk operations
@@ -48,4 +45,3 @@ router.get('/trash', asyncHandler(moderationController.listTrash));
 router.patch('/trash/:id/restore', asyncHandler(moderationController.restoreFromTrash));
 
 export const moderationRouter = router;
-

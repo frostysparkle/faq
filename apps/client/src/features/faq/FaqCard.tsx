@@ -8,14 +8,14 @@ import { useFaqFeedback, useRecordFaqView } from './queries';
 
 const STATUS_DOT: Record<string, string> = {
   published: '#16a34a',
-  draft:     '#6b7280',
-  outdated:  '#d97706',
+  draft: '#6b7280',
+  outdated: '#d97706',
 };
 
 const CARD_COLOR: Record<string, string> = {
   published: 'mod-card-blue',
-  outdated:  'mod-card-orange',
-  draft:     'mod-card-blue',
+  outdated: 'mod-card-orange',
+  draft: 'mod-card-blue',
 };
 
 function timeAgo(isoDate: string): string {
@@ -40,7 +40,9 @@ function formatCount(n: number): string {
 }
 
 function Pipe() {
-  return <span style={{ margin: '0 8px', color: 'var(--color-border)', userSelect: 'none' }}>|</span>;
+  return (
+    <span style={{ margin: '0 8px', color: 'var(--color-border)', userSelect: 'none' }}>|</span>
+  );
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -64,11 +66,15 @@ export function FaqCard({ faq, role, expanded: expandedProp, onToggle }: FaqCard
   const [popping, setPopping] = useState<'helpful' | 'unhelpful' | null>(null);
 
   const recordView = useRecordFaqView();
-  const feedback   = useFaqFeedback(faq.id);
+  const feedback = useFaqFeedback(faq.id);
 
   const toggle = () => {
     const isOpening = !expanded;
-    if (onToggle) { onToggle(); } else { setExpandedInternal(isOpening); }
+    if (onToggle) {
+      onToggle();
+    } else {
+      setExpandedInternal(isOpening);
+    }
     if (isOpening && role === 'student') recordView.mutate(faq.id);
   };
 
@@ -84,52 +90,74 @@ export function FaqCard({ faq, role, expanded: expandedProp, onToggle }: FaqCard
   };
 
   const showRawCounts = role === 'moderator' || role === 'admin';
-  const currentVote  = faq.userVote ?? null;
-  const helpfulCount   = faq.helpfulCount   ?? 0;
+  const currentVote = faq.userVote ?? null;
+  const helpfulCount = faq.helpfulCount ?? 0;
   const unhelpfulCount = faq.unhelpfulCount ?? 0;
-  const cardColor      = CARD_COLOR[faq.status] ?? 'mod-card-blue';
-  const dotColor       = STATUS_DOT[faq.status]  ?? '#6b7280';
-  const firstCategory  = faq.categories[0];
+  const cardColor = CARD_COLOR[faq.status] ?? 'mod-card-blue';
+  const dotColor = STATUS_DOT[faq.status] ?? '#6b7280';
+  const firstCategory = faq.categories[0];
 
   return (
     <div className={`mod-card ${cardColor}`}>
-
       {/* ── Always-visible header — single row ───────────────────────── */}
       {/* alignItems:flex-start pins metadata + chevron to the top line when the title wraps */}
       <div style={{ padding: '13px 18px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-
         {/* Title — grows to fill space, wraps to multiple lines if needed */}
         <button
           onClick={toggle}
           aria-expanded={expanded}
           aria-controls={`faq-${faq.id}-body`}
           style={{
-            flex: 1, minWidth: 0,
-            background: 'transparent', border: 'none', padding: 0,
-            textAlign: 'left', cursor: 'pointer', color: 'inherit', font: 'inherit',
+            flex: 1,
+            minWidth: 0,
+            background: 'transparent',
+            border: 'none',
+            padding: 0,
+            textAlign: 'left',
+            cursor: 'pointer',
+            color: 'inherit',
+            font: 'inherit',
           }}
         >
-          <span style={{
-            fontSize: 14, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.45,
-          }}>
+          <span
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: 'var(--color-text)',
+              lineHeight: 1.45,
+            }}
+          >
             {faq.title}
           </span>
         </button>
 
         {/* Metadata — Category → Status (mods) → Timestamp → Views (mods) */}
-        <div style={{
-          display: 'flex', alignItems: 'center',
-          fontSize: 12, color: 'var(--color-text-muted)', flexShrink: 0,
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            fontSize: 12,
+            color: 'var(--color-text-muted)',
+            flexShrink: 0,
+          }}
+        >
           {firstCategory && (
             <>
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                color: 'var(--color-primary)', fontWeight: 600,
-                maxWidth: 120, overflow: 'hidden',
-              }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  color: 'var(--color-primary)',
+                  fontWeight: 600,
+                  maxWidth: 120,
+                  overflow: 'hidden',
+                }}
+              >
                 <Folder size={12} style={{ flexShrink: 0 }} />
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span
+                  style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                >
                   {firstCategory.name}
                 </span>
               </span>
@@ -140,9 +168,26 @@ export function FaqCard({ faq, role, expanded: expandedProp, onToggle }: FaqCard
           {/* Status — mods/admins only */}
           {role !== 'student' && (
             <>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
-                <span style={{ color: dotColor, fontWeight: 600, textTransform: 'capitalize' as const }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: dotColor,
+                    flexShrink: 0,
+                  }}
+                />
+                <span
+                  style={{ color: dotColor, fontWeight: 600, textTransform: 'capitalize' as const }}
+                >
                   {faq.status}
                 </span>
               </span>
@@ -150,15 +195,26 @@ export function FaqCard({ faq, role, expanded: expandedProp, onToggle }: FaqCard
             </>
           )}
 
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
-            <Clock size={12} />{timeAgo(faq.updatedAt)}
+          <span
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}
+          >
+            <Clock size={12} />
+            {timeAgo(faq.updatedAt)}
           </span>
 
           {showRawCounts && faq.viewCount !== undefined && (
             <>
               <Pipe />
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap' }}>
-                <Eye size={12} />{faq.viewCount} views
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 3,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Eye size={12} />
+                {faq.viewCount} views
               </span>
             </>
           )}
@@ -169,18 +225,29 @@ export function FaqCard({ faq, role, expanded: expandedProp, onToggle }: FaqCard
           onClick={toggle}
           aria-label={expanded ? 'Collapse' : 'Expand'}
           style={{
-            flexShrink: 0, background: 'transparent',
-            border: 'none', borderRadius: 8,
-            padding: '4px 6px', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+            background: 'transparent',
+            border: 'none',
+            borderRadius: 8,
+            padding: '4px 6px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             transition: 'background 0.13s',
           }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-input)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-input)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+          }}
         >
-          {expanded
-            ? <ChevronUp   size={15} color="var(--color-text-muted)" />
-            : <ChevronDown size={15} color="var(--color-text-muted)" />}
+          {expanded ? (
+            <ChevronUp size={15} color="var(--color-text-muted)" />
+          ) : (
+            <ChevronDown size={15} color="var(--color-text-muted)" />
+          )}
         </button>
       </div>
 
@@ -190,15 +257,28 @@ export function FaqCard({ faq, role, expanded: expandedProp, onToggle }: FaqCard
           <div style={{ borderTop: '1px solid var(--color-border)', margin: '0 18px' }} />
 
           {/* Answer text */}
-          <div style={{
-            padding: '14px 18px 12px',
-            fontSize: 14, color: 'var(--color-text)', lineHeight: 1.7, whiteSpace: 'pre-wrap',
-          }}>
+          <div
+            style={{
+              padding: '14px 18px 12px',
+              fontSize: 14,
+              color: 'var(--color-text)',
+              lineHeight: 1.7,
+              whiteSpace: 'pre-wrap',
+            }}
+          >
             {faq.answer}
           </div>
 
           {/* Vote bar — interactive for students, read-only for mods/admins */}
-          <div style={{ padding: '10px 18px 14px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div
+            style={{
+              padding: '10px 18px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              flexWrap: 'wrap',
+            }}
+          >
             <YtVoteBar
               helpfulCount={helpfulCount}
               unhelpfulCount={unhelpfulCount}
@@ -208,9 +288,7 @@ export function FaqCard({ faq, role, expanded: expandedProp, onToggle }: FaqCard
               isPending={feedback.isPending}
               onVote={role === 'student' ? handleVote : null}
             />
-            {role === 'student' && (
-              <FlagFaqButton faqId={faq.id} faqUpdatedAt={faq.updatedAt} />
-            )}
+            {role === 'student' && <FlagFaqButton faqId={faq.id} faqUpdatedAt={faq.updatedAt} />}
           </div>
         </div>
       )}
@@ -239,9 +317,9 @@ function YtVoteBar({
   isPending: boolean;
   onVote: ((r: 'helpful' | 'unhelpful') => void) | null;
 }) {
-  const likeActive    = currentVote === 'helpful';
+  const likeActive = currentVote === 'helpful';
   const dislikeActive = currentVote === 'unhelpful';
-  const readOnly      = onVote === null;
+  const readOnly = onVote === null;
 
   const btnBase: React.CSSProperties = {
     display: 'inline-flex',
@@ -282,19 +360,21 @@ function YtVoteBar({
           background: likeActive ? 'rgba(22, 163, 74, 0.13)' : 'transparent',
           color: likeActive
             ? '#16a34a'
-            : (isPending && pendingRating !== 'helpful')
+            : isPending && pendingRating !== 'helpful'
               ? 'var(--color-text-muted)'
               : 'var(--color-text)',
           opacity: isPending && pendingRating !== 'helpful' ? 0.55 : 1,
         }}
         onMouseEnter={(e) => {
           if (!readOnly && !isPending)
-            (e.currentTarget as HTMLButtonElement).style.background =
-              likeActive ? 'rgba(22, 163, 74, 0.22)' : 'var(--color-card)';
+            (e.currentTarget as HTMLButtonElement).style.background = likeActive
+              ? 'rgba(22, 163, 74, 0.22)'
+              : 'var(--color-card)';
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background =
-            likeActive ? 'rgba(22, 163, 74, 0.13)' : 'transparent';
+          (e.currentTarget as HTMLButtonElement).style.background = likeActive
+            ? 'rgba(22, 163, 74, 0.13)'
+            : 'transparent';
         }}
       >
         <span
@@ -339,19 +419,21 @@ function YtVoteBar({
           background: dislikeActive ? 'rgba(220, 38, 38, 0.10)' : 'transparent',
           color: dislikeActive
             ? '#dc2626'
-            : (isPending && pendingRating !== 'unhelpful')
+            : isPending && pendingRating !== 'unhelpful'
               ? 'var(--color-text-muted)'
               : 'var(--color-text)',
           opacity: isPending && pendingRating !== 'unhelpful' ? 0.55 : 1,
         }}
         onMouseEnter={(e) => {
           if (!readOnly && !isPending)
-            (e.currentTarget as HTMLButtonElement).style.background =
-              dislikeActive ? 'rgba(220, 38, 38, 0.18)' : 'var(--color-card)';
+            (e.currentTarget as HTMLButtonElement).style.background = dislikeActive
+              ? 'rgba(220, 38, 38, 0.18)'
+              : 'var(--color-card)';
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background =
-            dislikeActive ? 'rgba(220, 38, 38, 0.10)' : 'transparent';
+          (e.currentTarget as HTMLButtonElement).style.background = dislikeActive
+            ? 'rgba(220, 38, 38, 0.10)'
+            : 'transparent';
         }}
       >
         <span

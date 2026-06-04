@@ -18,21 +18,34 @@
   color: #ffffff;
   border: none;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.35), 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 6px 20px rgba(124, 58, 237, 0.35),
+    0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
   padding: 0;
 }
 .ym-launcher:hover {
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
   filter: none;
   transform: translateY(-2px);
-  box-shadow: 0 10px 26px rgba(124, 58, 237, 0.45), 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 10px 26px rgba(124, 58, 237, 0.45),
+    0 2px 4px rgba(0, 0, 0, 0.1);
 }
-.ym-launcher:active { transform: translateY(0); }
-.ym-launcher svg { width: 26px; height: 26px; display: block; }
+.ym-launcher:active {
+  transform: translateY(0);
+}
+.ym-launcher svg {
+  width: 26px;
+  height: 26px;
+  display: block;
+}
 
 /* Tooltip — appears to the left of the launcher on hover */
 .ym-launcher-tooltip {
@@ -62,7 +75,9 @@
   border-left-color: #7c3aed;
 }
 .ym-launcher:hover .ym-launcher-tooltip,
-.ym-launcher:focus-visible .ym-launcher-tooltip { opacity: 1; }
+.ym-launcher:focus-visible .ym-launcher-tooltip {
+  opacity: 1;
+}
 
 /* ── 2. Chat panel container ──────────────────────────────────────────── */
 .yaksha-mini {
@@ -78,7 +93,9 @@
   max-height: calc(100vh - 2rem);
   background: var(--color-card);
   border-radius: 14px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.22),
+    0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -87,8 +104,14 @@
 }
 
 @keyframes ym-slide-up {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0);    }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ── 3. Header bar ────────────────────────────────────────────────────── */
@@ -119,7 +142,10 @@
   flex: 0 0 auto;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
-.yaksha-mini-head .ym-avatar svg { width: 22px; height: 22px; }
+.yaksha-mini-head .ym-avatar svg {
+  width: 22px;
+  height: 22px;
+}
 .yaksha-mini-head .ym-title-stack {
   display: flex;
   flex-direction: column;
@@ -163,7 +189,9 @@
   padding: 0;
   transition: background 0.15s ease;
 }
-.yaksha-mini-head .ym-close:hover { background: rgba(255, 255, 255, 0.2); }
+.yaksha-mini-head .ym-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
 
 /* ── 4. Chat log area ─────────────────────────────────────────────────── */
 .yaksha-mini-log {
@@ -193,7 +221,9 @@
 }
 
 /* User messages — right-aligned, primary colour */
-.ym-msg.user { justify-content: flex-end; }
+.ym-msg.user {
+  justify-content: flex-end;
+}
 .ym-msg.user .ym-bubble {
   background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   color: #ffffff;
@@ -201,7 +231,9 @@
 }
 
 /* Assistant messages — left-aligned, card surface */
-.ym-msg.assistant { justify-content: flex-start; }
+.ym-msg.assistant {
+  justify-content: flex-start;
+}
 .ym-msg.assistant .ym-bubble {
   background: var(--color-card);
   color: var(--color-text);
@@ -237,12 +269,24 @@
   border-radius: 50%;
   animation: ym-blink 1.2s infinite ease-in-out both;
 }
-.ym-dots span:nth-child(2) { animation-delay: 0.2s; }
-.ym-dots span:nth-child(3) { animation-delay: 0.4s; }
+.ym-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.ym-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 @keyframes ym-blink {
-  0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); }
-  40%           { opacity: 1;    transform: scale(1);     }
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Source pills (below assistant messages) */
@@ -284,7 +328,9 @@
   background: none;
   color: var(--color-text-muted);
 }
-.ym-fb-btn:hover { border-color: var(--color-text-muted); }
+.ym-fb-btn:hover {
+  border-color: var(--color-text-muted);
+}
 .ym-fb-btn.active-helpful {
   color: var(--color-success);
   border-color: var(--color-success);
@@ -320,7 +366,7 @@
   background: var(--color-card);
   border-top: 1px solid var(--color-border);
 }
-.yaksha-mini-form input[type="text"] {
+.yaksha-mini-form input[type='text'] {
   flex: 1 1 auto;
   width: 100%;
   font-family: inherit;
@@ -332,9 +378,11 @@
   border-radius: 999px;
   -webkit-appearance: none;
   appearance: none;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
-.yaksha-mini-form input[type="text"]:focus {
+.yaksha-mini-form input[type='text']:focus {
   outline: none;
   border-color: var(--color-primary);
   background: var(--color-card);
@@ -352,7 +400,9 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease;
   box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
 }
 .yaksha-mini-form .ym-send-btn:hover {
@@ -364,7 +414,10 @@
   cursor: not-allowed;
   box-shadow: none;
 }
-.yaksha-mini-form .ym-send-btn svg { width: 17px; height: 17px; }
+.yaksha-mini-form .ym-send-btn svg {
+  width: 17px;
+  height: 17px;
+}
 
 /* ── 7. Footer disclaimer ─────────────────────────────────────────────── */
 .yaksha-mini-foot {
@@ -383,8 +436,16 @@
 
 /* ── 8. Mobile responsive ─────────────────────────────────────────────── */
 @media (max-width: 560px) {
-  .ym-launcher { right: 1rem; bottom: 1rem; width: 56px; height: 56px; }
-  .ym-launcher svg { width: 24px; height: 24px; }
+  .ym-launcher {
+    right: 1rem;
+    bottom: 1rem;
+    width: 56px;
+    height: 56px;
+  }
+  .ym-launcher svg {
+    width: 24px;
+    height: 24px;
+  }
 
   .yaksha-mini {
     right: 0;
@@ -403,11 +464,23 @@
   z-index: 9200;
 }
 .ym-resize-handle.top {
-  top: -3px; left: 0; right: 0; height: 6px; cursor: ns-resize;
+  top: -3px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
 }
 .ym-resize-handle.left {
-  top: 0; left: -3px; bottom: 0; width: 6px; cursor: ew-resize;
+  top: 0;
+  left: -3px;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
 }
 .ym-resize-handle.top-left {
-  top: -4px; left: -4px; width: 12px; height: 12px; cursor: nwse-resize;
+  top: -4px;
+  left: -4px;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
 }

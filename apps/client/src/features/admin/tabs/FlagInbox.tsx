@@ -34,8 +34,7 @@ export function FlagInbox() {
   if (live.length === 0) return null;
 
   const getSpurti = (id: string) => spurtiMap[id] ?? 0;
-  const setSpurti = (id: string, pts: number) =>
-    setSpurtiMap((m) => ({ ...m, [id]: pts }));
+  const setSpurti = (id: string, pts: number) => setSpurtiMap((m) => ({ ...m, [id]: pts }));
 
   return (
     <Card style={{ marginBottom: 12, borderColor: 'var(--color-warning)' }}>

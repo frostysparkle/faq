@@ -40,9 +40,12 @@ import { QuestionModel } from '../models/Question.model.js';
 import { CategoryModel } from '../models/Category.model.js';
 // TagModel and AnswerModel must be imported so their schemas are registered
 // with mongoose before qnaService.createQuestion calls populate('tags').
-import { TagModel } from '../models/Tag.model.js'; void TagModel;
-import { AnswerModel } from '../models/Answer.model.js'; void AnswerModel;
-import { FaqModel } from '../models/Faq.model.js'; void FaqModel;
+import { TagModel } from '../models/Tag.model.js';
+void TagModel;
+import { AnswerModel } from '../models/Answer.model.js';
+void AnswerModel;
+import { FaqModel } from '../models/Faq.model.js';
+void FaqModel;
 import { qnaService } from '../services/qna.service.js';
 import { generateEmbedding } from '../services/embedding.service.js';
 
@@ -137,7 +140,7 @@ const STUDENTS: StudentScenario[] = [
       {
         label: 'Q2-B',
         description:
-          'I missed yesterday\'s mail. Today morning when I tried to join the internship main ' +
+          "I missed yesterday's mail. Today morning when I tried to join the internship main " +
           'WhatsApp group, the group is full. Now what should I do?',
         type: 'community',
         duplicateOf: 1, // duplicate of Q1-B (Abhishek's second question)
@@ -251,10 +254,12 @@ async function main() {
   }
 
   // ── Clear any previous test questions from these accounts ──────────────────
-  const studentObjIds = Object.values(userIds).map(id => new Types.ObjectId(id));
+  const studentObjIds = Object.values(userIds).map((id) => new Types.ObjectId(id));
   const deleted = await QuestionModel.deleteMany({ askedBy: { $in: studentObjIds } });
   if (deleted.deletedCount > 0) {
-    console.log(`> Cleared ${deleted.deletedCount} previous test question(s) from these accounts.\n`);
+    console.log(
+      `> Cleared ${deleted.deletedCount} previous test question(s) from these accounts.\n`,
+    );
   }
 
   // ── Keep track of created question IDs by position for duplicate lookup ────
@@ -276,13 +281,10 @@ async function main() {
       const title = q.description.split('.')[0].trim().slice(0, 140);
 
       // ── Step 1: checkExisting ──────────────────────────────────────────────
-      const check = await qnaService.checkExisting(
-        { title, description: q.description },
-        userId,
-      );
+      const check = await qnaService.checkExisting({ title, description: q.description }, userId);
 
-      const faqMatches = check.matchedFaqs.map(f => ({ title: f.title, score: f.score }));
-      const commMatches = check.matchedQuestions.map(m => ({
+      const faqMatches = check.matchedFaqs.map((f) => ({ title: f.title, score: f.score }));
+      const commMatches = check.matchedQuestions.map((m) => ({
         id: m.id,
         title: m.title,
         score: m.score,
@@ -307,9 +309,9 @@ async function main() {
         });
         console.log(
           `**${q.label}** — ${passed ? '✅ FAQ match detected' : '❌ No FAQ match found'}\n` +
-          `- Description: "${truncate(q.description, 80)}"\n` +
-          `- FAQ hit: ${faqMatches[0] ? `"${truncate(faqMatches[0].title, 60)}" (${faqMatches[0].score.toFixed(3)})` : 'none'}\n` +
-          `- Action: Student clicks "This answers it" — no question created.\n`,
+            `- Description: "${truncate(q.description, 80)}"\n` +
+            `- FAQ hit: ${faqMatches[0] ? `"${truncate(faqMatches[0].title, 60)}" (${faqMatches[0].score.toFixed(3)})` : 'none'}\n` +
+            `- Action: Student clicks "This answers it" — no question created.\n`,
         );
         continue;
       }
@@ -317,7 +319,7 @@ async function main() {
       if (q.duplicateOf !== undefined) {
         // This question should be detected as a duplicate of an existing community question.
         const expectedOriginal = postedQuestions[q.duplicateOf];
-        const matchedCorrectly = commMatches.some(m => m.id === expectedOriginal?.id);
+        const matchedCorrectly = commMatches.some((m) => m.id === expectedOriginal?.id);
 
         if (matchedCorrectly && expectedOriginal) {
           // Tag the student to the existing question.
@@ -335,13 +337,13 @@ async function main() {
               passed: true,
               note:
                 `Duplicate detected → "${truncate(expectedOriginal.title, 60)}". ` +
-                `${student.name}'s ID linked via tagMe. Score: ${commMatches.find(m => m.id === expectedOriginal.id)?.score.toFixed(3)}.`,
+                `${student.name}'s ID linked via tagMe. Score: ${commMatches.find((m) => m.id === expectedOriginal.id)?.score.toFixed(3)}.`,
             });
             console.log(
               `**${q.label}** — ✅ Duplicate detected + student tagged\n` +
-              `- Description: "${truncate(q.description, 80)}"\n` +
-              `- Matched: "${truncate(expectedOriginal.title, 60)}" (${commMatches.find(m => m.id === expectedOriginal.id)?.score.toFixed(3)})\n` +
-              `- Action: tagMe called → ${student.name}'s ID linked to ${expectedOriginal.label}.\n`,
+                `- Description: "${truncate(q.description, 80)}"\n` +
+                `- Matched: "${truncate(expectedOriginal.title, 60)}" (${commMatches.find((m) => m.id === expectedOriginal.id)?.score.toFixed(3)})\n` +
+                `- Action: tagMe called → ${student.name}'s ID linked to ${expectedOriginal.label}.\n`,
             );
           } catch (err) {
             results.push({
@@ -356,7 +358,9 @@ async function main() {
               passed: false,
               note: `tagMe failed: ${err instanceof Error ? err.message : String(err)}`,
             });
-            console.log(`**${q.label}** — ❌ tagMe failed: ${err instanceof Error ? err.message : String(err)}\n`);
+            console.log(
+              `**${q.label}** — ❌ tagMe failed: ${err instanceof Error ? err.message : String(err)}\n`,
+            );
           }
         } else {
           // Duplicate not detected — record as failure.
@@ -377,9 +381,9 @@ async function main() {
           });
           console.log(
             `**${q.label}** — ❌ Duplicate NOT detected\n` +
-            `- Description: "${truncate(q.description, 80)}"\n` +
-            `- Expected match: ${expectedOriginal?.label ?? 'unknown'}\n` +
-            `- Community matches found: ${commMatches.length === 0 ? 'none' : `"${truncate(commMatches[0].title, 50)}" (score ${commMatches[0].score.toFixed(3)})`}\n`,
+              `- Description: "${truncate(q.description, 80)}"\n` +
+              `- Expected match: ${expectedOriginal?.label ?? 'unknown'}\n` +
+              `- Community matches found: ${commMatches.length === 0 ? 'none' : `"${truncate(commMatches[0].title, 50)}" (score ${commMatches[0].score.toFixed(3)})`}\n`,
           );
         }
         continue;
@@ -434,9 +438,9 @@ async function main() {
 
         console.log(
           `**${q.label}** — ✅ New question created (index ${postedQuestions.length - 1})\n` +
-          `- Description: "${truncate(q.description, 80)}"\n` +
-          `- FAQ matches: ${faqMatches.length} | Community matches: ${commMatches.length}\n` +
-          `- Question ID: ${createdId} | Embedding stored ✓\n`,
+            `- Description: "${truncate(q.description, 80)}"\n` +
+            `- FAQ matches: ${faqMatches.length} | Community matches: ${commMatches.length}\n` +
+            `- Question ID: ${createdId} | Embedding stored ✓\n`,
         );
       } else {
         results.push({
@@ -460,7 +464,9 @@ async function main() {
   // Verify that tagged students are visible on the original questions.
   // ─────────────────────────────────────────────────────────────────────────
   console.log('\n---\n## Phase 2: Moderator View Validation\n');
-  console.log('Checking that each original question shows the correct number of tagged students.\n');
+  console.log(
+    'Checking that each original question shows the correct number of tagged students.\n',
+  );
 
   for (const posted of postedQuestions) {
     const doc = await QuestionModel.findById(posted.id)
@@ -482,7 +488,7 @@ async function main() {
     }
 
     const taggedCount = doc.taggedStudents?.length ?? 0;
-    const taggedNames = doc.taggedStudents?.map(s => s.name).join(', ') || 'none';
+    const taggedNames = doc.taggedStudents?.map((s) => s.name).join(', ') || 'none';
 
     console.log(`**${posted.label}** — "${truncate(doc.title, 70)}"`);
     console.log(`- Original author: ${doc.askedBy.name} (${doc.askedBy.email})`);
@@ -500,21 +506,27 @@ async function main() {
   const totalCreated = await QuestionModel.countDocuments({
     askedBy: { $in: studentObjIds },
   });
-  const expectedCreated = results.filter(r => r.step === 'NEW_QUESTION' && r.passed).length;
-  const duplicatesPrevented = results.filter(r => r.step === 'TAGGED' && r.passed).length;
+  const expectedCreated = results.filter((r) => r.step === 'NEW_QUESTION' && r.passed).length;
+  const duplicatesPrevented = results.filter((r) => r.step === 'TAGGED' && r.passed).length;
 
   console.log(`| Metric | Expected | Actual | Pass? |`);
   console.log(`|--------|----------|--------|-------|`);
-  console.log(`| Questions created in DB | ${expectedCreated} | ${totalCreated} | ${totalCreated === expectedCreated ? '✅' : '❌'} |`);
-  console.log(`| Duplicate submissions prevented (tag-me used instead) | ${duplicatesPrevented} | ${duplicatesPrevented} | ✅ |`);
-  console.log(`| FAQ matches resolved without posting | ${results.filter(r => r.step === 'FAQ_MATCH' && r.passed).length} | — | ✅ |`);
+  console.log(
+    `| Questions created in DB | ${expectedCreated} | ${totalCreated} | ${totalCreated === expectedCreated ? '✅' : '❌'} |`,
+  );
+  console.log(
+    `| Duplicate submissions prevented (tag-me used instead) | ${duplicatesPrevented} | ${duplicatesPrevented} | ✅ |`,
+  );
+  console.log(
+    `| FAQ matches resolved without posting | ${results.filter((r) => r.step === 'FAQ_MATCH' && r.passed).length} | — | ✅ |`,
+  );
 
   // ─────────────────────────────────────────────────────────────────────────
   // SUMMARY
   // ─────────────────────────────────────────────────────────────────────────
   console.log('\n---\n## Overall Test Summary\n');
 
-  const passed = results.filter(r => r.passed).length;
+  const passed = results.filter((r) => r.passed).length;
   const total = results.length;
   const pct = Math.round((passed / total) * 100);
 
@@ -542,7 +554,7 @@ async function main() {
   console.log('### Student Accounts for Manual Testing\n');
   console.log('| Name | Email | Password | Role |');
   console.log('|------|-------|----------|------|');
-  STUDENTS.forEach(s => {
+  STUDENTS.forEach((s) => {
     console.log(`| ${s.name} | ${s.email} | Student@2026 | student |`);
   });
   console.log('| Kushagra | kushagra@samagama.test | Moderator@2026 | moderator |');
@@ -556,7 +568,7 @@ async function main() {
     'Verify: "Same query — tag me" button is visible and clickable.',
     'Click "Same query — tag me". Verify: success screen appears ("You\'ve been tagged").',
     'Log in as moderator (Kushagra). Navigate to Community Questions.',
-    'Open Q1-A (Abhishek\'s NOC/offer letter question). Verify: Meena and Harshdeep appear as tagged students.',
+    "Open Q1-A (Abhishek's NOC/offer letter question). Verify: Meena and Harshdeep appear as tagged students.",
     'Log in as Harshdeep. Navigate to Ask a Question.',
     'Type a question similar to Q3-A: "NOC validated but no offer letter after 48 hours". Verify duplicate detected.',
     'Type a question similar to Q1-C (leave/exams question). Verify FAQ match shown and no community question step.',
@@ -575,7 +587,7 @@ async function main() {
   process.exit(passed === total ? 0 : 1);
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error('\n❌ Test run failed:', err);
   process.exit(1);
 });

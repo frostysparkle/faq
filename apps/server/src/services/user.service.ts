@@ -81,11 +81,7 @@ export const userService = {
     };
   },
 
-  async changeRole(
-    userId: string,
-    newRole: UserRole,
-    actorId: string,
-  ): Promise<PublicUserAdmin> {
+  async changeRole(userId: string, newRole: UserRole, actorId: string): Promise<PublicUserAdmin> {
     if (userId === actorId) throw ApiError.badRequest('You cannot change your own role');
 
     const user = await UserModel.findById(userId);
@@ -94,7 +90,8 @@ export const userService = {
     if (user.role === 'admin') throw ApiError.forbidden('System admin accounts cannot be modified');
 
     const previousRole = user.role as UserRole;
-    if (previousRole === newRole) return toPublicUserAdmin(user as Parameters<typeof toPublicUserAdmin>[0]);
+    if (previousRole === newRole)
+      return toPublicUserAdmin(user as Parameters<typeof toPublicUserAdmin>[0]);
 
     user.role = newRole;
 
@@ -124,8 +121,10 @@ export const userService = {
 
     const user = await UserModel.findById(userId);
     if (!user) throw ApiError.notFound('User not found');
-    if (user.role === 'admin') throw ApiError.forbidden('System admin accounts cannot be suspended');
-    if (user.status === 'suspended') return toPublicUserAdmin(user as Parameters<typeof toPublicUserAdmin>[0]);
+    if (user.role === 'admin')
+      throw ApiError.forbidden('System admin accounts cannot be suspended');
+    if (user.status === 'suspended')
+      return toPublicUserAdmin(user as Parameters<typeof toPublicUserAdmin>[0]);
 
     const previousStatus = user.status;
     user.status = 'suspended';
@@ -146,7 +145,8 @@ export const userService = {
   async activateUser(userId: string, actorId: string): Promise<PublicUserAdmin> {
     const user = await UserModel.findById(userId);
     if (!user) throw ApiError.notFound('User not found');
-    if (user.status === 'active') return toPublicUserAdmin(user as Parameters<typeof toPublicUserAdmin>[0]);
+    if (user.status === 'active')
+      return toPublicUserAdmin(user as Parameters<typeof toPublicUserAdmin>[0]);
 
     const previousStatus = user.status;
     user.status = 'active';
@@ -170,12 +170,15 @@ export const userService = {
     const user = await UserModel.findById(userId);
     if (!user) throw ApiError.notFound('User not found');
     if (user.role === 'admin') throw ApiError.forbidden('System admin accounts cannot be deleted');
-    if (user.role !== 'student') throw ApiError.forbidden('Only student accounts can be permanently deleted');
+    if (user.role !== 'student')
+      throw ApiError.forbidden('Only student accounts can be permanently deleted');
 
     const userObjId = user._id;
 
     // Collect owned content IDs for cascade deletion.
-    const ownedQuestions = await QuestionModel.find({ askedBy: userObjId }, '_id').lean<{ _id: unknown }[]>();
+    const ownedQuestions = await QuestionModel.find({ askedBy: userObjId }, '_id').lean<
+      { _id: unknown }[]
+    >();
     const questionIds = ownedQuestions.map((q) => q._id);
 
     const ownedAnswers = await AnswerModel.find(
@@ -190,7 +193,11 @@ export const userService = {
       $or: [{ reportedBy: userObjId }, { entityId: { $in: contentIds } }],
     });
     await ReviewItemModel.deleteMany({
-      $or: [{ assignedTo: userObjId }, { resolvedBy: userObjId }, { entityId: { $in: contentIds } }],
+      $or: [
+        { assignedTo: userObjId },
+        { resolvedBy: userObjId },
+        { entityId: { $in: contentIds } },
+      ],
     });
     await NotificationModel.deleteMany({ userId: userObjId });
     await AnalyticsEventModel.deleteMany({

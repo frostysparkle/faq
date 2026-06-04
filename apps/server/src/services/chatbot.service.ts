@@ -50,7 +50,7 @@ export interface ChatQueryResult {
 interface SessionData {
   userId: string;
   messages: ChatMessage[];
-  fallbackUnlocked: boolean;   // true after a fallback response — unlocks #escalate
+  fallbackUnlocked: boolean; // true after a fallback response — unlocks #escalate
 }
 
 // ─── In-process session cache (30-min idle TTL) ───────────────────────────────
@@ -70,12 +70,12 @@ Rules:
 - Be friendly and professional. Address the student directly.
 - Do NOT repeat the question back.`;
 
-const FALLBACK_STRING = "I don't have an answer for you at the moment. You can escalate it to the backend team: Type #escalate";
+const FALLBACK_STRING =
+  "I don't have an answer for you at the moment. You can escalate it to the backend team: Type #escalate";
 
 // ─── Main chat query ──────────────────────────────────────────────────────────
 
 export const chatbotService = {
-
   /** Process a student message and return Yaksha's response. */
   async processQuery(
     userId: string,
@@ -92,15 +92,28 @@ export const chatbotService = {
     const isEscalate = /^#escalate/i.test(trimmed) && !isForceEscalate;
 
     if (isForceEscalate || (isEscalate && session.fallbackUnlocked)) {
-      return this.handleEscalation(userId, sid, session, trimmed, isForceEscalate ? 'force' : 'standard');
+      return this.handleEscalation(
+        userId,
+        sid,
+        session,
+        trimmed,
+        isForceEscalate ? 'force' : 'standard',
+      );
     }
 
     if (isEscalate && !session.fallbackUnlocked) {
-      const answer = 'Escalation is only available after Yaksha cannot answer your question. Please ask your question first.';
+      const answer =
+        'Escalation is only available after Yaksha cannot answer your question. Please ask your question first.';
       session.messages.push({ role: 'user', content: trimmed });
       session.messages.push({ role: 'assistant', content: answer });
       sessionCache.set(sid, session);
-      return { sessionId: sid, answer, sources: [], fallback_triggered: false, messageIndex: session.messages.length - 1 };
+      return {
+        sessionId: sid,
+        answer,
+        sources: [],
+        fallback_triggered: false,
+        messageIndex: session.messages.length - 1,
+      };
     }
 
     // ── Retrieve FAQ context via embedding + cosine similarity ─────────────────
@@ -112,7 +125,7 @@ export const chatbotService = {
 
     // ── Call LLM ───────────────────────────────────────────────────────────────
     const history = session.messages.slice(-10); // keep last 5 turns (10 messages)
-    const ragContext = sources.map(s => `FAQ: ${s.title}\nAnswer: ${s.answer}`);
+    const ragContext = sources.map((s) => `FAQ: ${s.title}\nAnswer: ${s.answer}`);
 
     const { answer, fallback_triggered } = await callLlm({
       system_instruction: SYSTEM_PROMPT,
@@ -131,7 +144,7 @@ export const chatbotService = {
     return {
       sessionId: sid,
       answer,
-      sources: sources.map(s => ({ id: s.id, title: s.title, similarity: s.similarity })),
+      sources: sources.map((s) => ({ id: s.id, title: s.title, similarity: s.similarity })),
       fallback_triggered,
       messageIndex: session.messages.length - 1,
     };
@@ -145,9 +158,10 @@ export const chatbotService = {
     message: string,
     type: 'standard' | 'force',
   ): Promise<ChatQueryResult> {
-    const forceReason = type === 'force'
-      ? message.replace(/^#forceescalate\s*/i, '').trim() || 'User requested escalation'
-      : 'Chatbot could not answer — student escalating';
+    const forceReason =
+      type === 'force'
+        ? message.replace(/^#forceescalate\s*/i, '').trim() || 'User requested escalation'
+        : 'Chatbot could not answer — student escalating';
 
     let summary = `Issue escalated by student. Reason: ${forceReason}`;
 
@@ -156,7 +170,10 @@ export const chatbotService = {
       try {
         const res = await fetch(`${env.LLM_BASE_URL}/internal/llm/summarize`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.LLM_INTERNAL_SECRET}` },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${env.LLM_INTERNAL_SECRET}`,
+          },
           body: JSON.stringify({
             escalation_type: type === 'force' ? 'force_escalate' : 'escalate',
             force_reason: forceReason,
@@ -173,7 +190,8 @@ export const chatbotService = {
     }
 
     // Record escalation as a ChatFeedback with rating='incorrect' so it lands in the mod inbox.
-    const lastUserMsg = session.messages.filter(m => m.role === 'user').at(-1)?.content ?? message;
+    const lastUserMsg =
+      session.messages.filter((m) => m.role === 'user').at(-1)?.content ?? message;
     await ChatFeedbackModel.create({
       chatSessionId: undefined,
       messageIndex: session.messages.length,
@@ -191,7 +209,14 @@ export const chatbotService = {
     session.fallbackUnlocked = false;
     sessionCache.set(sessionId, session);
 
-    return { sessionId, answer, sources: [], fallback_triggered: false, escalated: true, messageIndex: session.messages.length - 1 };
+    return {
+      sessionId,
+      answer,
+      sources: [],
+      fallback_triggered: false,
+      escalated: true,
+      messageIndex: session.messages.length - 1,
+    };
   },
 
   /** Get all messages in a session for the frontend to restore state. */
@@ -236,7 +261,9 @@ export const chatbotService = {
 
   // ── Admin/mod read paths (unchanged) ──────────────────────────────────────
 
-  async listFeedback(filter: 'all' | 'helpful' | 'unhelpful' | 'archived'): Promise<PublicChatFeedback[]> {
+  async listFeedback(
+    filter: 'all' | 'helpful' | 'unhelpful' | 'archived',
+  ): Promise<PublicChatFeedback[]> {
     const q: Record<string, unknown> = {};
     if (filter === 'archived') {
       q.status = 'archived';
@@ -257,7 +284,7 @@ export const chatbotService = {
       .populate('userId', 'name')
       .lean<PopulatedFeedback[]>();
 
-    return rows.map(f => ({
+    return rows.map((f) => ({
       id: f._id.toString(),
       query: f.query,
       answer: f.answer,
@@ -280,7 +307,10 @@ export const chatbotService = {
     return { total, helpful, unhelpful };
   },
 
-  async updateFeedbackStatus(id: string, status: 'reviewed' | 'actioned' | 'archived'): Promise<void> {
+  async updateFeedbackStatus(
+    id: string,
+    status: 'reviewed' | 'actioned' | 'archived',
+  ): Promise<void> {
     await ChatFeedbackModel.findByIdAndUpdate(id, { $set: { status } });
   },
 
@@ -310,14 +340,14 @@ async function retrieveFaqSources(
     .lean<{ _id: unknown; title: string; answer: string; embedding?: number[] }[]>();
 
   const scored = faqs
-    .filter(f => f.embedding && f.embedding.length === 384)
-    .map(f => ({
+    .filter((f) => f.embedding && f.embedding.length === 384)
+    .map((f) => ({
       id: (f._id as { toString(): string }).toString(),
       title: f.title,
       answer: f.answer,
       similarity: cosineSimilarity(queryEmbedding, f.embedding!),
     }))
-    .filter(r => r.similarity >= opts.threshold)
+    .filter((r) => r.similarity >= opts.threshold)
     .sort((a, b) => b.similarity - a.similarity)
     .slice(0, opts.maxSources);
 
@@ -331,7 +361,7 @@ async function retrieveFaqSources(
       .limit(opts.maxSources)
       .lean<{ _id: unknown; title: string; answer: string }[]>();
 
-    return textResults.map(f => ({
+    return textResults.map((f) => ({
       id: (f._id as { toString(): string }).toString(),
       title: f.title,
       answer: f.answer,
@@ -351,7 +381,6 @@ async function callLlm(opts: {
   current_message: string;
   sources: FaqSource[];
 }): Promise<{ answer: string; fallback_triggered: boolean }> {
-
   if (env.LLM_PROVIDER === 'local-llama' && env.LLM_BASE_URL && env.LLM_INTERNAL_SECRET) {
     return callLlmServer(opts);
   }
@@ -395,11 +424,18 @@ async function callLlmServer(opts: {
 
     if (!res.ok) throw new Error(`LLM server returned ${res.status}`);
 
-    const json = (await res.json()) as { status: string; data: { response_text: string; fallback_triggered: boolean } };
+    const json = (await res.json()) as {
+      status: string;
+      data: { response_text: string; fallback_triggered: boolean };
+    };
     return { answer: json.data.response_text, fallback_triggered: json.data.fallback_triggered };
   } catch (err) {
     logger.warn({ err }, 'LLM server call failed — falling back to mock');
-    return mockLlm({ rag_context: opts.rag_context, current_message: opts.current_message, sources: [] });
+    return mockLlm({
+      rag_context: opts.rag_context,
+      current_message: opts.current_message,
+      sources: [],
+    });
   }
 }
 
@@ -411,27 +447,29 @@ async function callGeminiLlm(opts: {
   sources: FaqSource[];
 }): Promise<{ answer: string; fallback_triggered: boolean }> {
   try {
-    const contextBlock = opts.rag_context.length > 0
-      ? `\n\nAPPROVED FAQ CONTEXT:\n${opts.rag_context.join('\n\n')}`
-      : '';
+    const contextBlock =
+      opts.rag_context.length > 0
+        ? `\n\nAPPROVED FAQ CONTEXT:\n${opts.rag_context.join('\n\n')}`
+        : '';
 
-    const historyContents = opts.conversation_history.map(m => ({
+    const historyContents = opts.conversation_history.map((m) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }],
     }));
 
     const body = {
       system_instruction: { parts: [{ text: opts.system_instruction + contextBlock }] },
-      contents: [
-        ...historyContents,
-        { role: 'user', parts: [{ text: opts.current_message }] },
-      ],
+      contents: [...historyContents, { role: 'user', parts: [{ text: opts.current_message }] }],
       generationConfig: { temperature: 0.2, maxOutputTokens: 500 },
     };
 
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      },
     );
 
     if (!res.ok) throw new Error(`Gemini LLM error: ${res.status}`);
@@ -440,7 +478,8 @@ async function callGeminiLlm(opts: {
       candidates: { content: { parts: { text: string }[] } }[];
     };
     const answer = json.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? FALLBACK_STRING;
-    const fallback_triggered = answer === FALLBACK_STRING || answer.includes("I don't have an answer");
+    const fallback_triggered =
+      answer === FALLBACK_STRING || answer.includes("I don't have an answer");
     return { answer, fallback_triggered };
   } catch (err) {
     logger.warn({ err }, 'Gemini LLM call failed — falling back to mock');
@@ -456,13 +495,17 @@ async function callOllamaLlm(opts: {
   sources: FaqSource[];
 }): Promise<{ answer: string; fallback_triggered: boolean }> {
   try {
-    const contextBlock = opts.rag_context.length > 0
-      ? `\n\nAPPROVED FAQ CONTEXT:\n${opts.rag_context.join('\n\n')}`
-      : '';
+    const contextBlock =
+      opts.rag_context.length > 0
+        ? `\n\nAPPROVED FAQ CONTEXT:\n${opts.rag_context.join('\n\n')}`
+        : '';
 
     const messages = [
       { role: 'system', content: opts.system_instruction + contextBlock },
-      ...opts.conversation_history.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
+      ...opts.conversation_history.map((m) => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content,
+      })),
       { role: 'user', content: opts.current_message },
     ];
 
@@ -482,11 +525,16 @@ async function callOllamaLlm(opts: {
 
     const json = (await res.json()) as { choices: { message: { content: string } }[] };
     const answer = json.choices?.[0]?.message?.content?.trim() ?? FALLBACK_STRING;
-    const fallback_triggered = answer === FALLBACK_STRING || answer.includes("I don't have an answer");
+    const fallback_triggered =
+      answer === FALLBACK_STRING || answer.includes("I don't have an answer");
     return { answer, fallback_triggered };
   } catch (err) {
     logger.warn({ err }, 'Ollama call failed — falling back to mock');
-    return mockLlm({ rag_context: opts.rag_context, current_message: opts.current_message, sources: opts.sources });
+    return mockLlm({
+      rag_context: opts.rag_context,
+      current_message: opts.current_message,
+      sources: opts.sources,
+    });
   }
 }
 
@@ -504,13 +552,14 @@ async function callGroqLlm(opts: {
   sources: FaqSource[];
 }): Promise<{ answer: string; fallback_triggered: boolean }> {
   try {
-    const contextBlock = opts.rag_context.length > 0
-      ? `\n\nAPPROVED FAQ CONTEXT:\n${opts.rag_context.join('\n\n')}`
-      : '';
+    const contextBlock =
+      opts.rag_context.length > 0
+        ? `\n\nAPPROVED FAQ CONTEXT:\n${opts.rag_context.join('\n\n')}`
+        : '';
 
     const messages = [
       { role: 'system', content: opts.system_instruction + contextBlock },
-      ...opts.conversation_history.map(m => ({
+      ...opts.conversation_history.map((m) => ({
         role: m.role === 'assistant' ? 'assistant' : 'user',
         content: m.content,
       })),
@@ -521,7 +570,7 @@ async function callGroqLlm(opts: {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.GROQ_API_KEY}`,
+        Authorization: `Bearer ${env.GROQ_API_KEY}`,
       },
       body: JSON.stringify({
         model: env.GROQ_MODEL,
@@ -536,19 +585,23 @@ async function callGroqLlm(opts: {
 
     const json = (await res.json()) as { choices: { message: { content: string } }[] };
     const answer = json.choices?.[0]?.message?.content?.trim() ?? FALLBACK_STRING;
-    const fallback_triggered = answer === FALLBACK_STRING || answer.includes("I don't have an answer");
+    const fallback_triggered =
+      answer === FALLBACK_STRING || answer.includes("I don't have an answer");
     return { answer, fallback_triggered };
   } catch (err) {
     logger.warn({ err }, 'Groq call failed — falling back to mock');
-    return mockLlm({ rag_context: opts.rag_context, current_message: opts.current_message, sources: opts.sources });
+    return mockLlm({
+      rag_context: opts.rag_context,
+      current_message: opts.current_message,
+      sources: opts.sources,
+    });
   }
 }
 
-function mockLlm(opts: {
-  rag_context: string[];
-  current_message: string;
-  sources: FaqSource[];
-}): { answer: string; fallback_triggered: boolean } {
+function mockLlm(opts: { rag_context: string[]; current_message: string; sources: FaqSource[] }): {
+  answer: string;
+  fallback_triggered: boolean;
+} {
   if (opts.sources.length === 0 || opts.rag_context.length === 0) {
     return { answer: FALLBACK_STRING, fallback_triggered: true };
   }

@@ -32,7 +32,7 @@ import { connectDatabase, disconnectDatabase } from '../config/database.js';
 import { generateEmbedding, cosineSimilarity } from '../services/embedding.service.js';
 import { FaqModel } from '../models/Faq.model.js';
 
-const SEMANTIC_THRESHOLD = 0.50;
+const SEMANTIC_THRESHOLD = 0.5;
 const TOP_K = 3;
 
 // ─── Part 1: FAQ Test Data ────────────────────────────────────────────────────
@@ -128,7 +128,7 @@ const FAQ_TEST_GROUPS: FaqTestGroup[] = [
     variations: [
       'I missed the orientation session today — is there any way to get the recording?',
       'Is there a way to catch up if I was unable to attend the live kickoff session?',
-      'Will the video recording of today\'s session be shared with all interns?',
+      "Will the video recording of today's session be shared with all interns?",
       'I joined the Zoom session late and missed part of it — where can I watch the replay?',
       'Can you please send me the recording of the session I missed yesterday?',
     ],
@@ -136,7 +136,7 @@ const FAQ_TEST_GROUPS: FaqTestGroup[] = [
 
   // ── FAQ 8 ──────────────────────────────────────────────────────────────────
   {
-    faqTitle: 'What happens after I send my acceptance? My dashboard doesn\'t update.',
+    faqTitle: "What happens after I send my acceptance? My dashboard doesn't update.",
     variations: [
       'I sent the signed offer letter 3 days ago but my dashboard still shows offer letter pending',
       'After sending the acceptance mail how long does the dashboard take to reflect the change?',
@@ -192,7 +192,8 @@ const COMMUNITY_TEST_GROUPS: CommunityTestGroup[] = [
   // ── Community Q 1 (from Unique Question 2 in troubleshoot file) ────────────
   {
     groupIndex: 0,
-    originalQuestion: 'My dashboard is still showing the interview status as Incomplete even though I completed the interview successfully',
+    originalQuestion:
+      'My dashboard is still showing the interview status as Incomplete even though I completed the interview successfully',
     duplicateVariations: [
       'I successfully completed my interview and the chatbot confirmed it but dashboard still shows Incomplete',
       'My dashboard is still showing interview as Incomplete — please verify and update my status',
@@ -205,7 +206,8 @@ const COMMUNITY_TEST_GROUPS: CommunityTestGroup[] = [
   // ── Community Q 2 (from Unique Question 3 in troubleshoot file) ────────────
   {
     groupIndex: 1,
-    originalQuestion: 'My interview status shows Interview Interrupted even though I completed it and Yaksha confirmed all answers were saved',
+    originalQuestion:
+      'My interview status shows Interview Interrupted even though I completed it and Yaksha confirmed all answers were saved',
     duplicateVariations: [
       'My Yaksha interview was completed and I got confirmation but when I logged back in it shows Interview Interrupted',
       'Yaksha said my interview was complete and all answers were saved but the system still shows interrupted',
@@ -218,7 +220,8 @@ const COMMUNITY_TEST_GROUPS: CommunityTestGroup[] = [
   // ── Community Q 3 (from Unique Question 6 in troubleshoot file) ────────────
   {
     groupIndex: 2,
-    originalQuestion: 'I am unable to join the orientation Zoom meeting — it says this meeting is for authorized registrants only or the passcode is incorrect',
+    originalQuestion:
+      'I am unable to join the orientation Zoom meeting — it says this meeting is for authorized registrants only or the passcode is incorrect',
     duplicateVariations: [
       'I registered for the Zoom meeting but the passcode is showing as incorrect — what should I do?',
       'I am getting the error This meeting is for authorized registrants only even with my registered email',
@@ -231,7 +234,8 @@ const COMMUNITY_TEST_GROUPS: CommunityTestGroup[] = [
   // ── Community Q 4 (from Unique Question 7 in troubleshoot file) ────────────
   {
     groupIndex: 3,
-    originalQuestion: 'I am unable to join the internship WhatsApp group because it shows the group is full',
+    originalQuestion:
+      'I am unable to join the internship WhatsApp group because it shows the group is full',
     duplicateVariations: [
       'The Vicharanashala Summership WhatsApp group is full and I cannot join — please share a new link',
       'I missed the mail and when I try to join the WhatsApp group it says group is full',
@@ -244,7 +248,8 @@ const COMMUNITY_TEST_GROUPS: CommunityTestGroup[] = [
   // ── Community Q 5 (from Unique Question 25 in troubleshoot file) ───────────
   {
     groupIndex: 4,
-    originalQuestion: 'I am not able to interact with Yaksha or the chat feature is not working or not enabled on my account',
+    originalQuestion:
+      'I am not able to interact with Yaksha or the chat feature is not working or not enabled on my account',
     duplicateVariations: [
       'I uploaded my self declaration and fixed my dates but I am still not able to chat with Yaksha',
       'The platform is not allowing me to message Yaksha even though I received the offer letter',
@@ -301,7 +306,14 @@ async function runFaqTests(
         (m) => m.title.toLowerCase().trim() === group.faqTitle.toLowerCase().trim(),
       );
 
-      results.push({ groupIndex: gi, variationIndex: vi, faqTitle: group.faqTitle, variation, topMatches: scored, passed });
+      results.push({
+        groupIndex: gi,
+        variationIndex: vi,
+        faqTitle: group.faqTitle,
+        variation,
+        topMatches: scored,
+        passed,
+      });
     }
   }
 
@@ -332,7 +344,14 @@ async function runCommunityTests(
       // Pass if the top-2 results include the correct original question.
       const passed = scored.some((m) => m.correctGroup);
 
-      results.push({ groupIndex: gi, variationIndex: vi, originalQuestion: group.originalQuestion, variation, topMatches: scored, passed });
+      results.push({
+        groupIndex: gi,
+        variationIndex: vi,
+        originalQuestion: group.originalQuestion,
+        variation,
+        topMatches: scored,
+        passed,
+      });
     }
   }
 
@@ -356,7 +375,9 @@ async function main() {
   if (provider === 'mock') {
     console.log('> ⚠️  **Warning:** Running with mock embeddings. Mock embeddings use character');
     console.log('> counting, not real semantic understanding. Accuracy will be very low.');
-    console.log('> Set `EMBEDDING_PROVIDER=ollama` or `EMBEDDING_PROVIDER=gemini` for meaningful results.\n');
+    console.log(
+      '> Set `EMBEDDING_PROVIDER=ollama` or `EMBEDDING_PROVIDER=gemini` for meaningful results.\n',
+    );
   }
 
   // ── Load FAQ embeddings from database ─────────────────────────────────────
@@ -375,7 +396,10 @@ async function main() {
   // which would make cosine similarity meaningless against real embeddings.
   const faqEmbeddings: { title: string; embedding: number[] }[] = [];
   for (let i = 0; i < rawFaqs.length; i++) {
-    faqEmbeddings.push({ title: rawFaqs[i].title, embedding: await generateEmbedding(rawFaqs[i].title) });
+    faqEmbeddings.push({
+      title: rawFaqs[i].title,
+      embedding: await generateEmbedding(rawFaqs[i].title),
+    });
     // 500ms pause between requests keeps Gemini free-tier well under its rate limit.
     // Ollama and mock providers ignore this delay (they respond instantly).
     if (provider === 'gemini' && i < rawFaqs.length - 1) {
@@ -390,9 +414,13 @@ async function main() {
   // ══════════════════════════════════════════════════════════════════════════
 
   console.log('---\n');
-  console.log(`## Part 1: FAQ Matching (${FAQ_TEST_GROUPS.length} FAQs × 5 variations = ${FAQ_TEST_GROUPS.length * 5} test cases)\n`);
+  console.log(
+    `## Part 1: FAQ Matching (${FAQ_TEST_GROUPS.length} FAQs × 5 variations = ${FAQ_TEST_GROUPS.length * 5} test cases)\n`,
+  );
   console.log('Testing whether each paraphrased student question surfaces the correct FAQ');
-  console.log(`within the top ${TOP_K} results at a similarity threshold of ${SEMANTIC_THRESHOLD}.\n`);
+  console.log(
+    `within the top ${TOP_K} results at a similarity threshold of ${SEMANTIC_THRESHOLD}.\n`,
+  );
 
   const faqResults = await runFaqTests(faqEmbeddings);
   const faqPassed = faqResults.filter((r) => r.passed).length;
@@ -412,7 +440,9 @@ async function main() {
     const topTitle = top ? truncate(top.title, 40) : '*(no match above threshold)*';
     const topScore = top ? top.score.toFixed(3) : '—';
     const mark = r.passed ? '✅' : '❌';
-    console.log(`| ${i + 1} | ${truncate(r.variation, 55)} | ${truncate(r.faqTitle, 40)} | ${topTitle} | ${topScore} | ${mark} |`);
+    console.log(
+      `| ${i + 1} | ${truncate(r.variation, 55)} | ${truncate(r.faqTitle, 40)} | ${topTitle} | ${topScore} | ${mark} |`,
+    );
   });
 
   // Per-FAQ breakdown
@@ -421,14 +451,22 @@ async function main() {
     const group = FAQ_TEST_GROUPS[gi];
     const groupResults = faqResults.filter((r) => r.groupIndex === gi);
     const groupPassed = groupResults.filter((r) => r.passed).length;
-    const status = groupPassed === 5 ? '✅ All pass' : groupPassed === 0 ? '❌ All fail' : `⚠️  ${groupPassed}/5 pass`;
+    const status =
+      groupPassed === 5
+        ? '✅ All pass'
+        : groupPassed === 0
+          ? '❌ All fail'
+          : `⚠️  ${groupPassed}/5 pass`;
     console.log(`**FAQ ${gi + 1}:** "${group.faqTitle}" — ${status}`);
-    groupResults.filter((r) => !r.passed).forEach((r) => {
-      const top = r.topMatches[0];
-      console.log(`  - ❌ "${truncate(r.variation, 70)}"`);
-      if (top) console.log(`       → matched "${truncate(top.title, 60)}" (${top.score.toFixed(3)})`);
-      else console.log(`       → no match above threshold`);
-    });
+    groupResults
+      .filter((r) => !r.passed)
+      .forEach((r) => {
+        const top = r.topMatches[0];
+        console.log(`  - ❌ "${truncate(r.variation, 70)}"`);
+        if (top)
+          console.log(`       → matched "${truncate(top.title, 60)}" (${top.score.toFixed(3)})`);
+        else console.log(`       → no match above threshold`);
+      });
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -439,7 +477,9 @@ async function main() {
   console.log(`## Part 2: Community Question Duplicate Detection\n`);
   console.log('5 original community questions from troubleshoot_summership_2026_questions.md.');
   console.log('Each has 5 paraphrased duplicate variations. Test passes if the correct original');
-  console.log(`question appears in the top-2 semantic matches at threshold ${SEMANTIC_THRESHOLD}.\n`);
+  console.log(
+    `question appears in the top-2 semantic matches at threshold ${SEMANTIC_THRESHOLD}.\n`,
+  );
 
   console.log('**Original questions used:**\n');
   COMMUNITY_TEST_GROUPS.forEach((g, i) => {
@@ -466,15 +506,25 @@ async function main() {
 
   // Results table
   console.log('### Detailed Results\n');
-  console.log('| # | Duplicate Variation | Expected Original (short) | Top Match Returned | Score | Pass? |');
-  console.log('|---|---------------------|--------------------------|-------------------|-------|-------|');
+  console.log(
+    '| # | Duplicate Variation | Expected Original (short) | Top Match Returned | Score | Pass? |',
+  );
+  console.log(
+    '|---|---------------------|--------------------------|-------------------|-------|-------|',
+  );
 
   communityResults.forEach((r, i) => {
     const top = r.topMatches[0];
-    const topTitle = top ? (top.correctGroup ? '✓ Correct' : truncate(top.title, 30)) : '*(no match)*';
+    const topTitle = top
+      ? top.correctGroup
+        ? '✓ Correct'
+        : truncate(top.title, 30)
+      : '*(no match)*';
     const topScore = top ? top.score.toFixed(3) : '—';
     const mark = r.passed ? '✅' : '❌';
-    console.log(`| ${i + 1} | ${truncate(r.variation, 50)} | Q${r.groupIndex + 1}: ${truncate(r.originalQuestion, 30)} | ${topTitle} | ${topScore} | ${mark} |`);
+    console.log(
+      `| ${i + 1} | ${truncate(r.variation, 50)} | Q${r.groupIndex + 1}: ${truncate(r.originalQuestion, 30)} | ${topTitle} | ${topScore} | ${mark} |`,
+    );
   });
 
   // Per-question breakdown
@@ -483,14 +533,22 @@ async function main() {
     const group = COMMUNITY_TEST_GROUPS[gi];
     const groupResults = communityResults.filter((r) => r.groupIndex === gi);
     const groupPassed = groupResults.filter((r) => r.passed).length;
-    const status = groupPassed === 5 ? '✅ All pass' : groupPassed === 0 ? '❌ All fail' : `⚠️  ${groupPassed}/5 pass`;
+    const status =
+      groupPassed === 5
+        ? '✅ All pass'
+        : groupPassed === 0
+          ? '❌ All fail'
+          : `⚠️  ${groupPassed}/5 pass`;
     console.log(`**Q${gi + 1}:** "${truncate(group.originalQuestion, 70)}" — ${status}`);
-    groupResults.filter((r) => !r.passed).forEach((r) => {
-      const top = r.topMatches[0];
-      console.log(`  - ❌ "${truncate(r.variation, 70)}"`);
-      if (top) console.log(`       → matched "${truncate(top.title, 50)}" (${top.score.toFixed(3)})`);
-      else console.log(`       → no match above threshold`);
-    });
+    groupResults
+      .filter((r) => !r.passed)
+      .forEach((r) => {
+        const top = r.topMatches[0];
+        console.log(`  - ❌ "${truncate(r.variation, 70)}"`);
+        if (top)
+          console.log(`       → matched "${truncate(top.title, 50)}" (${top.score.toFixed(3)})`);
+        else console.log(`       → no match above threshold`);
+      });
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -506,7 +564,9 @@ async function main() {
   console.log('| Section | Passed | Total | Accuracy |');
   console.log('|---------|--------|-------|----------|');
   console.log(`| Part 1 — FAQ Matching | ${faqPassed} | ${faqTotal} | ${faqPct}% |`);
-  console.log(`| Part 2 — Community Duplicate Detection | ${commPassed} | ${commTotal} | ${commPct}% |`);
+  console.log(
+    `| Part 2 — Community Duplicate Detection | ${commPassed} | ${commTotal} | ${commPct}% |`,
+  );
   console.log(`| **Total** | **${totalPassed}** | **${totalCases}** | **${totalPct}%** |`);
 
   console.log('\n### Interpretation\n');
@@ -519,14 +579,22 @@ async function main() {
     console.log('   a higher-quality embedding provider (Gemini text-embedding-004).');
   } else if (totalPct >= 50) {
     console.log('🟠 **Fair** — Results suggest embeddings are not well-suited to this content.');
-    console.log('   If using mock or all-minilm, switch to EMBEDDING_PROVIDER=gemini for significantly');
-    console.log('   better accuracy. Also run the embedding backfill script to populate stored vectors.');
+    console.log(
+      '   If using mock or all-minilm, switch to EMBEDDING_PROVIDER=gemini for significantly',
+    );
+    console.log(
+      '   better accuracy. Also run the embedding backfill script to populate stored vectors.',
+    );
   } else {
     console.log('🔴 **Poor** — Most likely cause: FAQs have no stored embeddings (embeddings are');
     console.log('   generated on-the-fly from titles only) or EMBEDDING_PROVIDER=mock is active.');
     console.log('   Steps to fix:');
-    console.log('   1. Set EMBEDDING_PROVIDER=gemini or EMBEDDING_PROVIDER=ollama in apps/server/env');
-    console.log('   2. Run the FAQ embedding backfill: npm --workspace @samagama/server run seed:faqs');
+    console.log(
+      '   1. Set EMBEDDING_PROVIDER=gemini or EMBEDDING_PROVIDER=ollama in apps/server/env',
+    );
+    console.log(
+      '   2. Run the FAQ embedding backfill: npm --workspace @samagama/server run seed:faqs',
+    );
     console.log('   3. Re-run this test script.');
   }
 

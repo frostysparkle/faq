@@ -8,13 +8,13 @@ accuracy improvements.
 
 ## Features That Use AI
 
-| Feature | Where | What the AI does |
-|---|---|---|
-| **Check FAQ** (Ask a Question, Step 2) | `qna.service.ts → checkExisting()` | Converts the student's question into a meaning fingerprint (embedding) and finds the closest FAQ entries by cosine similarity. |
-| **Check Community Questions** (Step 3) | `qna.service.ts → checkExisting()` | Reuses the same embedding to find semantically similar open community questions — catches paraphrased duplicates that share no keywords. |
-| **Yaksha chatbot** | `chatbot.service.ts` | Retrieves the top matching FAQs by embedding similarity, then passes them to an LLM which writes a conversational answer. |
-| **FAQ embedding on publish** | `faq.service.ts → scheduleEmbedding()` | Generates and stores a 384-dim vector for every FAQ when it is published or its title/answer is edited. |
-| **Question embedding on create** | `qna.service.ts → scheduleQuestionEmbedding()` | Generates and stores a 384-dim vector for every new community question so it can be found semantically in future duplicate checks. |
+| Feature                                | Where                                          | What the AI does                                                                                                                         |
+| -------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Check FAQ** (Ask a Question, Step 2) | `qna.service.ts → checkExisting()`             | Converts the student's question into a meaning fingerprint (embedding) and finds the closest FAQ entries by cosine similarity.           |
+| **Check Community Questions** (Step 3) | `qna.service.ts → checkExisting()`             | Reuses the same embedding to find semantically similar open community questions — catches paraphrased duplicates that share no keywords. |
+| **Yaksha chatbot**                     | `chatbot.service.ts`                           | Retrieves the top matching FAQs by embedding similarity, then passes them to an LLM which writes a conversational answer.                |
+| **FAQ embedding on publish**           | `faq.service.ts → scheduleEmbedding()`         | Generates and stores a 384-dim vector for every FAQ when it is published or its title/answer is edited.                                  |
+| **Question embedding on create**       | `qna.service.ts → scheduleQuestionEmbedding()` | Generates and stores a 384-dim vector for every new community question so it can be found semantically in future duplicate checks.       |
 
 ---
 
@@ -33,6 +33,7 @@ OLLAMA_MODEL=gemma3:4b
 ```
 
 **One-time setup:**
+
 ```bash
 ollama pull all-minilm   # embedding model — 45 MB
 ollama pull gemma3:4b    # chatbot LLM — 3.3 GB
@@ -58,20 +59,20 @@ GEMINI_API_KEY=your_key_here
 
 #### Free-Tier Rate Limits (as of 2026)
 
-| Model | Used for | Requests/minute | Requests/day | Cost above free tier |
-|---|---|---|---|---|
-| `text-embedding-004` | Check FAQ, Check Community Q | **1,500 / min** | Unlimited | $0.00001 per 1K chars |
-| `gemini-2.0-flash` | Yaksha chatbot replies | 15 / min | **1,500 / day** | ~$0.10 per 1M tokens |
+| Model                | Used for                     | Requests/minute | Requests/day    | Cost above free tier  |
+| -------------------- | ---------------------------- | --------------- | --------------- | --------------------- |
+| `text-embedding-004` | Check FAQ, Check Community Q | **1,500 / min** | Unlimited       | $0.00001 per 1K chars |
+| `gemini-2.0-flash`   | Yaksha chatbot replies       | 15 / min        | **1,500 / day** | ~$0.10 per 1M tokens  |
 
 **What this means for a student internship portal:**
 
-- *Check FAQ / Check Community Questions:* At 1,500 embedding requests per minute,
+- _Check FAQ / Check Community Questions:_ At 1,500 embedding requests per minute,
   even if every student in a cohort of 500 clicked "Check Existing Answers" at
   exactly the same second, you would use 500 of 1,500 slots — well within the
   free limit. The 60-second per-user result cache in `qna.service.ts` further
   reduces real API calls to a small fraction of that.
 
-- *Yaksha chatbot:* 1,500 requests/day covers a cohort of 300 students asking
+- _Yaksha chatbot:_ 1,500 requests/day covers a cohort of 300 students asking
   5 chatbot questions each (300 × 5 = 1,500). The 30-minute session cache means
   follow-up questions in the same conversation do not cost extra embedding calls.
   If you exceed the daily limit near the end of an active day, Yaksha
@@ -156,6 +157,7 @@ with genuine semantic overlap pass the filter. This reduces noise in the
 "Check FAQ" step without missing real matches.
 
 Tuning reference:
+
 - `0.35` — broad; catches distant associations, risks irrelevant results.
 - `0.50` — recommended; reliable with both all-minilm and Gemini embeddings.
 - `0.65` — strict; only near-identical paraphrases pass.
@@ -172,6 +174,7 @@ question titled "What is the procedure for logging work hours?" even though
 they mean the same thing.
 
 Now:
+
 - When a student submits a new community question, a 384-dim embedding of
   the title is generated and stored on the Question document (fire-and-forget,
   non-blocking).

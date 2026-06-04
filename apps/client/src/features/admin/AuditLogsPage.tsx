@@ -30,7 +30,14 @@ export function AuditLogsPage() {
       {/* Filters */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {(['all', 'user', 'faq', 'answer'] as EntityFilter[]).map((f) => (
-          <FilterChip key={f} active={entityFilter === f} onClick={() => { setEntityFilter(f); setPage(1); }}>
+          <FilterChip
+            key={f}
+            active={entityFilter === f}
+            onClick={() => {
+              setEntityFilter(f);
+              setPage(1);
+            }}
+          >
             {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1) + 's'}
           </FilterChip>
         ))}
@@ -62,7 +69,14 @@ export function AuditLogsPage() {
 
         {isLoading && <div style={{ padding: 18, fontSize: 13 }}>Loading…</div>}
         {!isLoading && (data?.items.length ?? 0) === 0 && (
-          <div style={{ padding: 24, textAlign: 'center', fontSize: 13, color: 'var(--color-text-muted)' }}>
+          <div
+            style={{
+              padding: 24,
+              textAlign: 'center',
+              fontSize: 13,
+              color: 'var(--color-text-muted)',
+            }}
+          >
             No audit log entries yet.
           </div>
         )}
@@ -77,7 +91,12 @@ export function AuditLogsPage() {
                   gridTemplateColumns: '1fr 1.2fr 1fr 0.8fr 1.2fr 40px',
                   gap: 10,
                   padding: '12px 18px',
-                  borderBottom: (!isExpanded && i < (data.items.length - 1)) ? '1px solid var(--color-border)' : isExpanded ? '1px solid var(--color-border)' : 'none',
+                  borderBottom:
+                    !isExpanded && i < data.items.length - 1
+                      ? '1px solid var(--color-border)'
+                      : isExpanded
+                        ? '1px solid var(--color-border)'
+                        : 'none',
                   alignItems: 'center',
                   cursor: 'pointer',
                 }}
@@ -89,7 +108,9 @@ export function AuditLogsPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 500 }}>{entry.actor.name}</div>
-                  <div style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>{entry.actor.email}</div>
+                  <div style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>
+                    {entry.actor.email}
+                  </div>
                 </div>
                 <div>
                   <Badge color={actionColor(entry.action)}>{formatAction(entry.action)}</Badge>
@@ -101,7 +122,11 @@ export function AuditLogsPage() {
                   {entry.entityId ? `ID: ${entry.entityId.slice(-6)}` : '—'}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {isExpanded ? <ChevronUp size={14} color="var(--color-text-muted)" /> : <ChevronDown size={14} color="var(--color-text-muted)" />}
+                  {isExpanded ? (
+                    <ChevronUp size={14} color="var(--color-text-muted)" />
+                  ) : (
+                    <ChevronDown size={14} color="var(--color-text-muted)" />
+                  )}
                 </div>
               </div>
 
@@ -110,7 +135,8 @@ export function AuditLogsPage() {
                   style={{
                     padding: '12px 18px',
                     background: 'var(--color-input)',
-                    borderBottom: i < (data.items.length - 1) ? '1px solid var(--color-border)' : 'none',
+                    borderBottom:
+                      i < data.items.length - 1 ? '1px solid var(--color-border)' : 'none',
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr',
                     gap: 12,
@@ -118,27 +144,76 @@ export function AuditLogsPage() {
                 >
                   {entry.before && (
                     <div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-danger)', textTransform: 'uppercase', marginBottom: 4 }}>Before</div>
-                      <pre style={{ fontSize: 11, color: 'var(--color-text-muted)', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      <div
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: 'var(--color-danger)',
+                          textTransform: 'uppercase',
+                          marginBottom: 4,
+                        }}
+                      >
+                        Before
+                      </div>
+                      <pre
+                        style={{
+                          fontSize: 11,
+                          color: 'var(--color-text-muted)',
+                          margin: 0,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                        }}
+                      >
                         {JSON.stringify(entry.before, null, 2)}
                       </pre>
                     </div>
                   )}
                   {entry.after && (
                     <div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-success)', textTransform: 'uppercase', marginBottom: 4 }}>After</div>
-                      <pre style={{ fontSize: 11, color: 'var(--color-text-muted)', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      <div
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: 'var(--color-success)',
+                          textTransform: 'uppercase',
+                          marginBottom: 4,
+                        }}
+                      >
+                        After
+                      </div>
+                      <pre
+                        style={{
+                          fontSize: 11,
+                          color: 'var(--color-text-muted)',
+                          margin: 0,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                        }}
+                      >
                         {JSON.stringify(entry.after, null, 2)}
                       </pre>
                     </div>
                   )}
                   {entry.reason && (
-                    <div style={{ gridColumn: '1 / -1', fontSize: 12, color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                    <div
+                      style={{
+                        gridColumn: '1 / -1',
+                        fontSize: 12,
+                        color: 'var(--color-text-muted)',
+                        fontStyle: 'italic',
+                      }}
+                    >
                       Reason: {entry.reason}
                     </div>
                   )}
                   {!entry.before && !entry.after && !entry.reason && (
-                    <div style={{ gridColumn: '1 / -1', fontSize: 12, color: 'var(--color-text-muted)' }}>
+                    <div
+                      style={{
+                        gridColumn: '1 / -1',
+                        fontSize: 12,
+                        color: 'var(--color-text-muted)',
+                      }}
+                    >
                       No additional details recorded.
                     </div>
                   )}
@@ -151,12 +226,32 @@ export function AuditLogsPage() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 16 }}>
-          <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 12,
+            marginTop: 16,
+          }}
+        >
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+          >
             <ChevronLeft size={14} /> Prev
           </Button>
-          <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Page {page} of {totalPages}</span>
-          <Button variant="ghost" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+          <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+            Page {page} of {totalPages}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
             Next <ChevronRight size={14} />
           </Button>
         </div>
@@ -165,7 +260,15 @@ export function AuditLogsPage() {
   );
 }
 
-function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       onClick={onClick}
@@ -188,7 +291,8 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
 
 function actionColor(action: string): 'success' | 'warning' | 'danger' | 'accent' | 'default' {
   if (action.includes('approve') || action.includes('activate')) return 'success';
-  if (action.includes('reject') || action.includes('suspend') || action.includes('archive')) return 'danger';
+  if (action.includes('reject') || action.includes('suspend') || action.includes('archive'))
+    return 'danger';
   if (action.includes('role')) return 'warning';
   if (action.includes('create') || action.includes('update')) return 'accent';
   return 'default';
@@ -200,5 +304,9 @@ function formatAction(action: string): string {
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  return (
+    d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) +
+    ' ' +
+    d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+  );
 }

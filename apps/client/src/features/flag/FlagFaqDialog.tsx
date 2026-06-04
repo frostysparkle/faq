@@ -21,7 +21,7 @@ const REASON_LABELS: Record<FlagReason, string> = {
 const STORAGE_KEY = 'samagama:flaggedFaqs';
 
 interface FlagRecord {
-  flaggedAt: string;    // ISO — when the user submitted the flag
+  flaggedAt: string; // ISO — when the user submitted the flag
   faqUpdatedAt: string; // ISO — FAQ's updatedAt at the time of flagging
 }
 
@@ -67,9 +67,7 @@ export function FlagFaqButton({ faqId, faqUpdatedAt = '' }: Props) {
 
   // Determine if the FAQ was updated after the user flagged it.
   const wasFaqUpdated =
-    persisted !== null &&
-    faqUpdatedAt &&
-    new Date(faqUpdatedAt) > new Date(persisted.flaggedAt);
+    persisted !== null && faqUpdatedAt && new Date(faqUpdatedAt) > new Date(persisted.flaggedAt);
 
   // Already flagged — show confirmation + optional update notice.
   if (persisted && !open) {
@@ -173,7 +171,9 @@ export function FlagFaqButton({ faqId, faqUpdatedAt = '' }: Props) {
         width: '100%',
       }}
     >
-      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-warning)', marginBottom: 8 }}>
+      <div
+        style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-warning)', marginBottom: 8 }}
+      >
         Flag this FAQ
       </div>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>

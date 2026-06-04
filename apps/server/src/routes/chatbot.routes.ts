@@ -34,8 +34,16 @@ router.post(
 );
 
 // ── Admin / moderator read paths ──────────────────────────────────────────────
-router.get('/feedback/stats', requireRole('moderator', 'admin'), asyncHandler(chatbotController.getStats));
-router.get('/feedback', requireRole('moderator', 'admin'), asyncHandler(chatbotController.listFeedback));
+router.get(
+  '/feedback/stats',
+  requireRole('moderator', 'admin'),
+  asyncHandler(chatbotController.getStats),
+);
+router.get(
+  '/feedback',
+  requireRole('moderator', 'admin'),
+  asyncHandler(chatbotController.listFeedback),
+);
 
 // ── Admin / moderator write paths ─────────────────────────────────────────────
 router.patch(

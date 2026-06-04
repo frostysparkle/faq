@@ -29,7 +29,14 @@ export function FaqQualityPage() {
       />
 
       {/* Summary cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 12,
+          marginBottom: 20,
+        }}
+      >
         <ScoreCard label="Good" count={counts.good} color="var(--color-success)" />
         <ScoreCard label="Rewrite Candidates" count={counts.rewrite} color="var(--color-warning)" />
         <ScoreCard label="Archive Candidates" count={counts.archive} color="var(--color-danger)" />
@@ -39,7 +46,11 @@ export function FaqQualityPage() {
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {(['all', 'rewrite', 'archive'] as Filter[]).map((f) => (
           <FilterChip key={f} active={filter === f} onClick={() => setFilter(f)}>
-            {f === 'all' ? 'All FAQs' : f === 'rewrite' ? 'Rewrite Candidates' : 'Archive Candidates'}
+            {f === 'all'
+              ? 'All FAQs'
+              : f === 'rewrite'
+                ? 'Rewrite Candidates'
+                : 'Archive Candidates'}
           </FilterChip>
         ))}
       </div>
@@ -72,7 +83,14 @@ export function FaqQualityPage() {
 
         {isLoading && <div style={{ padding: 18, fontSize: 13 }}>Loading…</div>}
         {!isLoading && (data?.length ?? 0) === 0 && (
-          <div style={{ padding: 24, textAlign: 'center', fontSize: 13, color: 'var(--color-text-muted)' }}>
+          <div
+            style={{
+              padding: 24,
+              textAlign: 'center',
+              fontSize: 13,
+              color: 'var(--color-text-muted)',
+            }}
+          >
             No FAQs match this filter.
           </div>
         )}
@@ -85,7 +103,7 @@ export function FaqQualityPage() {
               gridTemplateColumns: '2.5fr 0.6fr 0.6fr 0.6fr 0.6fr 0.8fr 0.8fr',
               gap: 10,
               padding: '12px 18px',
-              borderBottom: i < (data.length - 1) ? '1px solid var(--color-border)' : 'none',
+              borderBottom: i < data.length - 1 ? '1px solid var(--color-border)' : 'none',
               alignItems: 'center',
             }}
           >
@@ -96,15 +114,24 @@ export function FaqQualityPage() {
             <div>
               <QualityScoreBar score={row.qualityScore} />
             </div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{row.helpfulRatio}%</div>
-            <div style={{ fontSize: 12, color: row.flagCount > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+              {row.helpfulRatio}%
+            </div>
+            <div
+              style={{
+                fontSize: 12,
+                color: row.flagCount > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)',
+              }}
+            >
               {row.flagCount}
             </div>
             <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{row.viewCount}</div>
             <div>
               <Badge color={classificationColor(row.classification)}>{row.classification}</Badge>
             </div>
-            <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{timeAgo(row.updatedAt)}</div>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+              {timeAgo(row.updatedAt)}
+            </div>
           </div>
         ))}
       </Card>
@@ -136,7 +163,12 @@ function ScoreCard({ label, count, color }: { label: string; count: number; colo
 }
 
 function QualityScoreBar({ score }: { score: number }) {
-  const color = score >= 70 ? 'var(--color-success)' : score >= 40 ? 'var(--color-warning)' : 'var(--color-danger)';
+  const color =
+    score >= 70
+      ? 'var(--color-success)'
+      : score >= 40
+        ? 'var(--color-warning)'
+        : 'var(--color-danger)';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
       <div
@@ -155,7 +187,15 @@ function QualityScoreBar({ score }: { score: number }) {
   );
 }
 
-function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       onClick={onClick}

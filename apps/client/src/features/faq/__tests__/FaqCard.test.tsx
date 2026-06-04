@@ -11,7 +11,9 @@ import { FaqCard } from '../FaqCard';
 vi.mock('../api', () => ({
   faqApi: {
     recordView: vi.fn().mockResolvedValue(undefined),
-    submitFeedback: vi.fn().mockResolvedValue({ helpfulCount: 1, unhelpfulCount: 0, userVote: 'helpful' }),
+    submitFeedback: vi
+      .fn()
+      .mockResolvedValue({ helpfulCount: 1, unhelpfulCount: 0, userVote: 'helpful' }),
   },
 }));
 

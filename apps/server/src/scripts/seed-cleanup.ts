@@ -39,10 +39,9 @@ async function cleanup(): Promise<void> {
   // ── Phase 1: Identify seeded users ──────────────────────────────────────────
   // All accounts seeded by seed-real-accounts.ts and seed-student-accounts.ts
   // use @samagama.test addresses, a domain that cannot belong to real users.
-  const seededUsers = await UserModel.find(
-    { email: /@samagama\.test$/ },
-    '_id email',
-  ).lean<{ _id: Types.ObjectId; email: string }[]>();
+  const seededUsers = await UserModel.find({ email: /@samagama\.test$/ }, '_id email').lean<
+    { _id: Types.ObjectId; email: string }[]
+  >();
 
   if (seededUsers.length === 0) {
     logger.info('No @samagama.test accounts found — nothing to clean up.');
@@ -54,19 +53,15 @@ async function cleanup(): Promise<void> {
   logger.info({ count: seededIds.length }, 'Seeded accounts located');
 
   // ── Phase 2: Collect content IDs owned by seeded users ──────────────────────
-  const seededQuestions = await QuestionModel.find(
-    { askedBy: { $in: seededIds } },
-    '_id',
-  ).lean<{ _id: Types.ObjectId }[]>();
+  const seededQuestions = await QuestionModel.find({ askedBy: { $in: seededIds } }, '_id').lean<
+    { _id: Types.ObjectId }[]
+  >();
   const seededQuestionIds = seededQuestions.map((q) => q._id);
 
   // Answers submitted by seeded users OR answers on their questions
   const seededAnswers = await AnswerModel.find(
     {
-      $or: [
-        { answeredBy: { $in: seededIds } },
-        { questionId: { $in: seededQuestionIds } },
-      ],
+      $or: [{ answeredBy: { $in: seededIds } }, { questionId: { $in: seededQuestionIds } }],
     },
     '_id',
   ).lean<{ _id: Types.ObjectId }[]>();
@@ -157,7 +152,19 @@ async function cleanup(): Promise<void> {
 
   logger.info(
     {
-      summary: { users, questions, answers, flags, reviews, notifs, analytics, audits, searches, feedbackEvents, chatFeedback },
+      summary: {
+        users,
+        questions,
+        answers,
+        flags,
+        reviews,
+        notifs,
+        analytics,
+        audits,
+        searches,
+        feedbackEvents,
+        chatFeedback,
+      },
     },
     '✅ Seed cleanup complete',
   );

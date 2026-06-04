@@ -15,13 +15,15 @@ export const adminKeys = {
 
 // ─── User Management ─────────────────────────────────────────────────────────
 
-export function useUsers(params: {
-  page?: number;
-  pageSize?: number;
-  role?: string;
-  status?: string;
-  q?: string;
-} = {}) {
+export function useUsers(
+  params: {
+    page?: number;
+    pageSize?: number;
+    role?: string;
+    status?: string;
+    q?: string;
+  } = {},
+) {
   return useQuery({
     queryKey: adminKeys.users(params),
     queryFn: () => adminApi.listUsers(params),
@@ -63,12 +65,14 @@ export function useDeleteUser() {
 
 // ─── Audit Logs ──────────────────────────────────────────────────────────────
 
-export function useAuditLogs(params: {
-  page?: number;
-  pageSize?: number;
-  action?: string;
-  entityType?: string;
-} = {}) {
+export function useAuditLogs(
+  params: {
+    page?: number;
+    pageSize?: number;
+    action?: string;
+    entityType?: string;
+  } = {},
+) {
   return useQuery({
     queryKey: adminKeys.auditLogs(params),
     queryFn: () => adminApi.listAuditLogs(params),
@@ -148,8 +152,7 @@ export function useBulkApprove() {
 export function useBulkReject() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ids, note }: { ids: string[]; note?: string }) =>
-      adminApi.bulkReject(ids, note),
+    mutationFn: ({ ids, note }: { ids: string[]; note?: string }) => adminApi.bulkReject(ids, note),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['moderation'] });
       void qc.invalidateQueries({ queryKey: ['stats'] });

@@ -6,20 +6,20 @@ import localforage from 'localforage';
 
 // ─── Samagama-specific synonym dictionary ─────────────────────────────────────
 const SYNONYMS: Record<string, string> = {
-  'signin': 'login',
+  signin: 'login',
   'sign in': 'login',
-  'invoice': 'billing',
-  'error': 'bug',
-  'credential': 'password',
-  'noc': 'certificate',
-  'cert': 'certificate',
-  'zoom': 'meeting',
-  'vibe': 'platform',
-  'team': 'group',
-  'mentor': 'guide',
-  'stipend': 'payment salary',
-  'attendance': 'leave',
-  'phase': 'stage',
+  invoice: 'billing',
+  error: 'bug',
+  credential: 'password',
+  noc: 'certificate',
+  cert: 'certificate',
+  zoom: 'meeting',
+  vibe: 'platform',
+  team: 'group',
+  mentor: 'guide',
+  stipend: 'payment salary',
+  attendance: 'leave',
+  phase: 'stage',
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
       const response = await fetch(payload.dataEndpoint, { headers });
       if (!response.ok) throw new Error(`Failed to fetch search data: ${response.status}`);
 
-      const raw = await response.json() as SearchDoc[] | { data: SearchDoc[] };
+      const raw = (await response.json()) as SearchDoc[] | { data: SearchDoc[] };
       // Handle both plain array and {data:[...]} API envelope.
       const documents: SearchDoc[] = Array.isArray(raw) ? raw : (raw as { data: SearchDoc[] }).data;
       const tFetch = performance.now();
