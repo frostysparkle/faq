@@ -106,6 +106,18 @@ export const moderationService = {
       body: `Your answer to "${questionTitle}" has been approved by a moderator.`,
       relatedId: answer.questionId.toString(),
     });
+
+    // Notify the question asker that their question has been resolved.
+    // Skip if they are the same person as the answer author (no self-notification).
+    if (question && question.askedBy.toString() !== answer.answeredBy.toString()) {
+      void notificationService.create({
+        userId: question.askedBy.toString(),
+        type: 'question_answered',
+        title: 'Your question has been resolved!',
+        body: `A moderator approved an answer to your question: "${questionTitle}".`,
+        relatedId: answer.questionId.toString(),
+      });
+    }
   },
 
   async rejectAnswer(

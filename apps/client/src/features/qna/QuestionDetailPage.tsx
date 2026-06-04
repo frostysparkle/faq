@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  CalendarDays, ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
+  CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
   Clock, ThumbsDown, ThumbsUp, X, ZoomIn, ZoomOut,
 } from 'lucide-react';
 import { COMMUNITY_ANSWER_CAP } from '@samagama/shared';
@@ -179,6 +179,21 @@ export function QuestionDetailPage() {
         </div>
       </div>
 
+      {/* ── Resolved banner ── */}
+      {question.status === 'resolved' && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 16px', marginBottom: 14,
+          background: 'var(--color-success-bg)',
+          border: '1px solid var(--color-success)',
+          borderRadius: 10,
+          fontSize: 13, fontWeight: 600, color: 'var(--color-success)',
+        }}>
+          <CheckCircle2 size={16} style={{ flexShrink: 0 }} />
+          This question has been resolved — the approved answer is shown below.
+        </div>
+      )}
+
       {question.type === 'personal' ? (
         <div style={{ fontSize: 12, color: 'var(--color-text-muted)', padding: '10px 14px', background: 'var(--color-input)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
           Personal questions are answered directly by moderators. Peer answers are not enabled for this thread.
@@ -296,14 +311,29 @@ function AnswerCard({ answer, questionId, canVote, voteMutationKey }: {
   const vote = useVoteAnswer(voteMutationKey);
   const color = avatarColor(answer.author.name);
 
+  const isApproved = answer.status === 'approved';
+
   return (
     <div style={{
-      background: 'var(--color-card)',
-      border: '1px solid var(--color-border)',
+      background: isApproved ? 'var(--color-success-bg)' : 'var(--color-card)',
+      border: `1px solid ${isApproved ? 'var(--color-success)' : 'var(--color-border)'}`,
+      borderLeft: isApproved ? '4px solid var(--color-success)' : '1px solid var(--color-border)',
       borderRadius: 12,
       padding: '14px 18px',
       transition: 'box-shadow 0.15s',
     }}>
+      {/* Verified Answer label for approved answers */}
+      {isApproved && (
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          fontSize: 11, fontWeight: 700, color: 'var(--color-success)',
+          textTransform: 'uppercase', letterSpacing: '0.05em',
+          background: 'var(--color-card)', border: '1px solid var(--color-success)',
+          borderRadius: 6, padding: '3px 8px', marginBottom: 10,
+        }}>
+          <CheckCircle2 size={11} /> Verified Answer
+        </div>
+      )}
       {/* ── Header row: avatar + name + badge | time + votes ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
 

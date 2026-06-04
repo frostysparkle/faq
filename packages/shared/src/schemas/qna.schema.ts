@@ -75,6 +75,8 @@ export interface PublicAnswer {
   myVote?: 'up' | 'down' | null;
   moderationNote?: string;
   approvedAt?: string;
+  /** True when this approved answer has already been promoted to an FAQ entry. */
+  isFaqConverted?: boolean;
   createdAt: string;
   updatedAt: string;
 }

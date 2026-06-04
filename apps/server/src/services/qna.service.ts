@@ -219,6 +219,7 @@ function projectAnswer(a: PopulatedAnswer, viewerId?: string): PublicAnswer {
     downvoteCount: a.downvoteCount,
     moderationNote: a.moderationNote ?? undefined,
     approvedAt: a.approvedAt?.toISOString(),
+    isFaqConverted: !!a.convertedFaqId,
     createdAt: a.createdAt.toISOString(),
     updatedAt: a.updatedAt.toISOString(),
   };
@@ -558,9 +559,14 @@ export const qnaService = {
   },
 
   async listAnswers(questionId: string, viewerId: string, role: UserRole): Promise<PublicAnswer[]> {
-    // All roles see all answers. Moderators/admins additionally see rejected ones.
+    // Students: once a question is resolved, hide all pending answers — only the
+    // approved answer(s) remain visible. Pre-resolution they can still see pending ones.
+    // Moderators/admins always see every status for auditing.
     const filter: FilterQuery<AnswerDocument> = { questionId };
-    if (role === 'student') filter.status = { $in: ['pending', 'approved'] };
+    if (role === 'student') {
+      const q = await QuestionModel.findById(questionId).select('status').lean();
+      filter.status = q?.status === 'resolved' ? 'approved' : { $in: ['pending', 'approved'] };
+    }
 
     const answers = await AnswerModel.find(filter)
       .select('+upvotes +downvotes')
