@@ -5,13 +5,11 @@ const systemSettingsSchema = new Schema(
   {
     /** Singleton key — only one settings document exists. */
     _id: { type: String, default: 'global' },
-    duplicateWarnThreshold: { type: Number, default: 0.6, min: 0, max: 1 },
-    duplicateStrongThreshold: { type: Number, default: 0.8, min: 0, max: 1 },
     chatbotConfidenceThreshold: { type: Number, default: 0.7, min: 0, max: 1 },
     chatbotMaxSources: { type: Number, default: 6, min: 1, max: 20 },
     communityAnswerCap: { type: Number, default: 10, min: 1, max: 50 },
-    /** Max idle days before a question appears in the "urgent" bucket. */
-    urgentIdleDays: { type: Number, default: 7 },
+    /** Days a question must be idle before it enters the urgent moderation bucket. */
+    urgentIdleDays: { type: Number, default: 7, min: 1, max: 30 },
   },
   {
     timestamps: true,

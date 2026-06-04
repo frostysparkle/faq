@@ -15,7 +15,6 @@
 import { Types, type FilterQuery } from 'mongoose';
 import jwt from 'jsonwebtoken';
 import {
-  COMMUNITY_ANSWER_CAP,
   SPURTI_POINTS,
   type AnswerCreateInput,
   type CheckExistingInput,
@@ -35,6 +34,7 @@ import { ApiError } from '../utils/api-error.js';
 import { createTtlCache } from '../utils/ttl-cache.js';
 import { env } from '../config/env.js';
 import { generateEmbedding, cosineSimilarity } from './embedding.service.js';
+import { settingsService } from './settings.service.js';
 
 /** Signed token TTL for the existing-answer check (15 minutes). Long enough to read suggestions, short enough to limit replay. */
 const EXISTING_CHECK_TTL = 15 * 60;
@@ -481,18 +481,20 @@ export const qnaService = {
     // Idle-bucket filter — same mutually-exclusive math as the stats aggregation so
     // the dashboard card and the filter chip always agree on what's in each bucket.
     if (opts.idle) {
+      const { urgentIdleDays } = await settingsService.get();
       const now = Date.now();
       const day = 24 * 60 * 60 * 1000;
+      const urgentMs = urgentIdleDays * day;
       // Idle filtering only makes sense for the open queue.
       filter.type = 'community';
       filter.status = filter.status ?? { $in: ['open', 'answered'] };
       if (opts.idle === 'last24h') {
         filter.updatedAt = { $gte: new Date(now - day) };
       } else if (opts.idle === 'over3days') {
-        // Middle bucket: 24h–7d window so cards + chips always sum to totalOpen.
-        filter.updatedAt = { $lt: new Date(now - day), $gte: new Date(now - 7 * day) };
+        // Middle bucket: 24h–urgentIdleDays window so cards + chips always sum to totalOpen.
+        filter.updatedAt = { $lt: new Date(now - day), $gte: new Date(now - urgentMs) };
       } else {
-        filter.updatedAt = { $lt: new Date(now - 7 * day) };
+        filter.updatedAt = { $lt: new Date(now - urgentMs) };
       }
     }
 
@@ -590,9 +592,10 @@ export const qnaService = {
     if (question.status === 'resolved' || question.status === 'archived') {
       throw ApiError.forbidden('Question is closed for new answers');
     }
-    if (question.answerCount >= COMMUNITY_ANSWER_CAP) {
+    const { communityAnswerCap } = await settingsService.get();
+    if (question.answerCount >= communityAnswerCap) {
       throw ApiError.forbidden(
-        `This question has reached the maximum of ${COMMUNITY_ANSWER_CAP} answers`,
+        `This question has reached the maximum of ${communityAnswerCap} answers`,
       );
     }
     // Prevent the asker from answering their own question.

@@ -6,7 +6,7 @@ import { chatbotController } from '../controllers/chatbot.controller.js';
 import { requireAuth, requireRole } from '../middlewares/auth.js';
 import { validate } from '../middlewares/validate.js';
 import { asyncHandler } from '../utils/async-handler.js';
-import { chatQuerySchema, chatFeedbackSchema } from '@samagama/shared';
+import { chatQuerySchema, chatFeedbackSchema, updateFeedbackStatusSchema } from '@samagama/shared';
 
 const router = Router();
 
@@ -36,5 +36,19 @@ router.post(
 // ── Admin / moderator read paths ──────────────────────────────────────────────
 router.get('/feedback/stats', requireRole('moderator', 'admin'), asyncHandler(chatbotController.getStats));
 router.get('/feedback', requireRole('moderator', 'admin'), asyncHandler(chatbotController.listFeedback));
+
+// ── Admin / moderator write paths ─────────────────────────────────────────────
+router.patch(
+  '/feedback/:id',
+  requireRole('moderator', 'admin'),
+  validate(updateFeedbackStatusSchema),
+  asyncHandler(chatbotController.updateFeedbackStatus),
+);
+
+router.delete(
+  '/feedback/:id',
+  requireRole('admin'),
+  asyncHandler(chatbotController.deleteFeedback),
+);
 
 export const chatbotRouter = router;

@@ -1,10 +1,11 @@
 // Seeds community question interactions directly into MongoDB — no running server needed.
 //
-// What it does (three phases):
-//   Phase 0 — Prerequisite: if no community questions exist, creates them.
-//   Phase 1 — Answers: adds 3–5 answers per question from seeded students.
-//   Phase 2 — Votes:   applies upvotes/downvotes (80 % up, 20 % down).
-//   Phase 3 — Boost:   guarantees the top-3 most-tagged questions are net-positive.
+// What it does (four phases):
+//   Phase 0  — Prerequisite: if no community questions exist, creates them.
+//   Phase 0.5 — Personal questions: seeds up to 20 personal questions if none exist.
+//   Phase 1  — Answers: adds 5–10 answers per question; ~10 questions deliberately left unanswered.
+//   Phase 2  — Votes:   applies upvotes/downvotes (80 % up, 20 % down).
+//   Phase 3  — Boost:   guarantees the top-3 most-tagged questions are net-positive.
 //
 // Idempotent: skips existing answers (unique-index enforced), skips already-cast votes.
 // Refuses to run when NODE_ENV=production.
@@ -26,11 +27,38 @@ import { CategoryModel } from '../models/Category.model.js';
 import { QuestionModel } from '../models/Question.model.js';
 import { UserModel } from '../models/User.model.js';
 
+// ── Personal question seed data ───────────────────────────────────────────────
+// Private questions distributed randomly to students; max 20 seeded.
+
+const PERSONAL_QUESTIONS_SEED: { title: string; description: string }[] = [
+  { title: 'Medical emergency — requesting extension on Phase 1 tasks', description: 'I was hospitalized for 5 days and could not complete the Phase 1 tasks by the deadline. Can I get an extension? I can provide medical documents as proof.' },
+  { title: 'Stipend not credited for the second month', description: 'I did not receive my stipend for the second month. I checked with my bank and there is no pending transaction from Samagama. Can you look into this from your end?' },
+  { title: 'Name mismatch between portal and official documents', description: 'My name on the portal shows "Priya Nair" but my NOC and college certificates show "Priya S Nair". Will this mismatch cause issues with the final internship certificate?' },
+  { title: 'Assigned mentor has not responded in 10 days', description: 'My assigned mentor has not replied to any of my messages for the past 10 days. I have sent three follow-up emails and two WhatsApp messages. Can you assign a different mentor or escalate this?' },
+  { title: 'Laptop failure two days before Phase 2 submission', description: 'My laptop suffered a hardware failure two days before the Phase 2 submission deadline. All my work is on the broken device. Can I get a 3-day extension to recover and resubmit?' },
+  { title: 'Supplementary college exams clash with internship weeks', description: 'My college has scheduled supplementary exams during the core internship weeks. Is there a way to pause or reschedule my internship participation without penalty?' },
+  { title: 'Charged twice for registration fee on the same day', description: 'My bank statement shows two deductions of the same registration amount on the same date. This appears to be a duplicate charge. How do I request a refund for the duplicate payment?' },
+  { title: 'Uncomfortable interaction with a platform moderator', description: 'I want to report an uncomfortable interaction I had with one of the platform moderators during a private session. I would prefer to keep this matter confidential and handled discreetly.' },
+  { title: 'Need confidential recommendation letter for scholarship', description: 'I need an official recommendation letter issued by IIT Ropar for a scholarship application. The deadline is next week. Can someone help me obtain this on priority?' },
+  { title: 'Accessibility accommodation for Zoom sessions', description: 'I have a hearing impairment and find it difficult to follow live Zoom sessions without captions. Can you enable automatic captions or provide text transcripts for all mandatory sessions?' },
+  { title: 'My mobile number is visible to other students', description: 'I noticed my personal mobile number appears to be visible to other students on the community page. I did not consent to this. Please remove it and review the privacy settings.' },
+  { title: 'Mandatory session conflicts with a religious festival', description: 'A mandatory live session is scheduled on a major festival day for my community. Can I be granted an exemption or access to the session recording without my attendance being penalised?' },
+  { title: 'Requesting formal withdrawal due to family emergency', description: 'A serious medical emergency in my family has made me the primary caretaker at home. I need to formally withdraw from the internship. Will this affect my eligibility for future Samagama cohorts?' },
+  { title: 'Completion certificate issued with wrong graduation year', description: 'The completion certificate I received shows my graduation year as 2025, but I am a 2026 batch student. Can a corrected certificate be reissued? I need it for my college records.' },
+  { title: 'No internet access for two weeks due to family relocation', description: 'My family is relocating and I will have no reliable internet access for the next two weeks. Is there an offline mode or any accommodation available so I do not lose my internship progress?' },
+  { title: 'Requesting re-evaluation of stipend eligibility after NPTEL result', description: 'I was initially categorised as VINS (no stipend), but I recently qualified for NPTEL Gold certification after the original cutoff date. Can my stipend eligibility be re-evaluated for the remaining internship weeks?' },
+  { title: 'Assigned to wrong domain — requesting reassignment to ML/AI track', description: 'I have been assigned to the data analytics domain but I applied specifically for the Machine Learning and AI track. Can I be reassigned to match my stated preference and existing skill set?' },
+  { title: 'Need participation letter urgently for visa appointment', description: 'I have a visa appointment in 5 days and need an official internship participation letter from IIT Ropar as supporting documentation. Can this be issued on priority?' },
+  { title: 'Submitted incorrect bank account number for stipend', description: 'I made a typing error in the bank account number I submitted for stipend payment. One payment has already been sent to the wrong account. How do I correct this urgently?' },
+  { title: 'Completed all modules early — requesting early completion certificate', description: 'I have finished all required modules and submitted all deliverables two weeks ahead of the official end date. Is it possible to receive my completion certificate earlier than scheduled?' },
+];
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const ANSWER_CAP = 10;          // mirrors COMMUNITY_ANSWER_CAP in the server
-const ANSWERS_MIN = 3;
-const ANSWERS_MAX = 5;
+const ANSWER_CAP = 10;              // hard cap — no question exceeds this
+const ANSWERS_MIN = 5;              // min answers for a question that gets responses
+const ANSWERS_MAX = 10;             // max answers per question (matches ANSWER_CAP)
+const UNANSWERED_QUESTION_COUNT = 10; // ~10 community questions seeded with zero answers
 const UPVOTE_PROBABILITY = 0.8;
 const VOTERS_TOP = { min: 6, max: 9 };
 const VOTERS_OTHER = { min: 3, max: 5 };
@@ -197,12 +225,64 @@ async function ensureQuestions(students: Student[]): Promise<void> {
   logger.info({ created, tagged: Math.min(TAG_DISTRIBUTION.length, allQuestions.length) }, 'Community questions created');
 }
 
+// ── Phase 0.5: Personal questions ────────────────────────────────────────────
+
+async function ensurePersonalQuestions(
+  students: Student[],
+  categoryId: Types.ObjectId,
+): Promise<void> {
+  const existing = await QuestionModel.countDocuments({
+    type: 'personal',
+    isTrashed: { $ne: true },
+  });
+
+  if (existing >= PERSONAL_QUESTIONS_SEED.length) {
+    logger.info({ existing }, 'Personal questions already present — skipping creation');
+    return;
+  }
+
+  logger.info({ existing }, 'Seeding personal questions');
+
+  const shuffledStudents = shuffle(students);
+  const shuffledQuestions = shuffle([...PERSONAL_QUESTIONS_SEED]);
+  let created = 0;
+
+  for (let i = 0; i < shuffledQuestions.length; i++) {
+    const { title, description } = shuffledQuestions[i];
+    const student = shuffledStudents[i % shuffledStudents.length];
+
+    const alreadyExists = await QuestionModel.exists({ title, type: 'personal' });
+    if (alreadyExists) continue;
+
+    await QuestionModel.create({
+      title,
+      description,
+      type: 'personal',
+      status: 'open',
+      category: categoryId,
+      askedBy: student._id,
+      answerCount: 0,
+      viewCount: 0,
+    });
+    created++;
+  }
+
+  logger.info({ created }, 'Personal questions created');
+}
+
 // ── Phase 1: Answers ──────────────────────────────────────────────────────────
 
-async function seedAnswers(questions: Question[], students: Student[]): Promise<number> {
+async function seedAnswers(
+  questions: Question[],
+  students: Student[],
+  unansweredIds: Set<string>,
+): Promise<number> {
   let totalCreated = 0;
 
   for (const question of questions) {
+    // Skip questions deliberately kept unanswered for realism.
+    if (unansweredIds.has(question._id.toString())) continue;
+
     const remaining = ANSWER_CAP - question.answerCount;
     if (remaining <= 0) continue;
 
@@ -382,9 +462,20 @@ async function seedInteractions(): Promise<void> {
   logger.info({ count: students.length }, 'Seeded students loaded');
 
   // ── Phase 0 ───────────────────────────────────────────────────────────────────
+  logger.info('=== Phase 0: Community questions ===');
   await ensureQuestions(students);
 
-  // Reload questions after potential creation
+  // ── Phase 0.5 ────────────────────────────────────────────────────────────────
+  logger.info('=== Phase 0.5: Personal questions ===');
+  const defaultCategory = await CategoryModel.findOne({ isActive: { $ne: false } })
+    .lean<{ _id: Types.ObjectId }>();
+  if (defaultCategory) {
+    await ensurePersonalQuestions(students, defaultCategory._id);
+  } else {
+    logger.warn('No category found — skipping personal question seeding');
+  }
+
+  // Reload community questions after potential creation
   const questions = await QuestionModel.find(
     {
       type: 'community',
@@ -403,9 +494,22 @@ async function seedInteractions(): Promise<void> {
   const topIds = new Set(sorted.slice(0, 3).map((q) => q._id.toString()));
   logger.info({ topIds: Array.from(topIds).map((id) => id.slice(-6)) }, 'Top-3 identified');
 
+  // Select ~10 questions that will remain unanswered to simulate real-world engagement gaps.
+  // Only candidates with 0 existing answers are eligible so already-answered questions are
+  // never retroactively stripped of their answers on re-runs.
+  const unansweredCandidates = questions.filter((q) => q.answerCount === 0);
+  const unansweredCount = Math.min(UNANSWERED_QUESTION_COUNT, unansweredCandidates.length);
+  const unansweredIds = new Set(
+    shuffle(unansweredCandidates).slice(0, unansweredCount).map((q) => q._id.toString()),
+  );
+  logger.info(
+    { unansweredCount, totalCommunity: questions.length },
+    'Unanswered questions designated',
+  );
+
   // ── Phase 1 ───────────────────────────────────────────────────────────────────
   logger.info('=== Phase 1: Answers ===');
-  const newAnswers = await seedAnswers(questions, students);
+  const newAnswers = await seedAnswers(questions, students, unansweredIds);
   logger.info({ newAnswers }, 'Phase 1 complete');
 
   // ── Phase 2 ───────────────────────────────────────────────────────────────────
@@ -418,6 +522,10 @@ async function seedInteractions(): Promise<void> {
   await boostTopQuestions(topIds, students);
 
   // ── Summary ───────────────────────────────────────────────────────────────────
+  const personalCount = await QuestionModel.countDocuments({
+    type: 'personal',
+    isTrashed: { $ne: true },
+  });
   const [totalAnswers, upAgg, downAgg] = await Promise.all([
     AnswerModel.countDocuments({ questionId: { $in: questions.map((q) => q._id) } }),
     AnswerModel.aggregate<{ total: number }>([
@@ -432,7 +540,9 @@ async function seedInteractions(): Promise<void> {
 
   logger.info(
     {
-      questions: questions.length,
+      communityQuestions: questions.length,
+      personalQuestions: personalCount,
+      unansweredCommunity: unansweredCount,
       totalAnswers,
       newAnswersThisRun: newAnswers,
       totalUpvotes: upAgg[0]?.total ?? 0,

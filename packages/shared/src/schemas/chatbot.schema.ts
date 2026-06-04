@@ -16,8 +16,13 @@ export const chatFeedbackSchema = z.object({
   comment: z.string().trim().max(500).optional(),
 });
 
+export const updateFeedbackStatusSchema = z.object({
+  status: z.enum(['reviewed', 'actioned', 'archived']),
+});
+
 export type ChatQueryInput = z.infer<typeof chatQuerySchema>;
 export type ChatFeedbackInput = z.infer<typeof chatFeedbackSchema>;
+export type UpdateFeedbackStatusInput = z.infer<typeof updateFeedbackStatusSchema>;
 
 // ─── Response types ───────────────────────────────────────────────────────────
 
@@ -50,7 +55,7 @@ export interface PublicChatFeedback {
   rating: (typeof CHAT_FEEDBACK_RATINGS)[number];
   comment?: string;
   user: { id: string; name: string };
-  status: 'open' | 'reviewed' | 'resolved';
+  status: 'open' | 'reviewed' | 'actioned' | 'archived';
   /** Full conversation snapshot; populated for feedback submitted after Phase 6. */
   messages?: Array<{ role: 'user' | 'assistant'; content: string }>;
   createdAt: string;

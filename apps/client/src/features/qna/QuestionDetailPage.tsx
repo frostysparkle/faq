@@ -1,19 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  CheckCircle2, ChevronLeft, ChevronRight,
-  Clock, ThumbsDown, ThumbsUp, X, ZoomIn, ZoomOut,
+  CheckCircle2, ChevronDown, ChevronLeft, ChevronUp,
+  Clock, Folder, MessageSquare, ThumbsDown, ThumbsUp, X, ZoomIn, ZoomOut,
 } from 'lucide-react';
-import { COMMUNITY_ANSWER_CAP } from '@samagama/shared';
-import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../auth/AuthProvider';
+import { useSettings } from '../../hooks/useSettings';
 import { useAnswers, useQuestion, useSubmitAnswer, useVoteAnswer } from './queries';
 
-const ANSWERS_PER_PAGE = 5;
-
-// ─── Avatar colour palette (picked by name hash) ──────────────────────────────
-
+// ── Avatar palette ─────────────────────────────────────────────────────────────
 const AVATAR_PALETTE = [
   { bg: '#EDE9FE', fg: '#7C3AED' },
   { bg: '#D1FAE5', fg: '#059669' },
@@ -23,14 +19,12 @@ const AVATAR_PALETTE = [
   { bg: '#FCE7F3', fg: '#DB2777' },
   { bg: '#E0F2FE', fg: '#0284C7' },
 ];
-
 function avatarColor(name: string) {
   const idx = ((name.charCodeAt(0) ?? 0) + (name.charCodeAt(1) ?? 0)) % AVATAR_PALETTE.length;
   return AVATAR_PALETTE[idx];
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
+// ── Helpers ────────────────────────────────────────────────────────────────────
 function timeAgo(iso: string): string {
   const sec = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
   if (sec < 60) return `${sec}s ago`;
@@ -40,108 +34,161 @@ function timeAgo(iso: string): string {
   if (hr < 24) return `${hr}hr${hr === 1 ? '' : 's'} ago`;
   return `${Math.floor(hr / 24)}d ago`;
 }
-
 function formatDate(iso: string): string {
-  const d = new Date(iso);
-  const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-  return `${date} at ${time}`;
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function capitalize(s: string) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// ── Status config ──────────────────────────────────────────────────────────────
+const STATUS_CFG: Record<string, { label: string; bg: string; fg: string; border: string; accent: string }> = {
+  open:     { label: 'Open',     bg: '#EDE9FE', fg: '#7C3AED', border: '#C4B5FD', accent: '#7C3AED' },
+  answered: { label: 'Answered', bg: '#FEF3C7', fg: '#D97706', border: '#FDE68A', accent: '#D97706' },
+  resolved: { label: 'Resolved', bg: '#D1FAE5', fg: '#059669', border: '#A7F3D0', accent: '#059669' },
+};
+function getStatus(s: string) {
+  return STATUS_CFG[s] ?? { label: capitalize(s), bg: '#F3F4F6', fg: '#6B7280', border: '#E5E7EB', accent: '#E5E7EB' };
 }
 
-function statusTextColor(status: string): string {
-  switch (status) {
-    case 'resolved': return 'var(--color-success)';
-    case 'answered': return '#d97706';
-    case 'open':     return 'var(--color-primary)';
-    default:         return 'var(--color-text-muted)';
-  }
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-// ─── QuestionDetailPage ───────────────────────────────────────────────────────
-
+// ── QuestionDetailPage ─────────────────────────────────────────────────────────
 export function QuestionDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  const navigate  = useNavigate();
+  const { user }  = useAuth();
   const { data: question, isLoading: qLoading } = useQuestion(id);
-  const { data: answers, isLoading: aLoading } = useAnswers(id);
-  const [page, setPage] = useState(1);
+  const { data: answers,  isLoading: aLoading  } = useAnswers(id);
+  const { data: settings } = useSettings();
+
   const [showAnswerForm, setShowAnswerForm] = useState(false);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [zoom, setZoom] = useState(1);
+  const [showAll,        setShowAll]        = useState(false);
+  const [lightboxOpen,   setLightboxOpen]   = useState(false);
+  const [zoom,           setZoom]           = useState(1);
 
   const totalAnswers = answers?.length ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalAnswers / ANSWERS_PER_PAGE));
-  const pagedAnswers = (answers ?? []).slice((page - 1) * ANSWERS_PER_PAGE, page * ANSWERS_PER_PAGE);
-  const capReached = totalAnswers >= COMMUNITY_ANSWER_CAP;
+
+  // Sort by net vote score (highest first) — reflects persisted MongoDB counts.
+  const sortedAnswers = [...(answers ?? [])].sort(
+    (a, b) => (b.upvoteCount - b.downvoteCount) - (a.upvoteCount - a.downvoteCount),
+  );
+  // Default view: top 3; expanded view: all.
+  const displayedAnswers = showAll ? sortedAnswers : sortedAnswers.slice(0, 3);
+  const hasMore = totalAnswers > 3;
+
+  const answerCap   = settings?.communityAnswerCap ?? 10;
+  const capReached      = totalAnswers >= answerCap;
   const alreadyAnswered = answers?.some((a) => a.author.id === user?.id) ?? false;
 
-  // Reset to page 1 whenever answers list changes
-  useEffect(() => { setPage(1); }, [totalAnswers]);
-
-  if (qLoading) return <div className="mod-card mod-card-blue" style={{ padding: 16 }}>Loading…</div>;
-  if (!question) return <div className="mod-card mod-card-red" style={{ padding: 16 }}>Question not found.</div>;
+  if (qLoading) return <div className="mod-card mod-card-blue" style={{ padding: 20, fontSize: 13, color: 'var(--color-text-muted)' }}>Loading…</div>;
+  if (!question) return <div className="mod-card mod-card-red" style={{ padding: 20 }}>Question not found.</div>;
 
   const isOwnQuestion = user?.id === question.author.id;
+  const sc            = getStatus(question.status);
+  const qAvatarColor  = avatarColor(question.author.name);
+  const showDescription =
+    question.description &&
+    question.description.trim() &&
+    question.description.trim().toLowerCase() !== question.title.trim().toLowerCase();
 
   return (
-    <div style={{ maxWidth: 860, margin: '0 auto' }}>
+    <div style={{ maxWidth: 800, margin: '0 auto' }}>
 
       {/* ── Back ── */}
       <button
         onClick={() => navigate(-1)}
         style={{
-          display: 'inline-flex', alignItems: 'center', gap: 4,
+          display: 'inline-flex', alignItems: 'center', gap: 6,
           background: 'none', border: 'none', cursor: 'pointer',
-          color: 'var(--color-text-muted)', fontSize: 13,
-          marginBottom: 28, fontFamily: 'inherit', fontWeight: 500,
-          padding: '4px 0',
+          color: 'var(--color-text-muted)', fontSize: 13, fontWeight: 500,
+          padding: '4px 0', marginBottom: 24, fontFamily: 'inherit', transition: 'color 0.15s',
         }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-primary)'; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-muted)'; }}
       >
-        <ChevronLeft size={16} /> Back
+        <ChevronLeft size={15} />Back to Community
       </button>
 
-      {/* ── Title ── */}
-      <h1 style={{ fontSize: 36, fontWeight: 800, color: 'var(--color-text)', marginBottom: 14, lineHeight: 1.25, letterSpacing: '-0.02em' }}>
-        {question.title}
-      </h1>
+      {/* ── Question card ── */}
+      <div style={{
+        background: 'var(--color-card)',
+        border: '1px solid var(--color-border)',
+        borderLeft: `4px solid ${sc.accent}`,
+        borderRadius: 14,
+        padding: '24px 28px',
+        marginBottom: 28,
+      }}>
+        {/* Status + Category chips */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center',
+            fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+            padding: '3px 10px', borderRadius: 20,
+            background: sc.bg, color: sc.fg, border: `1px solid ${sc.border}`,
+          }}>
+            {sc.label}
+          </span>
+          {question.category && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              fontSize: 11, fontWeight: 600,
+              padding: '3px 10px', borderRadius: 20,
+              background: 'var(--color-input, #F3F4F6)', color: 'var(--color-text-muted)',
+              border: '1px solid var(--color-border)',
+            }}>
+              <Folder size={11} />{question.category.name}
+            </span>
+          )}
+        </div>
 
-      {/* ── Meta row: Asked by · Date · Type · Status ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 0, fontSize: 14, color: 'var(--color-text-muted)', flexWrap: 'wrap', marginBottom: 20, rowGap: 4 }}>
-        <span>Asked by&nbsp;<strong style={{ color: 'var(--color-text)' }}>{question.author.name}</strong></span>
-        <span style={{ margin: '0 8px' }}>·</span>
-        <span>{formatDate(question.createdAt)}</span>
-        <span style={{ margin: '0 8px' }}>·</span>
-        <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{capitalize(question.type)}</span>
-        <span style={{ margin: '0 8px' }}>·</span>
-        <span style={{ color: statusTextColor(question.status), fontWeight: 600 }}>{capitalize(question.status)}</span>
-        {question.category && (
-          <>
-            <span style={{ margin: '0 8px' }}>·</span>
-            <span style={{ color: 'var(--color-text-muted)' }}>{question.category.name}</span>
-          </>
+        {/* Title */}
+        <h1 style={{
+          fontSize: 22, fontWeight: 800, lineHeight: 1.4,
+          color: 'var(--color-text)', margin: '0 0 16px', letterSpacing: '-0.01em',
+        }}>
+          {question.title}
+        </h1>
+
+        {/* Description */}
+        {showDescription && (
+          <p style={{
+            fontSize: 14, lineHeight: 1.75, color: 'var(--color-text)',
+            whiteSpace: 'pre-wrap', margin: '0 0 18px',
+          }}>
+            {question.description}
+          </p>
         )}
+
+        {/* Screenshot thumbnail */}
+        {question.screenshotUrl && (
+          <div style={{ marginBottom: 18 }}>
+            <ImageThumbnail src={question.screenshotUrl} onClick={() => { setZoom(1); setLightboxOpen(true); }} />
+          </div>
+        )}
+
+        {/* Card footer: author + answer count */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          paddingTop: 16, borderTop: '1px solid var(--color-border)',
+        }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+            background: qAvatarColor.bg, color: qAvatarColor.fg,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 12, fontWeight: 800,
+          }}>
+            {question.author.name.charAt(0).toUpperCase()}
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
+            Asked by <strong style={{ color: 'var(--color-text)', fontWeight: 600 }}>{question.author.name}</strong>
+            <span style={{ margin: '0 6px' }}>·</span>
+            {formatDate(question.createdAt)}
+          </div>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--color-text-muted)' }}>
+            <MessageSquare size={13} />
+            {totalAnswers} {totalAnswers === 1 ? 'answer' : 'answers'}
+          </div>
+        </div>
       </div>
 
-      {/* ── Description (if distinct from title) ── */}
-      {question.description &&
-       question.description.trim() &&
-       question.description.trim().toLowerCase() !== question.title.trim().toLowerCase() && (
-        <div style={{ fontSize: 15, color: 'var(--color-text)', lineHeight: 1.75, whiteSpace: 'pre-wrap', marginBottom: 20 }}>
-          {question.description}
-        </div>
-      )}
-
-      {/* ── Screenshot ── */}
-      {question.screenshotUrl && (
-        <div style={{ marginBottom: 20 }}>
-          <ImageThumbnail src={question.screenshotUrl} onClick={() => { setZoom(1); setLightboxOpen(true); }} />
-        </div>
-      )}
+      {/* ── Lightbox ── */}
       {lightboxOpen && question.screenshotUrl && (
         <ImageLightbox
           src={question.screenshotUrl}
@@ -152,82 +199,111 @@ export function QuestionDetailPage() {
         />
       )}
 
-      {/* ── Divider ── */}
-      <div style={{ height: 1, background: 'var(--color-border)', marginBottom: 28 }} />
-
-      {/* ── Personal question answers ── */}
+      {/* ── Answers ── */}
       {question.type === 'personal' ? (
-        <>
-          {aLoading && (
-            <div style={{ fontSize: 13, color: 'var(--color-text-muted)', paddingBottom: 24 }}>Loading response…</div>
-          )}
-          {!aLoading && answers && answers.filter((a) => a.status === 'approved').length > 0
-            ? answers.filter((a) => a.status === 'approved').map((a) => (
-                <AnswerCard key={a.id} answer={a} questionId={question.id} canVote={false} voteMutationKey={question.id} />
-              ))
-            : !aLoading && (
-                <div style={{ fontSize: 14, color: 'var(--color-text-muted)', paddingBottom: 28 }}>
-                  Personal questions are answered directly by moderators. A response will appear here once a moderator replies.
-                </div>
-              )
-          }
-        </>
+        <PersonalAnswerSection answers={answers ?? []} isLoading={aLoading} />
       ) : (
         <>
-          {/* ── Community answers ── */}
-          {aLoading && (
-            <div style={{ fontSize: 13, color: 'var(--color-text-muted)', paddingBottom: 24 }}>Loading answers…</div>
-          )}
-          {!aLoading && totalAnswers === 0 && (
-            <div style={{ fontSize: 14, color: 'var(--color-text-muted)', paddingBottom: 28 }}>
-              No answers yet — be the first to share what worked for you.
+          {/* Section header */}
+          {!aLoading && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text)', whiteSpace: 'nowrap' }}>
+                {totalAnswers === 0 ? 'No answers yet' : `${totalAnswers} Answer${totalAnswers === 1 ? '' : 's'}`}
+              </span>
+              <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
             </div>
           )}
-          {pagedAnswers.map((a) => (
-            <AnswerCard
-              key={a.id}
-              answer={a}
-              questionId={question.id}
-              canVote={!!user?.id && user.id !== a.author.id}
-              voteMutationKey={question.id}
-            />
-          ))}
-          {totalPages > 1 && (
-            <PaginationBar page={page} totalPages={totalPages} onChange={setPage} />
+
+          {aLoading && (
+            <div style={{ fontSize: 13, color: 'var(--color-text-muted)', padding: '12px 0' }}>Loading answers…</div>
+          )}
+
+          {/* Answer cards (top 3 or all, sorted by net votes) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {displayedAnswers.map((a) => (
+              <AnswerCard
+                key={a.id}
+                answer={a}
+                questionId={question.id}
+                canVote={!!user?.id && user.id !== a.author.id}
+                voteMutationKey={question.id}
+              />
+            ))}
+          </div>
+
+          {/* Show All / Show Less toggle */}
+          {!aLoading && hasMore && (
+            <button
+              onClick={() => setShowAll((v) => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                width: '100%', marginTop: 10, padding: '10px 0',
+                background: 'none',
+                border: '1px solid var(--color-border)',
+                borderRadius: 10, cursor: 'pointer',
+                fontSize: 13, fontWeight: 600, color: 'var(--color-primary)',
+                fontFamily: 'inherit', transition: 'all 0.15s',
+              }}
+              onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'var(--color-primary)'; el.style.color = '#fff'; el.style.borderColor = 'var(--color-primary)'; }}
+              onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'none'; el.style.color = 'var(--color-primary)'; el.style.borderColor = 'var(--color-border)'; }}
+            >
+              {showAll
+                ? <><ChevronUp size={14} />Show Less</>
+                : <><ChevronDown size={14} />Show All {totalAnswers} Answers</>
+              }
+            </button>
           )}
 
           {/* ── Submit answer ── */}
           {!isOwnQuestion && question.status !== 'resolved' && question.status !== 'archived' && (
-            alreadyAnswered ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--color-success)', padding: '10px 14px', background: 'var(--color-success-bg, #f0fdf4)', borderRadius: 8, border: '1px solid var(--color-success)', marginBottom: 8, fontWeight: 600 }}>
-                <Clock size={14} />
-                You've already submitted an answer — it's pending moderation.
+            <div style={{ marginTop: 28 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text)', whiteSpace: 'nowrap' }}>Your Answer</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
               </div>
-            ) : capReached ? (
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', padding: '8px 12px', background: 'var(--color-input)', borderRadius: 8, border: '1px solid var(--color-border)', marginBottom: 8 }}>
-                Max {COMMUNITY_ANSWER_CAP} answers reached — you can still vote on existing answers.
-              </div>
-            ) : !showAnswerForm ? (
-              <button
-                onClick={() => setShowAnswerForm(true)}
-                style={{
-                  marginTop: 8, padding: '10px 22px', borderRadius: 10, border: 'none',
-                  background: 'var(--color-success)', color: 'white',
-                  fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-                  transition: 'opacity 0.15s',
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.88'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
-              >
-                Answer this question
-              </button>
-            ) : (
-              <AnswerPopup
-                questionId={question.id}
-                showConfirmation={totalAnswers > 0}
-                onClose={() => setShowAnswerForm(false)}
-              />
-            )
+
+              {alreadyAnswered ? (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '14px 18px', borderRadius: 12,
+                  background: 'var(--color-success-bg, #f0fdf4)',
+                  border: '1px solid var(--color-success)',
+                  fontSize: 13, color: 'var(--color-success)', fontWeight: 600,
+                }}>
+                  <Clock size={15} />
+                  Your answer is submitted and is pending moderator review.
+                </div>
+              ) : capReached ? (
+                <div style={{
+                  padding: '12px 16px', borderRadius: 12,
+                  background: 'var(--color-input, #F9FAFB)',
+                  border: '1px solid var(--color-border)',
+                  fontSize: 13, color: 'var(--color-text-muted)',
+                }}>
+                  This question has reached the maximum of {answerCap} answers.
+                </div>
+              ) : !showAnswerForm ? (
+                <button
+                  onClick={() => setShowAnswerForm(true)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    padding: '10px 22px', borderRadius: 10, border: 'none',
+                    background: 'var(--color-primary)', color: 'white',
+                    fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 0.15s',
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.88'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
+                >
+                  <MessageSquare size={15} />Write an Answer
+                </button>
+              ) : (
+                <AnswerForm
+                  questionId={question.id}
+                  showConfirmation={totalAnswers > 0}
+                  onClose={() => setShowAnswerForm(false)}
+                />
+              )}
+            </div>
           )}
         </>
       )}
@@ -235,186 +311,213 @@ export function QuestionDetailPage() {
   );
 }
 
-// ─── AnswerCard ───────────────────────────────────────────────────────────────
+// ── PersonalAnswerSection ──────────────────────────────────────────────────────
+function PersonalAnswerSection({
+  answers, isLoading,
+}: {
+  answers: import('@samagama/shared').PublicAnswer[];
+  isLoading: boolean;
+}) {
+  const approved = answers.filter((a) => a.status === 'approved');
+  if (isLoading) return <div style={{ fontSize: 13, color: 'var(--color-text-muted)', padding: '12px 0' }}>Loading response…</div>;
+  if (approved.length === 0) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'flex-start', gap: 14,
+        padding: '18px 20px', borderRadius: 12,
+        background: 'var(--color-input, #F9FAFB)',
+        border: '1px solid var(--color-border)',
+        color: 'var(--color-text-muted)', fontSize: 13, lineHeight: 1.6,
+      }}>
+        <Clock size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+        Personal questions are answered directly by moderators. A response will appear here once a moderator replies.
+      </div>
+    );
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {approved.map((a) => (
+        <AnswerCard key={a.id} answer={a} questionId="" canVote={false} voteMutationKey="" />
+      ))}
+    </div>
+  );
+}
 
-function AnswerCard({ answer, questionId: _questionId, canVote, voteMutationKey }: {
+// ── AnswerCard ─────────────────────────────────────────────────────────────────
+function AnswerCard({ answer, questionId: _qId, canVote, voteMutationKey }: {
   answer: import('@samagama/shared').PublicAnswer;
   questionId: string;
   canVote: boolean;
   voteMutationKey: string;
 }) {
-  const vote = useVoteAnswer(voteMutationKey);
-  const color = avatarColor(answer.author.name);
+  const vote       = useVoteAnswer(voteMutationKey);
+  const color      = avatarColor(answer.author.name);
   const isApproved = answer.status === 'approved';
 
-  return (
-    <div style={{ paddingBottom: 28 }}>
-      {/* ── Answer body ── */}
-      <div style={{ fontSize: 15, lineHeight: 1.75, color: 'var(--color-text)', whiteSpace: 'pre-wrap', marginBottom: 18 }}>
-        {answer.body}
-      </div>
+  function castVote(direction: 'up' | 'down') {
+    if (!vote.isPending) vote.mutate({ answerId: answer.id, direction });
+  }
 
-      {/* ── Attribution row: avatar · Answered by Name · ✓ Approved · time ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 0, fontSize: 14, color: 'var(--color-text-muted)', flexWrap: 'wrap', rowGap: 4 }}>
+  const upActive   = answer.myVote === 'up';
+  const downActive = answer.myVote === 'down';
+
+  return (
+    <div style={{
+      background: 'var(--color-card)',
+      border: '1px solid var(--color-border)',
+      borderLeft: `3px solid ${isApproved ? '#059669' : 'var(--color-border)'}`,
+      borderRadius: 12,
+      padding: '18px 22px',
+      background: isApproved ? 'rgba(5,150,105,0.02)' : 'var(--color-card)',
+    } as React.CSSProperties}>
+
+      {/* Answer body */}
+      <p style={{
+        fontSize: 14, lineHeight: 1.8, color: 'var(--color-text)',
+        whiteSpace: 'pre-wrap', margin: '0 0 14px',
+      }}>
+        {answer.body}
+      </p>
+
+      {/* Footer: avatar · name · votes · timestamp */}
+      <div style={{
+        display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8,
+        paddingTop: 12, borderTop: '1px solid var(--color-border)',
+        fontSize: 13,
+      }}>
         {/* Avatar */}
         <div style={{
-          width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+          width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
           background: color.bg, color: color.fg,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 11, fontWeight: 800, marginRight: 8,
+          fontSize: 11, fontWeight: 800,
         }}>
           {answer.author.name.charAt(0).toUpperCase()}
         </div>
 
-        <span>Answered by&nbsp;<strong style={{ color: 'var(--color-text)' }}>{answer.author.name}</strong></span>
+        {/* Name */}
+        <span style={{ fontWeight: 600, color: 'var(--color-text)' }}>
+          {answer.author.name}
+        </span>
 
-        {isApproved ? (
-          <>
-            <span style={{ margin: '0 8px' }}>·</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--color-success)', fontWeight: 600 }}>
-              <CheckCircle2 size={15} style={{ color: 'var(--color-success)' }} />
-              Approved by Moderator
-            </span>
-          </>
-        ) : (
-          <>
-            <span style={{ margin: '0 8px' }}>·</span>
-            <Badge color="default">{capitalize(answer.status)}</Badge>
-            {canVote && (
-              <>
-                <span style={{ margin: '0 8px' }}>·</span>
-                <button
-                  onClick={() => !vote.isPending && vote.mutate({ answerId: answer.id, direction: 'up' })}
-                  disabled={vote.isPending}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', color: answer.myVote === 'up' ? 'var(--color-success)' : 'var(--color-text-muted)', fontSize: 13, fontWeight: 600, transition: 'color 0.15s' }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-success)'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = answer.myVote === 'up' ? 'var(--color-success)' : 'var(--color-text-muted)'; }}
-                >
-                  <ThumbsUp size={13} strokeWidth={answer.myVote === 'up' ? 2.5 : 1.8} fill={answer.myVote === 'up' ? 'var(--color-success)' : 'none'} />
-                  {answer.upvoteCount}
-                </button>
-                <button
-                  onClick={() => !vote.isPending && vote.mutate({ answerId: answer.id, direction: 'down' })}
-                  disabled={vote.isPending}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', color: answer.myVote === 'down' ? 'var(--color-danger)' : 'var(--color-text-muted)', fontSize: 13, fontWeight: 600, transition: 'color 0.15s', marginLeft: 8 }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-danger)'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = answer.myVote === 'down' ? 'var(--color-danger)' : 'var(--color-text-muted)'; }}
-                >
-                  <ThumbsDown size={13} strokeWidth={answer.myVote === 'down' ? 2.5 : 1.8} fill={answer.myVote === 'down' ? 'var(--color-danger)' : 'none'} />
-                  {answer.downvoteCount}
-                </button>
-              </>
-            )}
-          </>
+        {/* Approved indicator inline (no badge, just a small icon) */}
+        {isApproved && (
+          <CheckCircle2 size={14} color="#059669" style={{ flexShrink: 0 }} />
         )}
 
-        <span style={{ margin: '0 8px' }}>·</span>
-        <span>{timeAgo(answer.createdAt)}</span>
-      </div>
+        {/* Votes — clickable if canVote, read-only otherwise */}
+        <VoteControl
+          direction="up"
+          count={answer.upvoteCount}
+          active={upActive}
+          canVote={canVote}
+          isPending={vote.isPending}
+          onVote={() => castVote('up')}
+        />
+        <VoteControl
+          direction="down"
+          count={answer.downvoteCount}
+          active={downActive}
+          canVote={canVote}
+          isPending={vote.isPending}
+          onVote={() => castVote('down')}
+        />
 
-      {/* ── Bottom divider ── */}
-      <div style={{ height: 1, background: 'var(--color-border)', marginTop: 28 }} />
+        {/* Timestamp — pushed to the right */}
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--color-text-muted)' }}>
+          {timeAgo(answer.createdAt)}
+        </span>
+      </div>
     </div>
   );
 }
 
-// ─── PaginationBar ────────────────────────────────────────────────────────────
+// ── VoteControl ────────────────────────────────────────────────────────────────
+function VoteControl({ direction, count, active, canVote, isPending, onVote }: {
+  direction: 'up' | 'down';
+  count: number;
+  active: boolean;
+  canVote: boolean;
+  isPending: boolean;
+  onVote: () => void;
+}) {
+  const isUp       = direction === 'up';
+  const activeColor = isUp ? '#059669' : '#DC2626';
+  const Icon        = isUp ? ThumbsUp : ThumbsDown;
 
-function PaginationBar({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (p: number) => void }) {
-  const pages: (number | '…')[] = [];
-  if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (page > 3) pages.push('…');
-    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
-    if (page < totalPages - 2) pages.push('…');
-    pages.push(totalPages);
+  if (!canVote) {
+    // Read-only display
+    return (
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        fontSize: 12, fontWeight: 600,
+        color: active ? activeColor : 'var(--color-text-muted)',
+      }}>
+        <Icon size={13} strokeWidth={active ? 2.5 : 1.8} fill={active ? activeColor : 'none'} />
+        {count}
+      </span>
+    );
   }
 
-  const btnBase: React.CSSProperties = {
-    width: 36, height: 36, borderRadius: 8, border: '1px solid var(--color-border)',
-    background: 'var(--color-card)', cursor: 'pointer', fontFamily: 'inherit',
-    fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    transition: 'all 0.15s', color: 'var(--color-text-muted)',
-  };
-
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16 }}>
-      {/* Prev */}
-      <button
-        onClick={() => onChange(Math.max(1, page - 1))}
-        disabled={page === 1}
-        style={{ ...btnBase, opacity: page === 1 ? 0.4 : 1 }}
-      >
-        <ChevronLeft size={16} />
-      </button>
-
-      {pages.map((p, i) =>
-        p === '…' ? (
-          <span key={`ellipsis-${i}`} style={{ ...btnBase, cursor: 'default', border: 'none', background: 'none' }}>…</span>
-        ) : (
-          <button
-            key={p}
-            onClick={() => onChange(p as number)}
-            style={{
-              ...btnBase,
-              background: page === p ? 'var(--color-primary)' : 'var(--color-card)',
-              color: page === p ? 'white' : 'var(--color-text-muted)',
-              borderColor: page === p ? 'var(--color-primary)' : 'var(--color-border)',
-            }}
-          >
-            {p}
-          </button>
-        )
-      )}
-
-      {/* Next */}
-      <button
-        onClick={() => onChange(Math.min(totalPages, page + 1))}
-        disabled={page === totalPages}
-        style={{ ...btnBase, opacity: page === totalPages ? 0.4 : 1 }}
-      >
-        <ChevronRight size={16} />
-      </button>
-    </div>
+    <button
+      onClick={onVote}
+      disabled={isPending}
+      title={isUp ? 'Upvote' : 'Downvote'}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        background: 'none', border: 'none', cursor: isPending ? 'default' : 'pointer',
+        padding: 0, fontFamily: 'inherit',
+        fontSize: 12, fontWeight: 600,
+        color: active ? activeColor : 'var(--color-text-muted)',
+        transition: 'color 0.15s',
+      }}
+      onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.color = activeColor; }}
+      onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-muted)'; }}
+    >
+      <Icon size={13} strokeWidth={active ? 2.5 : 1.8} fill={active ? activeColor : 'none'} />
+      {count}
+    </button>
   );
 }
 
-// ─── AnswerPopup ──────────────────────────────────────────────────────────────
-
-function AnswerPopup({ questionId, showConfirmation, onClose }: { questionId: string; showConfirmation: boolean; onClose: () => void }) {
-  const [confirmedAnswersInadequate, setConfirmedAnswersInadequate] = useState(!showConfirmation);
+// ── AnswerForm ─────────────────────────────────────────────────────────────────
+function AnswerForm({ questionId, showConfirmation, onClose }: {
+  questionId: string;
+  showConfirmation: boolean;
+  onClose: () => void;
+}) {
+  const [confirmed,     setConfirmed]     = useState(!showConfirmation);
   const [assumeCorrect, setAssumeCorrect] = useState(false);
   const submit = useSubmitAnswer(questionId);
-  const [body, setBody] = useState('');
-  const [bodyError, setBodyError] = useState<string | null>(null);
+  const [body,  setBody]  = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
-    if (body.trim().length < 10) { setBodyError('Please write at least 10 characters.'); return; }
-    if (!assumeCorrect) { setBodyError('Please confirm that you believe your answer is correct.'); return; }
-    setBodyError(null);
+    if (body.trim().length < 10) { setError('Please write at least 10 characters.'); return; }
+    if (!assumeCorrect)          { setError('Please confirm your answer is correct.'); return; }
+    setError(null);
     await submit.mutateAsync({ body });
     setBody('');
     onClose();
   };
 
   return (
-    <div
-      style={{
-        background: 'var(--color-card)', border: '1px solid var(--color-border)',
-        borderRadius: 14, padding: '18px 20px',
-      }}
-    >
-      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', marginBottom: 12 }}>Your Answer</div>
-      {showConfirmation && !confirmedAnswersInadequate ? (
+    <div style={{
+      background: 'var(--color-card)',
+      border: '1px solid var(--color-border)',
+      borderTop: '3px solid var(--color-primary)',
+      borderRadius: 12,
+      padding: '20px 22px',
+    }}>
+      {showConfirmation && !confirmed ? (
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: 'var(--color-text)' }}>
-            Are you sure the existing answers are not up to the mark?
-          </div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', margin: '0 0 14px' }}>
+            Existing answers may already help. Are you sure you'd like to add a new one?
+          </p>
           <div style={{ display: 'flex', gap: 8 }}>
             <Button variant="ghost" size="sm" onClick={onClose}>No, existing are fine</Button>
-            <Button size="sm" onClick={() => setConfirmedAnswersInadequate(true)}>Yes, I'll add one</Button>
+            <Button size="sm" onClick={() => setConfirmed(true)}>Yes, I'll add one</Button>
           </div>
         </div>
       ) : (
@@ -422,32 +525,48 @@ function AnswerPopup({ questionId, showConfirmation, onClose }: { questionId: st
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            rows={4}
-            placeholder="Share what worked for you. Be specific and link to official sources where possible."
+            rows={5}
+            placeholder="Share what worked for you. Be specific and include official sources where possible."
             style={{
               width: '100%', background: 'var(--color-input)',
-              border: '1.5px solid var(--color-border)', borderRadius: 8,
-              padding: '8px 12px', color: 'var(--color-text)',
-              fontSize: 13, fontFamily: 'inherit', outline: 'none',
-              resize: 'vertical', boxSizing: 'border-box',
+              border: `1.5px solid ${error ? 'var(--color-danger)' : 'var(--color-border)'}`,
+              borderRadius: 8, padding: '10px 14px',
+              color: 'var(--color-text)', fontSize: 13,
+              fontFamily: 'inherit', outline: 'none',
+              resize: 'vertical', boxSizing: 'border-box', lineHeight: 1.7,
+              transition: 'border-color 0.15s',
             }}
+            onFocus={(e)  => { if (!error) (e.currentTarget as HTMLTextAreaElement).style.borderColor = 'var(--color-primary)'; }}
+            onBlur={(e)   => { if (!error) (e.currentTarget as HTMLTextAreaElement).style.borderColor = 'var(--color-border)'; }}
           />
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12, color: 'var(--color-text-muted)', cursor: 'pointer' }}>
-            <input type="checkbox" checked={assumeCorrect} onChange={(e) => setAssumeCorrect(e.target.checked)} style={{ accentColor: 'var(--color-success)' }} />
-            I believe my answer is correct.
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12, color: 'var(--color-text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+            <input
+              type="checkbox"
+              checked={assumeCorrect}
+              onChange={(e) => setAssumeCorrect(e.target.checked)}
+              style={{ accentColor: 'var(--color-success)', width: 14, height: 14 }}
+            />
+            I believe my answer is correct and helpful.
           </label>
-          {bodyError && <div role="alert" style={{ marginTop: 6, fontSize: 12, color: 'var(--color-danger)' }}>{bodyError}</div>}
-          {submit.isError && (
-            <div role="alert" style={{ marginTop: 6, background: 'var(--color-danger-bg)', color: 'var(--color-danger)', borderRadius: 6, padding: '5px 10px', fontSize: 12 }}>
-              {submit.error instanceof Error ? submit.error.message : 'Could not submit answer'}
+
+          {error && (
+            <div role="alert" style={{ marginTop: 8, fontSize: 12, color: 'var(--color-danger)', fontWeight: 500 }}>
+              {error}
             </div>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, gap: 8 }}>
-            <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Visible immediately · reviewed by moderator</span>
+          {submit.isError && (
+            <div role="alert" style={{ marginTop: 8, padding: '8px 12px', background: 'var(--color-danger-bg)', color: 'var(--color-danger)', borderRadius: 8, fontSize: 12 }}>
+              {submit.error instanceof Error ? submit.error.message : 'Could not submit — please try again.'}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, gap: 8 }}>
+            <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Visible immediately · reviewed by a moderator</span>
             <div style={{ display: 'flex', gap: 8 }}>
               <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
               <Button size="sm" onClick={handleSubmit} disabled={submit.isPending || !assumeCorrect || body.trim().length < 10}>
-                {submit.isPending ? 'Submitting…' : 'Submit'}
+                {submit.isPending ? 'Submitting…' : 'Submit Answer'}
               </Button>
             </div>
           </div>
@@ -457,8 +576,7 @@ function AnswerPopup({ questionId, showConfirmation, onClose }: { questionId: st
   );
 }
 
-// ─── Image thumbnail ──────────────────────────────────────────────────────────
-
+// ── ImageThumbnail ─────────────────────────────────────────────────────────────
 function ImageThumbnail({ src, onClick }: { src: string; onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -488,29 +606,17 @@ function ImageThumbnail({ src, onClick }: { src: string; onClick: () => void }) 
   );
 }
 
-// ─── Image lightbox ───────────────────────────────────────────────────────────
-
+// ── ImageLightbox ──────────────────────────────────────────────────────────────
 function ImageLightbox({ src, zoom, onZoomIn, onZoomOut, onClose }: {
   src: string; zoom: number;
   onZoomIn: () => void; onZoomOut: () => void; onClose: () => void;
 }) {
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === '+' || e.key === '=') onZoomIn();
-      if (e.key === '-') onZoomOut();
-    };
-    document.addEventListener('keydown', h);
-    return () => document.removeEventListener('keydown', h);
-  }, [onClose, onZoomIn, onZoomOut]);
-
   const btnStyle: React.CSSProperties = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     width: 38, height: 38, borderRadius: 10,
     background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)',
     color: 'white', cursor: 'pointer', backdropFilter: 'blur(4px)', transition: 'background 0.15s',
   };
-
   return (
     <div
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}

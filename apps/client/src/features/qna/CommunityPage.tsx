@@ -10,7 +10,6 @@ import {
   Flame,
   Folder,
   MessageSquare,
-  RotateCcw,
   Search,
   User,
   Users,
@@ -207,7 +206,6 @@ export function CommunityPage() {
         pending={pending}
         setPending={setPending}
         onApply={handleApply}
-        onClear={handleClear}
         activeCategories={activeCategories}
         idle={idle ?? null}
         hasPendingChanges={hasPendingChanges}
@@ -328,7 +326,6 @@ interface FilterBarProps {
   pending:           PendingFilters;
   setPending:        React.Dispatch<React.SetStateAction<PendingFilters>>;
   onApply:           () => void;
-  onClear:           () => void;
   activeCategories:  { id: string; name: string }[];
   idle:              IdleBuckets | null;
   hasPendingChanges: boolean;
@@ -337,7 +334,7 @@ interface FilterBarProps {
 }
 
 function FilterBar({
-  pending, setPending, onApply, onClear,
+  pending, setPending, onApply,
   activeCategories, idle, hasPendingChanges,
   searchInput, onSearchChange,
 }: FilterBarProps) {
@@ -427,25 +424,6 @@ function FilterBar({
         Apply
       </button>
 
-      {/* Clear */}
-      <button
-        onClick={onClear}
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-          height: 36, padding: '0 12px', borderRadius: 8,
-          border: `1.5px solid ${T.border}`, background: 'var(--color-card)',
-          color: T.gray, fontSize: 13, fontWeight: 500,
-          cursor: 'pointer', fontFamily: 'inherit',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
-          transition: 'all 0.15s',
-          flexShrink: 0,
-        }}
-        onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = T.purple; el.style.color = T.purple; }}
-        onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.borderColor = T.border; el.style.color = T.gray; }}
-      >
-        <RotateCcw size={12} />
-        Clear
-      </button>
     </div>
   );
 }

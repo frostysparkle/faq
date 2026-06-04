@@ -429,11 +429,11 @@ function PersonalCard({ question }: { question: PublicQuestion }) {
 
   return (
     <div className={isResolved ? 'mod-card mod-card-green' : 'mod-card mod-card-blue'}>
-      <CardHeader title={question.title} meta={meta} expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
+      <CardHeader title={question.description.length > 200 ? question.description.slice(0, 197) + '…' : question.description} meta={meta} expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
       {expanded && (
         <CardBody>
-          {/* Question body */}
-          {question.description && question.description.trim() !== question.title.trim() && (
+          {/* Question body — only shown when description was truncated in the header */}
+          {question.description.length > 200 && (
             <div style={{ fontSize: 13, color: 'var(--color-text)', lineHeight: 1.65, marginBottom: 14, whiteSpace: 'pre-wrap' }}>{question.description}</div>
           )}
           {question.screenshotUrl && (
@@ -544,7 +544,7 @@ function CommunityCard({ question, pendingAnswers }: { question: PublicQuestion;
 
   return (
     <div className={cardClass}>
-      <CardHeader title={question.title} meta={meta} expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
+      <CardHeader title={question.description.length > 200 ? question.description.slice(0, 197) + '…' : question.description} meta={meta} expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
       {expanded && (
         <CardBody>
           {showStudents && taggedStudents.length > 0 && (
@@ -552,7 +552,7 @@ function CommunityCard({ question, pendingAnswers }: { question: PublicQuestion;
               Also asked by: {taggedStudents.map((s) => s.name).join(', ')}
             </div>
           )}
-          {question.description && question.description.trim() && question.description.trim().toLowerCase() !== question.title.trim().toLowerCase() && (
+          {question.description.length > 200 && (
             <div style={{ fontSize: 13, color: 'var(--color-text)', lineHeight: 1.65, marginBottom: 14, whiteSpace: 'pre-wrap' }}>{question.description}</div>
           )}
           {question.screenshotUrl && (
@@ -612,10 +612,10 @@ function ResolvedCard({ question }: { question: PublicQuestion }) {
 
   return (
     <div className="mod-card mod-card-green">
-      <CardHeader title={question.title} meta={meta} expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
+      <CardHeader title={question.description.length > 200 ? question.description.slice(0, 197) + '…' : question.description} meta={meta} expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
       {expanded && (
         <CardBody>
-          {question.description && question.description.trim() && question.description.trim().toLowerCase() !== question.title.trim().toLowerCase() && (
+          {question.description.length > 200 && (
             <div style={{ fontSize: 13, color: 'var(--color-text)', lineHeight: 1.65, marginBottom: 14, whiteSpace: 'pre-wrap' }}>{question.description}</div>
           )}
           {aLoading && <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Loading answers…</div>}
@@ -683,10 +683,10 @@ function TrashCard({ question }: { question: TrashedQuestionRow }) {
 
   return (
     <div className="mod-card mod-card-red" style={{ opacity: 0.92 }}>
-      <CardHeader title={question.title} meta={meta} expanded={expanded} onToggle={() => setExpanded((v) => !v)} extra={restoreBtn} />
+      <CardHeader title={question.description.length > 200 ? question.description.slice(0, 197) + '…' : question.description} meta={meta} expanded={expanded} onToggle={() => setExpanded((v) => !v)} extra={restoreBtn} />
       {expanded && (
         <CardBody>
-          {question.description && question.description.trim() && question.description.trim().toLowerCase() !== question.title.trim().toLowerCase() && (
+          {question.description.length > 200 && (
             <div style={{ fontSize: 13, color: 'var(--color-text)', lineHeight: 1.65, marginBottom: 14 }}>{question.description}</div>
           )}
           {question.answers.length === 0 && (<div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>No answers recorded.</div>)}

@@ -1,32 +1,29 @@
-// Creates community questions directly in MongoDB, bypassing the API.
-// This is used when the check-existing workflow finds no FAQ match.
-// Then the regular simulation script handles answers and voting.
+// Seeds community questions and personal questions directly into MongoDB.
+// Bypasses the check-existing API flow — intended for dev/demo environments only.
 //
-// Run: `npm run seed:community-questions`
+// What it does:
+//   1. Seeds community questions (unchanged from previous version).
+//   2. Seeds up to 20 personal questions distributed randomly across all 33 seeded students.
+//      Personal questions are private (visible only to the asker and moderators).
+//
+// Prerequisites:
+//   npm run seed:accounts          (real named accounts: 8 students + mods + admins)
+//   npm run seed:student-accounts  (25 additional students)
+//   npm run seed:faqs              (creates categories)
+//
+// Idempotent: skips questions whose title already exists in the database.
+//
+// Run: `npx tsx src/scripts/seed-community-questions.ts`
 import { connectDatabase, disconnectDatabase } from '../config/database.js';
 import { env } from '../config/env.js';
 import { logger } from '../config/logger.js';
 import { UserModel } from '../models/User.model.js';
 import { QuestionModel } from '../models/Question.model.js';
+import { CategoryModel } from '../models/Category.model.js';
 
-const BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:4000';
+// ── Community question data ───────────────────────────────────────────────────
 
-const STUDENT_EMAILS = [
-  'aditya@samagama.test', 'priya@samagama.test', 'arjun@samagama.test',
-  'sneha@samagama.test', 'vikram@samagama.test', 'kavya@samagama.test',
-  'rohit@samagama.test', 'ananya@samagama.test', 'siddharth@samagama.test',
-  'deepika@samagama.test', 'karthik@samagama.test', 'mythili@samagama.test',
-  'naveen@samagama.test', 'divya@samagama.test', 'suresh@samagama.test',
-  'meenakshi@samagama.test', 'chandran@samagama.test', 'lavanya@samagama.test',
-  'balaji@samagama.test', 'uma@samagama.test', 'gopinath@samagama.test',
-  'radhika@samagama.test', 'venkat@samagama.test', 'shakthi@samagama.test',
-  'nandini@samagama.test',
-];
-
-// These are the question titles that did NOT match any FAQ during check-existing
-// In a fresh run these would be all 30 questions — but since FAQs exist, we'll
-// create community questions for demonstration purposes
-const QUESTIONS = [
+const COMMUNITY_QUESTIONS = [
   { title: 'NOC format issue', description: 'My college provides NOC in its own format. Will it be accepted by IIT Ropar?' },
   { title: 'Dashboard shows interview incomplete', description: 'I completed my interview and Yaksha confirmed it, but my dashboard still shows "Incomplete". When will it update?' },
   { title: 'Interview status shows interrupted', description: 'Yaksha said my interview was completed successfully, but the portal shows "Interview Interrupted". Why?' },
@@ -59,6 +56,95 @@ const QUESTIONS = [
   { title: 'Mistake in acceptance email format', description: 'I replied with "reply" instead of "reply all" to the acceptance email. Will it still be accepted? Should I resend?' },
 ];
 
+// ── Personal question data ────────────────────────────────────────────────────
+// These are private questions that students would ask directly to moderators,
+// not suitable for public community posting. Max 20 will be seeded.
+
+const PERSONAL_QUESTIONS = [
+  {
+    title: 'Medical emergency — requesting extension on Phase 1 tasks',
+    description: 'I was hospitalized for 5 days and could not complete the Phase 1 tasks by the deadline. Can I get an extension? I can provide medical documents as proof.',
+  },
+  {
+    title: 'Stipend not credited for the second month',
+    description: 'I did not receive my stipend for the second month. I checked with my bank and there is no pending transaction from Samagama. Can you look into this from your end?',
+  },
+  {
+    title: 'Name mismatch between portal and official documents',
+    description: 'My name on the portal shows "Priya Nair" but my NOC and college certificates show "Priya S Nair". Will this mismatch cause issues with the final internship certificate?',
+  },
+  {
+    title: 'Assigned mentor has not responded in 10 days',
+    description: 'My assigned mentor has not replied to any of my messages for the past 10 days. I have sent three follow-up emails and two WhatsApp messages. Can you assign a different mentor or escalate this?',
+  },
+  {
+    title: 'Laptop failure two days before Phase 2 submission',
+    description: 'My laptop suffered a hardware failure two days before the Phase 2 submission deadline. All my work is on the broken device. Can I get a 3-day extension to recover and resubmit?',
+  },
+  {
+    title: 'Supplementary college exams clash with internship weeks',
+    description: 'My college has scheduled supplementary exams during the core internship weeks. Is there a way to pause or reschedule my internship participation without penalty?',
+  },
+  {
+    title: 'Charged twice for registration fee on the same day',
+    description: 'My bank statement shows two deductions of the same registration amount on the same date. This appears to be a duplicate charge. How do I request a refund for the duplicate payment?',
+  },
+  {
+    title: 'Uncomfortable interaction with a platform moderator',
+    description: 'I want to report an uncomfortable interaction I had with one of the platform moderators during a private session. I would prefer to keep this matter confidential and handled discreetly.',
+  },
+  {
+    title: 'Need confidential recommendation letter for scholarship',
+    description: 'I need an official recommendation letter issued by IIT Ropar for a scholarship application. The deadline is next week. Can someone help me obtain this on priority?',
+  },
+  {
+    title: 'Accessibility accommodation for Zoom sessions',
+    description: 'I have a hearing impairment and find it difficult to follow live Zoom sessions without captions. Can you enable automatic captions or provide text transcripts for all mandatory sessions?',
+  },
+  {
+    title: 'My mobile number is visible to other students',
+    description: 'I noticed my personal mobile number appears to be visible to other students on the community page. I did not consent to this. Please remove it and review the privacy settings.',
+  },
+  {
+    title: 'Mandatory session conflicts with a religious festival',
+    description: 'A mandatory live session is scheduled on a major festival day for my community. Can I be granted an exemption or access to the session recording without my attendance being penalised?',
+  },
+  {
+    title: 'Requesting formal withdrawal due to family emergency',
+    description: 'A serious medical emergency in my family has made me the primary caretaker at home. I need to formally withdraw from the internship. Will this affect my eligibility for future Samagama cohorts?',
+  },
+  {
+    title: 'Completion certificate issued with wrong graduation year',
+    description: 'The completion certificate I received shows my graduation year as 2025, but I am a 2026 batch student. Can a corrected certificate be reissued? I need it for my college records.',
+  },
+  {
+    title: 'No internet access for two weeks due to family relocation',
+    description: 'My family is relocating and I will have no reliable internet access for the next two weeks. Is there an offline mode or any accommodation available so I do not lose my internship progress?',
+  },
+  {
+    title: 'Requesting re-evaluation of stipend eligibility after NPTEL result',
+    description: 'I was initially categorised as VINS (no stipend), but I recently qualified for NPTEL Gold certification after the original cutoff date. Can my stipend eligibility be re-evaluated for the remaining internship weeks?',
+  },
+  {
+    title: 'Assigned to wrong domain — requesting reassignment to ML/AI track',
+    description: 'I have been assigned to the data analytics domain but I applied specifically for the Machine Learning and AI track. Can I be reassigned to match my stated preference and existing skill set?',
+  },
+  {
+    title: 'Need participation letter urgently for visa appointment',
+    description: 'I have a visa appointment in 5 days and need an official internship participation letter from IIT Ropar as supporting documentation. Can this be issued on priority?',
+  },
+  {
+    title: 'Submitted incorrect bank account number for stipend',
+    description: 'I made a typing error in the bank account number I submitted for stipend payment. One payment has already been sent to the wrong account. How do I correct this urgently to avoid further misdirected payments?',
+  },
+  {
+    title: 'Completed all modules early — requesting early completion certificate',
+    description: 'I have finished all required modules and submitted all deliverables two weeks ahead of the official end date. Is it possible to receive my completion certificate earlier than scheduled?',
+  },
+];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -66,6 +152,48 @@ function shuffle<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+// ── Seeders ───────────────────────────────────────────────────────────────────
+
+async function seedPersonalQuestions(
+  students: { _id: unknown }[],
+  categoryId: unknown,
+): Promise<void> {
+  const shuffledStudents = shuffle(students);
+  const shuffledQuestions = shuffle([...PERSONAL_QUESTIONS]);
+  // Cap at 20
+  const toSeed = shuffledQuestions.slice(0, 20);
+  let created = 0;
+  let skipped = 0;
+
+  for (let i = 0; i < toSeed.length; i++) {
+    const student = shuffledStudents[i % shuffledStudents.length];
+    const q = toSeed[i];
+
+    const exists = await QuestionModel.exists({ title: q.title, type: 'personal' });
+    if (exists) {
+      skipped++;
+      continue;
+    }
+
+    await QuestionModel.create({
+      title: q.title,
+      description: q.description,
+      type: 'personal',
+      status: 'open',
+      category: categoryId,
+      askedBy: student._id,
+      existingAnswerCheck: { checkedAt: new Date() },
+      answerCount: 0,
+      viewCount: 0,
+    });
+    created++;
+    logger.info({ title: q.title, student: String(student._id).slice(-6) }, 'Created personal question');
+    await new Promise((r) => setTimeout(r, 50));
+  }
+
+  logger.info({ created, skipped }, 'Personal questions seeded');
 }
 
 async function seedCommunityQuestions() {
@@ -76,56 +204,58 @@ async function seedCommunityQuestions() {
 
   await connectDatabase();
 
-  // Fetch default category
-  const { defaultCategoryObjectId } = await import('../models/Category.model.js').then((m) => {
-    return { defaultCategoryObjectId: m.CategoryModel.findOne().then((c) => c?._id) };
-  }) as unknown as { defaultCategoryObjectId: string };
+  const defaultCategory = await CategoryModel.findOne({ isActive: { $ne: false } })
+    .lean<{ _id: unknown }>();
+  if (!defaultCategory) throw new Error('No categories found. Run seed:faqs first.');
 
-  const students = await UserModel.find({ email: { $in: STUDENT_EMAILS } }).lean<{ _id: string }[]>();
-  if (students.length === 0) throw new Error('No student accounts found. Run seed:student-accounts first.');
+  // Fetch all 33 seeded students (25 from seed:student-accounts + 8 from seed:accounts)
+  const students = await UserModel.find(
+    { role: 'student', email: /@samagama\.test$/ },
+    '_id',
+  ).lean<{ _id: unknown }[]>();
+  if (students.length === 0) {
+    throw new Error('No student accounts found. Run seed:accounts + seed:student-accounts first.');
+  }
 
   logger.info({ studentCount: students.length }, 'Fetched student accounts');
 
   const shuffledStudents = shuffle(students);
-  const shuffledQuestions = shuffle([...QUESTIONS]);
-  const createdIds: string[] = [];
+  const shuffledQuestions = shuffle([...COMMUNITY_QUESTIONS]);
+  let communityCreated = 0;
+  let communitySkipped = 0;
 
   for (let i = 0; i < shuffledQuestions.length; i++) {
     const student = shuffledStudents[i % shuffledStudents.length];
     const q = shuffledQuestions[i];
 
-    // Check if a community question with this title already exists
-    const existing = await QuestionModel.findOne({
-      title: q.title,
-      type: 'community',
-      status: { $in: ['open', 'answered'] },
-    }).lean();
-    if (existing) {
-      logger.info({ title: q.title, existingId: existing._id.toString() }, 'Question already exists — skipping');
-      createdIds.push(existing._id.toString());
+    const exists = await QuestionModel.exists({ title: q.title, type: 'community' });
+    if (exists) {
+      communitySkipped++;
       continue;
     }
 
-    const created = await QuestionModel.create({
+    await QuestionModel.create({
       title: q.title,
       description: q.description,
       type: 'community',
       status: 'open',
+      category: defaultCategory._id,
       askedBy: student._id,
       existingAnswerCheck: { checkedAt: new Date() },
       answerCount: 0,
       viewCount: 0,
     });
-    createdIds.push(created._id.toString());
-    logger.info({ questionId: created._id.toString(), student: student._id, title: q.title }, 'Created community question');
+    communityCreated++;
+    logger.info({ title: q.title, student: String(student._id).slice(-6) }, 'Created community question');
     await new Promise((r) => setTimeout(r, 50));
   }
 
-  logger.info({ created: createdIds.length }, 'Community questions seeded');
-  logger.info({ createdIds }, 'Question IDs for reference');
+  logger.info({ communityCreated, communitySkipped }, 'Community questions seeded');
+
+  await seedPersonalQuestions(students, defaultCategory._id);
 
   await disconnectDatabase();
-  logger.info('✅ Community questions seeded.');
+  logger.info('✅ Community and personal questions seeded.');
 }
 
 seedCommunityQuestions().catch(async (err) => {

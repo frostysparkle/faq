@@ -8,7 +8,6 @@ import {
   ThumbsDown,
   Flag,
   Folder,
-  CalendarDays,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -198,14 +197,7 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
         }}>
           <ColHead>#</ColHead>
           <ColHead>Question</ColHead>
-          <ColHead>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span>Details</span>
-              <span style={{ fontSize: 10, fontWeight: 400, color: C.muted }}>
-                Category · Status · Updated
-              </span>
-            </div>
-          </ColHead>
+          <ColHead>Details</ColHead>
           <ColHead>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               Engagement <Info size={13} color={C.muted} />
@@ -352,7 +344,7 @@ function FaqRow({
           display: 'grid',
           gridTemplateColumns: GRID,
           alignItems: 'center',
-          padding: '20px 20px',
+          padding: '14px 20px',
           borderBottom: isLast && !expanded ? 'none' : `1px solid ${C.border}`,
           gap: 0,
           transition: 'background .12s',
@@ -379,46 +371,41 @@ function FaqRow({
           </p>
         </div>
 
-        {/* Details — stacked: Category on top, Status + Updated below */}
-        <div style={{ paddingRight: 20, minWidth: 0 }}>
+        {/* Details — Category above, Status + time below */}
+        <div style={{ paddingRight: 16, minWidth: 0 }}>
           {/* Row 1: Category */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, minWidth: 0 }}>
-            <Folder size={13} color={C.muted} strokeWidth={1.5} style={{ flexShrink: 0 }} />
-            <span style={{ fontSize: 10, color: C.muted, fontWeight: 500, flexShrink: 0 }}>Category</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5, minWidth: 0 }}>
+            <Folder size={12} color={C.muted} strokeWidth={1.5} style={{ flexShrink: 0 }} />
             <span style={{
-              fontSize: 13, fontWeight: 600, color: C.catText,
+              fontSize: 12, fontWeight: 600, color: C.catText,
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              marginLeft: 4,
             }}>
               {faq.categories[0]?.name ?? '—'}
             </span>
           </div>
-          {/* Row 2: Status + Updated */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+          {/* Row 2: Status pill + updated time */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{
-              fontSize: 11, fontWeight: 600, padding: '2px 9px', borderRadius: 20,
+              fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
               background: pill.bg, color: pill.fg, whiteSpace: 'nowrap',
             }}>
               {faq.status.charAt(0).toUpperCase() + faq.status.slice(1)}
             </span>
-            <span style={{ width: 1, height: 14, background: C.divider, flexShrink: 0 }} />
-            <CalendarDays size={13} color={C.muted} strokeWidth={1.5} style={{ flexShrink: 0 }} />
-            <span style={{ fontSize: 12, fontWeight: 500, color: C.mutedLabel, whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 11, color: C.mutedLabel, whiteSpace: 'nowrap' }}>
               {timeAgo(faq.updatedAt)}
             </span>
           </div>
         </div>
 
         {/* Engagement */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <ThumbsUp size={20} color={C.thumbUp} strokeWidth={1.8} />
-            <span style={{ fontSize: 15, fontWeight: 700, color: C.thumbUp }}>{faq.helpfulCount ?? 0}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <ThumbsUp size={14} color={C.thumbUp} strokeWidth={1.8} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: C.thumbUp }}>{faq.helpfulCount ?? 0}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <ThumbsDown size={20} color={C.thumbDown} strokeWidth={1.8} />
-            <span style={{ fontSize: 15, fontWeight: 700, color: C.thumbDown }}>{faq.unhelpfulCount ?? 0}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <ThumbsDown size={14} color={C.thumbDown} strokeWidth={1.8} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: C.thumbDown }}>{faq.unhelpfulCount ?? 0}</span>
           </div>
         </div>
 

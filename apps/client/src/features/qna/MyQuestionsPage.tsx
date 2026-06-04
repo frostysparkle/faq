@@ -76,7 +76,9 @@ function QuestionRow({ q }: { q: PublicQuestion }) {
               }}>{q.type}</span>
               {q.category && <Badge color="accent">{q.category.name}</Badge>}
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6, color: 'var(--color-text)' }}>{q.title}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6, color: 'var(--color-text)' }}>
+              {q.description.length > 200 ? q.description.slice(0, 197) + '…' : q.description}
+            </div>
             <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
               {timeAgo(q.createdAt)}
               {q.answerCount > 0 && ` · ${q.answerCount} answer${q.answerCount === 1 ? '' : 's'}`}

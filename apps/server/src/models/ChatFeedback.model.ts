@@ -35,7 +35,7 @@ const chatFeedbackSchema = new Schema(
     /** PRD §13.6: incorrect feedback creates a review item; track its lifecycle here. */
     status: {
       type: String,
-      enum: ['open', 'reviewed', 'resolved'],
+      enum: ['open', 'reviewed', 'actioned', 'archived'],
       default: 'open',
       index: true,
     },

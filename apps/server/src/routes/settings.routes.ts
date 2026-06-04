@@ -5,9 +5,10 @@ import { asyncHandler } from '../utils/async-handler.js';
 
 const router = Router();
 
-router.use(requireAuth, requireRole('admin'));
+// Any authenticated user may read settings (students need communityAnswerCap for UI).
+router.get('/', requireAuth, asyncHandler(settingsController.get));
 
-router.get('/', asyncHandler(settingsController.get));
-router.patch('/', asyncHandler(settingsController.update));
+// Only admins may change settings.
+router.patch('/', requireAuth, requireRole('admin'), asyncHandler(settingsController.update));
 
 export const settingsRouter = router;

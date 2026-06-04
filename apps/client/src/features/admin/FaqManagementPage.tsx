@@ -75,44 +75,11 @@ export function FaqManagementPage() {
           subtitle="Requires attention"
           trend={<TrendBox color="var(--color-warning)" points={trend?.map(d => d.flagged)} />}
         >
-          {/* Total flagged — full-width row */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '4px 0 14px' }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: '50%',
-              background: 'var(--color-danger-bg)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2,
-            }}>
-              <AlertCircleIcon color="var(--color-danger)" />
-            </div>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 2 }}>Total flagged</div>
-              <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--color-text)', letterSpacing: '-0.04em', lineHeight: 1 }}>{sv(modStats?.flaggedFaqs.total)}</div>
-              <div style={{ fontSize: 11, color: 'var(--color-danger)', fontWeight: 600, marginTop: 3 }}>Open or under review flags</div>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div style={{ height: 1, background: 'var(--color-border)', margin: '0 0 14px' }} />
-
-          {/* Today + This week — 2-col */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <FlaggedMini
-              icon={<TriangleIcon color="var(--color-warning)" />}
-              iconBg="var(--color-warning-bg)"
-              label="Flagged today"
-              value={sv(modStats?.flaggedFaqs.today)}
-              sub="New flags since midnight"
-              subColor="var(--color-warning)"
-            />
-            <FlaggedMini
-              icon={<ClockIcon color="var(--color-warning)" />}
-              iconBg="var(--color-warning-bg)"
-              label="Flagged this week"
-              value={sv(modStats?.flaggedFaqs.thisWeek)}
-              sub="Flags in the last 7 days"
-              subColor="var(--color-warning)"
-            />
-          </div>
+          <FlagCountRow
+            total={sv(modStats?.flaggedFaqs.total)}
+            today={sv(modStats?.flaggedFaqs.today)}
+            thisWeek={sv(modStats?.flaggedFaqs.thisWeek)}
+          />
         </SummaryCard>
       </div>
 
@@ -227,6 +194,64 @@ function RateRow({
             <polyline points="16 7 22 7 22 13" />
           </svg>
           {badge}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── FlagCountRow — mirrors RateRow for the Flagged card ─────────────────────
+
+function FlagCountRow({
+  total, today, thisWeek,
+}: {
+  total: number | string;
+  today: number | string;
+  thisWeek: number | string;
+}) {
+  const color = 'var(--color-warning)';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 16 }}>
+      {/* Left focal point — same 106 × 106 footprint as the donut ring */}
+      <div style={{
+        width: 106, height: 106, borderRadius: 18, flexShrink: 0,
+        background: 'var(--color-warning-bg)',
+        border: `2px solid ${color}`,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: 4,
+      }}>
+        <span style={{
+          fontSize: 38, fontWeight: 900,
+          color: 'var(--color-text)', letterSpacing: '-0.04em', lineHeight: 1,
+        }}>
+          {total}
+        </span>
+        <span style={{ fontSize: 10, fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          flags
+        </span>
+      </div>
+
+      {/* Right side — identical rhythm to RateRow */}
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', marginBottom: 4 }}>
+          Total flagged
+        </div>
+        <div style={{ fontSize: 12, color, fontWeight: 600, marginBottom: 10 }}>
+          Open or under review
+        </div>
+        {/* Badge — same visual as "N votes today" badge in RateRow */}
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          background: 'var(--color-card)', border: '1px solid var(--color-border)',
+          borderRadius: 8, padding: '4px 10px',
+          fontSize: 11, fontWeight: 700, color,
+        }}>
+          <FlagIcon color={color} />
+          {today} flagged today
+        </div>
+        {/* Compact secondary stat */}
+        <div style={{ marginTop: 8, fontSize: 12, color: 'var(--color-text-muted)' }}>
+          This week: <strong style={{ color: 'var(--color-text)', fontWeight: 700 }}>{thisWeek}</strong>
         </div>
       </div>
     </div>

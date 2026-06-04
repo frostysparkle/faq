@@ -105,7 +105,7 @@ export const chatbotService = {
 
     // ── Retrieve FAQ context via embedding + cosine similarity ─────────────────
     const settings = await SystemSettingsModel.findById('global').lean();
-    const threshold = settings?.chatbotConfidenceThreshold ?? 0.3;
+    const threshold = settings?.chatbotConfidenceThreshold ?? 0.7;
     const maxSources = settings?.chatbotMaxSources ?? 6;
 
     const sources = await retrieveFaqSources(trimmed, { threshold, maxSources });
@@ -236,10 +236,15 @@ export const chatbotService = {
 
   // ── Admin/mod read paths (unchanged) ──────────────────────────────────────
 
-  async listFeedback(filter: 'all' | 'helpful' | 'unhelpful'): Promise<PublicChatFeedback[]> {
+  async listFeedback(filter: 'all' | 'helpful' | 'unhelpful' | 'archived'): Promise<PublicChatFeedback[]> {
     const q: Record<string, unknown> = {};
-    if (filter === 'helpful') q.rating = 'helpful';
-    if (filter === 'unhelpful') q.rating = 'incorrect';
+    if (filter === 'archived') {
+      q.status = 'archived';
+    } else {
+      q.status = { $ne: 'archived' };
+      if (filter === 'helpful') q.rating = 'helpful';
+      if (filter === 'unhelpful') q.rating = 'incorrect';
+    }
 
     interface PopulatedFeedback extends Omit<ChatFeedbackDocument, 'userId' | 'messages'> {
       userId: { _id: Types.ObjectId; name: string };
@@ -259,19 +264,28 @@ export const chatbotService = {
       rating: f.rating,
       comment: f.comment ?? undefined,
       user: { id: f.userId._id.toString(), name: f.userId.name },
-      status: f.status,
+      status: f.status as 'open' | 'reviewed' | 'actioned' | 'archived',
       messages: f.messages && f.messages.length > 0 ? f.messages : undefined,
       createdAt: f.createdAt.toISOString(),
     }));
   },
 
   async getStats(): Promise<ChatbotFeedbackStats> {
+    const activeFilter = { status: { $ne: 'archived' } };
     const [total, helpful, unhelpful] = await Promise.all([
-      ChatFeedbackModel.countDocuments({}),
-      ChatFeedbackModel.countDocuments({ rating: 'helpful' }),
-      ChatFeedbackModel.countDocuments({ rating: 'incorrect' }),
+      ChatFeedbackModel.countDocuments(activeFilter),
+      ChatFeedbackModel.countDocuments({ ...activeFilter, rating: 'helpful' }),
+      ChatFeedbackModel.countDocuments({ ...activeFilter, rating: 'incorrect' }),
     ]);
     return { total, helpful, unhelpful };
+  },
+
+  async updateFeedbackStatus(id: string, status: 'reviewed' | 'actioned' | 'archived'): Promise<void> {
+    await ChatFeedbackModel.findByIdAndUpdate(id, { $set: { status } });
+  },
+
+  async deleteFeedback(id: string): Promise<void> {
+    await ChatFeedbackModel.findByIdAndDelete(id);
   },
 };
 

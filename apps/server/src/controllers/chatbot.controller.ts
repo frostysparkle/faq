@@ -27,11 +27,24 @@ export const chatbotController = {
   },
 
   async listFeedback(req: Request, res: Response) {
-    const filter = (req.query.filter as 'all' | 'helpful' | 'unhelpful' | undefined) ?? 'all';
+    const filter = (req.query.filter as 'all' | 'helpful' | 'unhelpful' | 'archived' | undefined) ?? 'all';
     return ok(res, await chatbotService.listFeedback(filter));
   },
 
   async getStats(_req: Request, res: Response) {
     return ok(res, await chatbotService.getStats());
+  },
+
+  async updateFeedbackStatus(req: Request, res: Response) {
+    const { id } = req.params;
+    const { status } = req.body as { status: 'reviewed' | 'actioned' | 'archived' };
+    await chatbotService.updateFeedbackStatus(id, status);
+    return ok(res, { success: true });
+  },
+
+  async deleteFeedback(req: Request, res: Response) {
+    const { id } = req.params;
+    await chatbotService.deleteFeedback(id);
+    return ok(res, { success: true });
   },
 };

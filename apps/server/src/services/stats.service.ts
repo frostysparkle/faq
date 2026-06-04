@@ -12,6 +12,7 @@ import { FlagModel } from '../models/Flag.model.js';
 import { QuestionModel } from '../models/Question.model.js';
 import { AnswerModel } from '../models/Answer.model.js';
 import { UserModel } from '../models/User.model.js';
+import { SystemSettingsModel } from '../models/SystemSettings.model.js';
 
 export interface FaqStats {
   totalFaqs: number;
@@ -233,10 +234,12 @@ export const statsService = {
  * middle bucket. Documented here so future readers can see the choice.
  */
 async getCommunityIdleBuckets(): Promise<IdleBuckets> {
+  const settings = await SystemSettingsModel.findById('global').lean();
+  const urgentIdleDays = settings?.urgentIdleDays ?? 7;
   const now = Date.now();
   const day = 24 * 60 * 60 * 1000;
   const threshold24h = new Date(now - day);
-  const threshold7d = new Date(now - 7 * day);
+  const threshold7d = new Date(now - urgentIdleDays * day);
 
   const [row] = await QuestionModel.aggregate<{
     last24h: number;

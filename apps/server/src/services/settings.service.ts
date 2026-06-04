@@ -2,8 +2,6 @@
 import { SystemSettingsModel } from '../models/SystemSettings.model.js';
 
 export interface PublicSettings {
-  duplicateWarnThreshold: number;
-  duplicateStrongThreshold: number;
   chatbotConfidenceThreshold: number;
   chatbotMaxSources: number;
   communityAnswerCap: number;
@@ -17,8 +15,6 @@ export const settingsService = {
       doc = await SystemSettingsModel.create({ _id: 'global' });
     }
     return {
-      duplicateWarnThreshold: doc.duplicateWarnThreshold ?? 0.6,
-      duplicateStrongThreshold: doc.duplicateStrongThreshold ?? 0.8,
       chatbotConfidenceThreshold: doc.chatbotConfidenceThreshold ?? 0.7,
       chatbotMaxSources: doc.chatbotMaxSources ?? 6,
       communityAnswerCap: doc.communityAnswerCap ?? 10,
@@ -33,8 +29,6 @@ export const settingsService = {
       { new: true, upsert: true },
     );
     return {
-      duplicateWarnThreshold: doc!.duplicateWarnThreshold ?? 0.6,
-      duplicateStrongThreshold: doc!.duplicateStrongThreshold ?? 0.8,
       chatbotConfidenceThreshold: doc!.chatbotConfidenceThreshold ?? 0.7,
       chatbotMaxSources: doc!.chatbotMaxSources ?? 6,
       communityAnswerCap: doc!.communityAnswerCap ?? 10,
