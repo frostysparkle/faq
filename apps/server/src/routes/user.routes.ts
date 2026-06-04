@@ -14,5 +14,6 @@ router.get('/', asyncHandler(userController.list));
 router.patch('/:id/role', validate(changeRoleSchema), asyncHandler(userController.changeRole));
 router.patch('/:id/suspend', asyncHandler(userController.suspend));
 router.patch('/:id/activate', asyncHandler(userController.activate));
+router.delete('/:id', asyncHandler(userController.deleteUser));
 
 export const userRouter = router;

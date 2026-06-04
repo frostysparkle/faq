@@ -113,6 +113,9 @@ export const adminApi = {
     const res = await apiClient.patch<ApiSuccess<PublicUserAdmin>>(`/api/users/${userId}/activate`);
     return res.data.data;
   },
+  async deleteUser(userId: string): Promise<void> {
+    await apiClient.delete(`/api/users/${userId}`);
+  },
 
   // Audit logs
   async listAuditLogs(params: {

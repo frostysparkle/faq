@@ -1,7 +1,5 @@
-// Unresolved Questions — redesigned to match Browse FAQs layout.
-//
-// Sections: Personal · Community · Resolved · Trash
-// Each of the first two sections has inline filter/sort controls.
+// Unresolved Questions — three-tab layout: Personal · Community · Trash.
+// Each tab has its own search bar + inline filter/sort controls.
 import { useMemo, useState } from 'react';
 import {
   BookOpen, CheckCircle, CheckCircle2, ChevronDown, ChevronUp,
@@ -23,7 +21,7 @@ import {
 import type { PendingAnswerSummary, TrashedQuestionRow } from '../qna/api';
 import type { PublicAnswer, PublicQuestion } from '@samagama/shared';
 
-type Section = 'personal' | 'community' | 'resolved' | 'trash';
+type Section = 'personal' | 'community' | 'trash';
 type PersonalStatus = 'all' | 'open' | 'resolved';
 type CommunityStatus = 'all' | 'open' | 'answered' | 'resolved';
 type SortBy = 'multi' | 'today' | 'week' | 'all';
@@ -61,11 +59,52 @@ const dropdownStyle: React.CSSProperties = {
   outline: 'none', cursor: 'pointer', appearance: 'auto',
 };
 
+// ─── Approved by Moderator badge (reused across Personal + Community cards) ───
+
+function ApprovedBadge() {
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      fontSize: 11, fontWeight: 700, color: 'var(--color-success)',
+      textTransform: 'uppercase', letterSpacing: '0.05em',
+      background: 'var(--color-card)', border: '1.5px solid var(--color-success)',
+      borderRadius: 6, padding: '3px 9px', marginBottom: 8,
+    }}>
+      <CheckCircle2 size={11} /> Approved by Moderator
+    </div>
+  );
+}
+
+// ─── Tab search bar ────────────────────────────────────────────────────────────
+
+function TabSearchBar({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="topbar-search" style={{ flex: '1 1 200px', minWidth: 0 }}>
+      <Search size={15} color={value ? 'var(--color-primary)' : 'var(--color-text-muted)'} style={{ flexShrink: 0 }} />
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Search questions by title or keyword…"
+        style={{ border: 'none', background: 'none', outline: 'none', color: 'var(--color-text)', fontSize: 14, flex: 1, fontFamily: 'inherit', minWidth: 0 }}
+      />
+      {value && (
+        <button onClick={() => onChange('')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0, color: 'var(--color-text-muted)' }}>
+          <RotateCcw size={12} />
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function UnresolvedQuestionsPage() {
   const [section, setSection] = useState<Section>('community');
-  const [search, setSearch] = useState('');
+
+  // Per-tab search states
+  const [personalSearch, setPersonalSearch] = useState('');
+  const [communitySearch, setCommunitySearch] = useState('');
+  const [trashSearch, setTrashSearch] = useState('');
 
   // Personal filters
   const [personalStatus, setPersonalStatus] = useState<PersonalStatus>('all');
@@ -96,21 +135,22 @@ export function UnresolvedQuestionsPage() {
   const isLoading =
     section === 'personal'  ? pQL :
     section === 'community' ? (cQL || rQL || paL) :
-    section === 'resolved'  ? rQL :
     tL;
 
-  const q = search.toLowerCase().trim();
+  const pq = personalSearch.toLowerCase().trim();
+  const cq = communitySearch.toLowerCase().trim();
+  const tq = trashSearch.toLowerCase().trim();
 
   // ── Personal: status + search ──────────────────────────────────────────────
   const filteredPersonal = useMemo(() => {
     if (!personalQ) return [];
     let list = personalQ;
-    if (q) list = list.filter((x) => x.title.toLowerCase().includes(q) || x.description.toLowerCase().includes(q));
+    if (pq) list = list.filter((x) => x.title.toLowerCase().includes(pq) || x.description.toLowerCase().includes(pq));
     if (personalStatus !== 'all') list = list.filter((x) => x.status === personalStatus);
     return list;
-  }, [personalQ, q, personalStatus]);
+  }, [personalQ, pq, personalStatus]);
 
-  // ── Community: status + sort + search ──────────────────────────────────────
+  // ── Community: status + sort + search (includes resolved) ─────────────────
   const filteredCommunity = useMemo(() => {
     let base: PublicQuestion[];
     if (communityStatus === 'resolved') {
@@ -120,7 +160,7 @@ export function UnresolvedQuestionsPage() {
     } else {
       base = (communityQ ?? []).filter((x) => x.status === communityStatus);
     }
-    if (q) base = base.filter((x) => x.title.toLowerCase().includes(q) || x.description.toLowerCase().includes(q));
+    if (cq) base = base.filter((x) => x.title.toLowerCase().includes(cq) || x.description.toLowerCase().includes(cq));
 
     const now = Date.now();
     const day = 24 * 60 * 60 * 1000;
@@ -138,31 +178,24 @@ export function UnresolvedQuestionsPage() {
       }
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [communityQ, resolvedQ, q, communityStatus, sortBy, pendingByQuestion]);
+  }, [communityQ, resolvedQ, cq, communityStatus, sortBy, pendingByQuestion]);
 
-  const filteredResolved = useMemo(() => {
-    if (!resolvedQ) return [];
-    if (!q) return resolvedQ;
-    return resolvedQ.filter((x) => x.title.toLowerCase().includes(q) || x.description.toLowerCase().includes(q));
-  }, [resolvedQ, q]);
-
+  // ── Trash: search ──────────────────────────────────────────────────────────
   const filteredTrash = useMemo(() => {
     if (!trashItems) return [];
-    if (!q) return trashItems;
-    return trashItems.filter((x) => x.title.toLowerCase().includes(q) || x.description.toLowerCase().includes(q));
-  }, [trashItems, q]);
+    if (!tq) return trashItems;
+    return trashItems.filter((x) => x.title.toLowerCase().includes(tq) || x.description.toLowerCase().includes(tq));
+  }, [trashItems, tq]);
 
   const pendingCount = pendingAnswers?.length ?? 0;
   const currentCount =
     section === 'personal'  ? filteredPersonal.length :
     section === 'community' ? filteredCommunity.length :
-    section === 'resolved'  ? filteredResolved.length :
     filteredTrash.length;
 
-  const CHIPS: Array<{ key: Section; label: string; count: number | undefined; Icon: typeof MessageCircle }> = [
+  const TABS: Array<{ key: Section; label: string; count: number | undefined; Icon: typeof MessageCircle }> = [
     { key: 'personal',  label: 'Personal',  count: personalQ?.length,  Icon: User },
     { key: 'community', label: 'Community', count: (communityQ?.length ?? 0) + (resolvedQ?.length ?? 0) || undefined, Icon: Users },
-    { key: 'resolved',  label: 'Resolved',  count: resolvedQ?.length,  Icon: CheckCircle2 },
     { key: 'trash',     label: 'Trash',     count: trashItems?.length, Icon: Trash2 },
   ];
 
@@ -186,27 +219,35 @@ export function UnresolvedQuestionsPage() {
         </span>
       </div>
 
-      {/* ── Search + section chips ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-        <div className="topbar-search" style={{ flex: '1 1 200px', minWidth: 0 }}>
-          <Search size={15} color={search ? 'var(--color-primary)' : 'var(--color-text-muted)'} style={{ flexShrink: 0 }} />
-          <input value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search questions by title or keyword…"
-            style={{ border: 'none', background: 'none', outline: 'none', color: 'var(--color-text)', fontSize: 14, flex: 1, fontFamily: 'inherit', minWidth: 0 }} />
-          {search && (
-            <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0, color: 'var(--color-text-muted)' }}>
-              <RotateCcw size={12} />
-            </button>
-          )}
-        </div>
-        {CHIPS.map(({ key, label, count, Icon }) => {
+      {/* ── Tab navigation row ── */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 18, padding: 4, background: 'var(--color-input)', border: '1.5px solid var(--color-border)', borderRadius: 12, width: 'fit-content' }}>
+        {TABS.map(({ key, label, count, Icon }) => {
           const active = section === key;
           return (
-            <button key={key} onClick={() => { setSection(key); setSearch(''); }}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 36, padding: '0 14px', borderRadius: 8, flexShrink: 0, border: `1.5px solid ${active ? 'var(--color-primary)' : 'var(--color-border)'}`, background: active ? 'var(--color-purple-bg)' : 'var(--color-input)', color: active ? 'var(--color-purple)' : 'var(--color-text-muted)', fontSize: 13, fontWeight: active ? 700 : 400, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}>
-              <Icon size={13} />{label}
+            <button
+              key={key}
+              onClick={() => setSection(key)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                height: 36, padding: '0 18px',
+                borderRadius: 9, flexShrink: 0,
+                border: 'none',
+                background: active ? 'var(--color-card)' : 'transparent',
+                color: active ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                fontSize: 13.5, fontWeight: active ? 700 : 500,
+                cursor: 'pointer', fontFamily: 'inherit',
+                transition: 'all 0.15s',
+                boxShadow: active ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+              }}>
+              <Icon size={14} />
+              {label}
               {count !== undefined && (
-                <span style={{ fontSize: 11, fontWeight: 700, lineHeight: '18px', background: active ? 'var(--color-purple)' : 'var(--color-border)', color: active ? 'white' : 'var(--color-text-muted)', borderRadius: 10, padding: '0 6px', minWidth: 18, textAlign: 'center' }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, lineHeight: '18px',
+                  background: active ? 'var(--color-primary)' : 'var(--color-border)',
+                  color: active ? 'white' : 'var(--color-text-muted)',
+                  borderRadius: 10, padding: '0 6px', minWidth: 18, textAlign: 'center',
+                }}>
                   {count}
                 </span>
               )}
@@ -222,10 +263,8 @@ export function UnresolvedQuestionsPage() {
       {/* ── Personal ── */}
       {!isLoading && section === 'personal' && (
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', padding: '10px 14px', marginBottom: 12, background: 'var(--color-card)', border: '1.5px solid var(--color-border)', borderRadius: 10 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>
-              <Filter size={12} /> Filters
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '10px 14px', marginBottom: 12, background: 'var(--color-card)', border: '1.5px solid var(--color-border)', borderRadius: 10 }}>
+            <TabSearchBar value={personalSearch} onChange={setPersonalSearch} />
             <div style={{ width: 1, height: 20, background: 'var(--color-border)', flexShrink: 0 }} />
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--color-text-muted)', flexShrink: 0 }}>
               Status
@@ -238,8 +277,8 @@ export function UnresolvedQuestionsPage() {
           </div>
           {filteredPersonal.length === 0 ? (
             <EmptyState Icon={User}
-              message={search ? `No personal questions matched "${search}"` : personalStatus !== 'all' ? `No ${personalStatus} personal questions.` : 'No personal questions at the moment.'}
-              sub={search ? 'Try a different keyword.' : personalStatus !== 'all' ? 'Try changing the status filter.' : 'Direct messages from students appear here.'} />
+              message={personalSearch ? `No personal questions matched "${personalSearch}"` : personalStatus !== 'all' ? `No ${personalStatus} personal questions.` : 'No personal questions at the moment.'}
+              sub={personalSearch ? 'Try a different keyword.' : personalStatus !== 'all' ? 'Try changing the status filter.' : 'Direct messages from students appear here.'} />
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {filteredPersonal.map((q) => <PersonalCard key={q.id} question={q} />)}
@@ -251,10 +290,8 @@ export function UnresolvedQuestionsPage() {
       {/* ── Community ── */}
       {!isLoading && section === 'community' && (
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', padding: '10px 14px', marginBottom: 12, background: 'var(--color-card)', border: '1.5px solid var(--color-border)', borderRadius: 10 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>
-              <Filter size={12} /> Filters
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '10px 14px', marginBottom: 12, background: 'var(--color-card)', border: '1.5px solid var(--color-border)', borderRadius: 10 }}>
+            <TabSearchBar value={communitySearch} onChange={setCommunitySearch} />
             <div style={{ width: 1, height: 20, background: 'var(--color-border)', flexShrink: 0 }} />
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--color-text-muted)', flexShrink: 0 }}>
               Status
@@ -284,42 +321,36 @@ export function UnresolvedQuestionsPage() {
           </div>
           {filteredCommunity.length === 0 ? (
             <EmptyState Icon={Users}
-              message={search ? `No community questions matched "${search}"` : sortBy === 'today' ? 'No community questions posted today.' : sortBy === 'week' ? 'No community questions posted this week.' : communityStatus !== 'all' ? `No ${communityStatus === 'answered' ? 'peer-answered' : communityStatus} community questions.` : 'No community questions need attention.'}
-              sub={search ? 'Try a different keyword.' : (sortBy === 'today' || sortBy === 'week') ? 'Try "All Time" in Sort By.' : communityStatus !== 'all' ? 'Try changing the status filter.' : 'Open and answered questions from students appear here.'} />
+              message={communitySearch ? `No community questions matched "${communitySearch}"` : sortBy === 'today' ? 'No community questions posted today.' : sortBy === 'week' ? 'No community questions posted this week.' : communityStatus !== 'all' ? `No ${communityStatus === 'answered' ? 'peer-answered' : communityStatus} community questions.` : 'No community questions need attention.'}
+              sub={communitySearch ? 'Try a different keyword.' : (sortBy === 'today' || sortBy === 'week') ? 'Try "All Time" in Sort By.' : communityStatus !== 'all' ? 'Try changing the status filter.' : 'Open and answered questions from students appear here.'} />
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {filteredCommunity.map((q) => (
-                <CommunityCard key={q.id} question={q} pendingAnswers={pendingByQuestion.get(q.id) ?? []} />
-              ))}
+              {filteredCommunity.map((q) =>
+                q.status === 'resolved'
+                  ? <ResolvedCard key={q.id} question={q} />
+                  : <CommunityCard key={q.id} question={q} pendingAnswers={pendingByQuestion.get(q.id) ?? []} />
+              )}
             </div>
           )}
         </div>
       )}
 
-      {/* ── Resolved ── */}
-      {!isLoading && section === 'resolved' && (
-        filteredResolved.length === 0 ? (
-          <EmptyState Icon={CheckCircle}
-            message={search ? `No resolved questions matched "${search}"` : 'No resolved questions yet.'}
-            sub={search ? 'Try a different keyword.' : 'Community questions appear here once a peer answer is approved.'} />
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {filteredResolved.map((q) => <ResolvedCard key={q.id} question={q} />)}
-          </div>
-        )
-      )}
-
       {/* ── Trash ── */}
       {!isLoading && section === 'trash' && (
-        filteredTrash.length === 0 ? (
-          <EmptyState Icon={Trash2}
-            message={search ? `No trashed questions matched "${search}"` : 'Trash is empty.'}
-            sub={search ? 'Try a different keyword.' : 'Expired community posts appear here and can be restored.'} />
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {filteredTrash.map((q) => <TrashCard key={q.id} question={q} />)}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '10px 14px', marginBottom: 12, background: 'var(--color-card)', border: '1.5px solid var(--color-border)', borderRadius: 10 }}>
+            <TabSearchBar value={trashSearch} onChange={setTrashSearch} />
           </div>
-        )
+          {filteredTrash.length === 0 ? (
+            <EmptyState Icon={Trash2}
+              message={trashSearch ? `No trashed questions matched "${trashSearch}"` : 'Trash is empty.'}
+              sub={trashSearch ? 'Try a different keyword.' : 'Expired community posts appear here and can be restored.'} />
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {filteredTrash.map((q) => <TrashCard key={q.id} question={q} />)}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -371,14 +402,19 @@ function PersonalCard({ question }: { question: PublicQuestion }) {
   const [body, setBody] = useState('');
   const respond = useRespondToPersonal();
 
+  // Load answers whenever the card is open so the response is visible immediately.
+  const { data: answers, isLoading: aLoading } = useAnswers(expanded ? question.id : undefined);
+
+  const isResolved = question.status === 'resolved';
+
   const submit = async () => {
     if (body.trim().length < 10) return;
     await respond.mutateAsync({ questionId: question.id, body });
     setBody('');
-    setExpanded(false);
+    // Stay expanded — the invalidated query will refetch and render the response.
   };
 
-  const statusColor = question.status === 'resolved' ? '#16a34a' : question.status === 'answered' ? '#d97706' : '#3b82f6';
+  const statusColor = isResolved ? '#16a34a' : question.status === 'answered' ? '#d97706' : '#3b82f6';
 
   const meta = (
     <>
@@ -392,10 +428,11 @@ function PersonalCard({ question }: { question: PublicQuestion }) {
   );
 
   return (
-    <div className="mod-card mod-card-blue">
+    <div className={isResolved ? 'mod-card mod-card-green' : 'mod-card mod-card-blue'}>
       <CardHeader title={question.title} meta={meta} expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
       {expanded && (
         <CardBody>
+          {/* Question body */}
           {question.description && question.description.trim() !== question.title.trim() && (
             <div style={{ fontSize: 13, color: 'var(--color-text)', lineHeight: 1.65, marginBottom: 14, whiteSpace: 'pre-wrap' }}>{question.description}</div>
           )}
@@ -404,15 +441,64 @@ function PersonalCard({ question }: { question: PublicQuestion }) {
               <img src={question.screenshotUrl} alt="Question attachment" style={{ maxWidth: '100%', maxHeight: 280, borderRadius: 8, border: '1px solid var(--color-border)', objectFit: 'contain', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
             </div>
           )}
-          <textarea value={body} onChange={(e) => setBody(e.target.value)}
-            placeholder="Type your response. The student will see it under My Questions as 'Responded'."
-            rows={4} maxLength={4000}
-            style={{ width: '100%', background: 'var(--color-input)', border: '1px solid var(--color-primary)', borderRadius: 8, padding: '8px 12px', fontSize: 13, fontFamily: 'inherit', color: 'var(--color-text)', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }} />
-          {respond.error && (<div role="alert" style={{ marginTop: 4, fontSize: 12, color: 'var(--color-danger)' }}>{respond.error instanceof Error ? respond.error.message : 'Could not submit response'}</div>)}
-          <div style={{ display: 'flex', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
-            <Button size="sm" variant="ghost" onClick={() => { setExpanded(false); setBody(''); }}>Cancel</Button>
-            <Button size="sm" onClick={submit} disabled={respond.isPending || body.trim().length < 10}>{respond.isPending ? 'Sending…' : 'Send response'}</Button>
-          </div>
+
+          {/* Existing moderator response(s) */}
+          {aLoading && (
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 12 }}>Loading response…</div>
+          )}
+          {!aLoading && answers && answers.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                Moderator response{answers.length > 1 ? 's' : ''}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {answers.map((a) => (
+                  <div key={a.id} style={{ background: 'var(--color-success-bg)', border: '1px solid var(--color-success)', borderLeft: '3px solid var(--color-success)', borderRadius: 8, padding: '9px 12px' }}>
+                    <ApprovedBadge />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                      <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--color-success)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white', flexShrink: 0 }}>
+                        {a.author.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)' }}>{a.author.name}</span>
+                      <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>· {timeAgo(a.createdAt)}</span>
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--color-text)', lineHeight: 1.55, whiteSpace: 'pre-wrap', paddingLeft: 28 }}>{a.body}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Resolved notice — no further input needed */}
+          {isResolved && !aLoading && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--color-success-bg)', border: '1px solid var(--color-success)', borderRadius: 8 }}>
+              <CheckCircle size={14} color="var(--color-success)" style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: 'var(--color-success)', fontWeight: 600 }}>
+                This question is resolved. The student can view the response under My Questions.
+              </span>
+            </div>
+          )}
+
+          {/* Compose area — only for open questions */}
+          {!isResolved && (
+            <>
+              <textarea value={body} onChange={(e) => setBody(e.target.value)}
+                placeholder="Type your response. The student will see it under My Questions as 'Responded'."
+                rows={4} maxLength={4000}
+                style={{ width: '100%', background: 'var(--color-input)', border: '1px solid var(--color-primary)', borderRadius: 8, padding: '8px 12px', fontSize: 13, fontFamily: 'inherit', color: 'var(--color-text)', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }} />
+              {respond.error && (
+                <div role="alert" style={{ marginTop: 4, fontSize: 12, color: 'var(--color-danger)' }}>
+                  {respond.error instanceof Error ? respond.error.message : 'Could not submit response'}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
+                <Button size="sm" variant="ghost" onClick={() => { setExpanded(false); setBody(''); }}>Cancel</Button>
+                <Button size="sm" onClick={submit} disabled={respond.isPending || body.trim().length < 10}>
+                  {respond.isPending ? 'Sending…' : 'Send response'}
+                </Button>
+              </div>
+            </>
+          )}
         </CardBody>
       )}
     </div>
@@ -541,7 +627,6 @@ function ResolvedCard({ question }: { question: PublicQuestion }) {
               {rankedAnswers.map((a, i) => (
                 <div key={a.id}>
                   <RankedAnswerRow answer={a} rank={i + 1} />
-                  {/* Mark as FAQ button — shown for approved answers not yet converted */}
                   {!a.isFaqConverted && !faqDismissed.has(a.id) && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, padding: '6px 10px', background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 8 }}>
                       <BookOpen size={13} color="var(--color-primary)" style={{ flexShrink: 0 }} />
@@ -646,6 +731,7 @@ function RankedAnswerRow({ answer, rank }: { answer: PublicAnswer; rank: number 
   const isTop = rank === 1;
   return (
     <div style={{ background: isTop ? 'var(--color-success-bg)' : 'var(--color-input)', border: `1px solid ${isTop ? 'var(--color-success)' : 'var(--color-border)'}`, borderLeft: `3px solid ${isTop ? 'var(--color-success)' : 'var(--color-border)'}`, borderRadius: 8, padding: '9px 12px' }}>
+      <ApprovedBadge />
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
         <div style={{ width: 20, height: 20, borderRadius: '50%', flexShrink: 0, background: isTop ? 'var(--color-success)' : 'var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: isTop ? 'white' : 'var(--color-text-muted)' }}>{rank}</div>
         <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white', flexShrink: 0 }}>{answer.author.name.charAt(0).toUpperCase()}</div>

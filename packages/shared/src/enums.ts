@@ -1,7 +1,7 @@
 // String-literal enums consumed by both client and server.
 // Each list is the single source of truth used by Mongoose schemas, Zod validators, and UI badges.
 
-export const USER_ROLES = ['student', 'moderator', 'admin'] as const;
+export const USER_ROLES = ['student', 't-moderator', 'moderator', 't-admin', 'admin'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 export const USER_STATUSES = ['active', 'suspended', 'deleted'] as const;

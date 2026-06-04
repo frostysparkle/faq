@@ -53,10 +53,9 @@ async function seed(): Promise<void> {
 
   await connectDatabase();
 
-  // Pick the seeded student as the source of feedback rows.
-  const student = await UserModel.findOne({ email: 'student@samagama.test' });
+  const student = await UserModel.findOne({ email: 'abhishek@samagama.test' });
   if (!student) {
-    logger.error('Seed user student@samagama.test not found. Run `seed:dev-users` first.');
+    logger.error('Seed user abhishek@samagama.test not found. Run `seed:accounts` first.');
     await disconnectDatabase();
     process.exit(1);
   }

@@ -41,4 +41,10 @@ export const userController = {
     const user = await userService.activateUser(req.params.id!, req.user.id);
     return ok(res, user);
   },
+
+  async deleteUser(req: Request, res: Response) {
+    if (!req.user) throw ApiError.unauthorized();
+    await userService.deleteUser(req.params.id!, req.user.id);
+    res.status(204).end();
+  },
 };

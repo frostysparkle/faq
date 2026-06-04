@@ -483,7 +483,7 @@ const CONVERSATIONS: ConversationSeed[] = [
 
   // ── 10. Stipend Date Confusion — DOES THIS RESOLVE YOUR QUERY ────────────
   {
-    studentEmail: 'student@samagama.test',
+    studentEmail: 'abhishek@samagama.test',
     scenario: 'Stipend payment date — partial answer ("Does this resolve your query?")',
     rating: 'helpful',
     status: 'open',

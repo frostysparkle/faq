@@ -53,6 +53,14 @@ export function useActivateUser() {
   });
 }
 
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => adminApi.deleteUser(userId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  });
+}
+
 // ─── Audit Logs ──────────────────────────────────────────────────────────────
 
 export function useAuditLogs(params: {
