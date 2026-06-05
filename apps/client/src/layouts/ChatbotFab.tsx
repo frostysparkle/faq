@@ -175,11 +175,15 @@ export function ChatbotFab() {
       if (axios.isAxiosError(err) && err.response?.data?.error?.code === 'OLLAMA_NOT_CONNECTED') {
         setOllamaError(true);
       } else {
+        // A timeout (no response received) means the model is just slow, not broken.
+        const timedOut = axios.isAxiosError(err) && err.code === 'ECONNABORTED';
         setMessages((prev) => [
           ...prev,
           {
             role: 'assistant',
-            content: 'Sorry, something went wrong. Please try again.',
+            content: timedOut
+              ? "That took longer than expected and timed out. The assistant may be busy — please try asking again."
+              : 'Sorry, something went wrong. Please try again.',
             sources: [],
           },
         ]);

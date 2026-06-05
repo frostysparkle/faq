@@ -319,7 +319,12 @@ export function QuestionDetailPage() {
 
       {/* ── Answers ── */}
       {question.type === 'personal' ? (
-        <PersonalAnswerSection answers={answers ?? []} isLoading={aLoading} />
+        <PersonalAnswerSection
+          answers={answers ?? []}
+          isLoading={aLoading}
+          questionId={question.id}
+          userId={user?.id}
+        />
       ) : (
         <>
           {/* Section header */}
@@ -504,9 +509,13 @@ export function QuestionDetailPage() {
 function PersonalAnswerSection({
   answers,
   isLoading,
+  questionId,
+  userId,
 }: {
   answers: import('@samagama/shared').PublicAnswer[];
   isLoading: boolean;
+  questionId: string;
+  userId: string | undefined;
 }) {
   const approved = answers.filter((a) => a.status === 'approved');
   if (isLoading)
@@ -540,7 +549,13 @@ function PersonalAnswerSection({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {approved.map((a) => (
-        <AnswerCard key={a.id} answer={a} questionId="" canVote={false} voteMutationKey="" />
+        <AnswerCard
+          key={a.id}
+          answer={a}
+          questionId={questionId}
+          canVote={!!userId && userId !== a.author.id}
+          voteMutationKey={questionId}
+        />
       ))}
     </div>
   );

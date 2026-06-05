@@ -9,6 +9,8 @@ export interface PublicSettings {
 }
 
 export const settingsService = {
+  // Read the singleton 'global' settings document, lazily creating it (with schema
+  // defaults) on first access. The `??` fallbacks guard against partially-populated docs.
   async get(): Promise<PublicSettings> {
     let doc = await SystemSettingsModel.findById('global').lean();
     if (!doc) {
@@ -22,6 +24,8 @@ export const settingsService = {
     };
   },
 
+  // Patch one or more settings on the singleton doc (upsert so it's created if missing),
+  // returning the full updated settings.
   async update(input: Partial<PublicSettings>): Promise<PublicSettings> {
     const doc = await SystemSettingsModel.findByIdAndUpdate(
       'global',

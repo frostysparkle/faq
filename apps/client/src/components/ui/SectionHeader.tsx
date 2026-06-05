@@ -1,3 +1,5 @@
+// Page/section heading: an accent bar, a title with optional subtitle, and an
+// optional right-aligned action slot (e.g. a button).
 import type { ReactNode } from 'react';
 
 interface SectionHeaderProps {

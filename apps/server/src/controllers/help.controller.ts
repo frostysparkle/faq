@@ -1,7 +1,10 @@
+// Help-center HTTP layer. Serves the bundle the client's in-browser search worker indexes.
 import type { Request, Response } from 'express';
 import { helpService } from '../services/help.service.js';
 
 export const helpController = {
+  // Export all searchable help docs as a single cacheable bundle. ETag + Cache-Control
+  // let the client skip re-downloading when its copy is still current (304 Not Modified).
   async exportSearchData(req: Request, res: Response) {
     const { docs, etag } = await helpService.exportForSearch();
 

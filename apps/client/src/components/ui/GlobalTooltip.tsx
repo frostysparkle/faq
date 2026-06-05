@@ -121,6 +121,13 @@ export function GlobalTooltip() {
   }, []);
 
   useEffect(() => {
+    // Dismiss the active tooltip and forget its anchor.
+    const clear = () => {
+      anchorRef.current = null;
+      cancelAnimationFrame(rafRef.current);
+      setTip(INITIAL);
+    };
+
     const show = (e: MouseEvent) => {
       const anchor = (e.target as HTMLElement).closest('[data-tooltip]') as HTMLElement | null;
       if (!anchor) return;
@@ -149,19 +156,32 @@ export function GlobalTooltip() {
       if (!anchor) return;
       const related = e.relatedTarget as Node | null;
       if (related && anchor.contains(related)) return;
-      if (anchorRef.current === anchor) {
-        anchorRef.current = null;
-        cancelAnimationFrame(rafRef.current);
-        setTip(INITIAL);
-      }
+      if (anchorRef.current === anchor) clear();
     };
+
+    // Clicking an anchor often unmounts it (e.g. "Close chat", "Edit") before any
+    // mouseout fires — dismiss immediately so the tooltip can't linger.
+    const onPointerDown = (e: Event) => {
+      const anchor = (e.target as HTMLElement).closest('[data-tooltip]') as HTMLElement | null;
+      if (anchor && anchorRef.current === anchor) clear();
+    };
+
+    // Safety net: if the active anchor is removed from the DOM for any reason
+    // while its tooltip is showing, mouseout never fires — drop it on detach.
+    const observer = new MutationObserver(() => {
+      if (anchorRef.current && !anchorRef.current.isConnected) clear();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
 
     // Use capture so we get events even inside shadow-DOM-like subtrees.
     document.addEventListener('mouseover', show, true);
     document.addEventListener('mouseout',  hide,  true);
+    document.addEventListener('pointerdown', onPointerDown, true);
     return () => {
       document.removeEventListener('mouseover', show, true);
       document.removeEventListener('mouseout',  hide,  true);
+      document.removeEventListener('pointerdown', onPointerDown, true);
+      observer.disconnect();
       cancelAnimationFrame(rafRef.current);
     };
   }, [finalize]);

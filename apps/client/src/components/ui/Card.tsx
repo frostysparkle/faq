@@ -1,3 +1,5 @@
+// Surface container with theme styling. When `onClick` is provided it becomes
+// interactive (pointer cursor + hover lift/elevation). `as` picks the rendered element.
 import type { CSSProperties, ReactNode } from 'react';
 
 interface CardProps {

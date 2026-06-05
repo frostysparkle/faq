@@ -8,12 +8,15 @@ const categorySchema = new Schema(
     name: { type: String, required: true, trim: true, maxlength: 80 },
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
     description: { type: String, trim: true, maxlength: 500 },
+    // Extra terms used to route questions/FAQs to this category during search/classification.
     keywords: { type: [String], default: [] },
+    // Soft on/off switch so a category can be hidden without deleting its content.
     isActive: { type: Boolean, default: true, index: true },
   },
   { timestamps: true },
 );
 
+// Auto-generate the slug from the name when one isn't supplied explicitly.
 categorySchema.pre('validate', function deriveSlug(next) {
   if (!this.slug && this.name) this.slug = slugify(this.name);
   next();

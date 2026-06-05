@@ -47,10 +47,12 @@ async function seed(): Promise<void> {
   await connectDatabase();
 
   for (const name of STUDENTS) {
+    // Derive a deterministic test email from the name so re-runs hit the same row.
     const email = `${name.toLowerCase().replace(/\s+/g, '.')}@samagama.test`;
     const passwordHash = await bcrypt.hash(PASSWORD, 12);
     const existing = await UserModel.findOne({ email });
     if (existing) {
+      // Re-seed in place — reset profile/password but deliberately keep earned Spurti Points.
       existing.name = name;
       existing.role = 'student';
       existing.passwordHash = passwordHash;

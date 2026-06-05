@@ -1,3 +1,4 @@
+// HTTP calls for content flagging: raise a flag, list flags (moderator), update flag status.
 import type {
   ApiSuccess,
   FlagCreateInput,

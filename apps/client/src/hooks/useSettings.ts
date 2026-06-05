@@ -1,3 +1,5 @@
+// React Query hook for the global system settings. Several UI surfaces read these
+// admin-configurable values (e.g. communityAnswerCap to cap the answer form).
 import { useQuery } from '@tanstack/react-query';
 import type { ApiSuccess } from '@samagama/shared';
 import { apiClient } from '../lib/api-client';

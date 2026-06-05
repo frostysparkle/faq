@@ -1,3 +1,5 @@
+// /api/flags — content flagging. Any authenticated user can raise a flag; listing and
+// status changes are moderator/admin only.
 import { Router } from 'express';
 import { flagCreateSchema, flagListQuerySchema, flagUpdateStatusSchema } from '@samagama/shared';
 import { flagController } from '../controllers/flag.controller.js';

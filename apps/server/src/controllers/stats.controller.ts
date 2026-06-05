@@ -1,3 +1,5 @@
+// Dashboard statistics HTTP layer. Surfaces the numbers shown on the student, moderator,
+// and admin dashboards. Each endpoint is a thin wrapper over statsService/analyticsService.
 import type { Request, Response } from 'express';
 import { statsService } from '../services/stats.service.js';
 import { analyticsService } from '../services/analytics.service.js';
@@ -5,6 +7,7 @@ import { ok } from '../utils/api-response.js';
 import { ApiError } from '../utils/api-error.js';
 
 export const statsController = {
+  // Aggregate FAQ counts/health for the FAQ management summary cards.
   async getFaqStats(_req: Request, res: Response) {
     return ok(res, await statsService.getFaqStats());
   },

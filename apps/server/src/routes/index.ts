@@ -1,4 +1,5 @@
-// Top-level API router. New feature routes will mount here.
+// Top-level API router. Mounts every feature sub-router under its resource path
+// (e.g. /auth, /faqs, /qna). New feature routes mount here. Also exposes /health.
 import { Router } from 'express';
 import { authRouter } from './auth.routes.js';
 import { categoryRouter } from './category.routes.js';
@@ -18,6 +19,7 @@ import { notificationRouter } from './notification.routes.js';
 
 const router = Router();
 
+// Liveness probe — unauthenticated; used by load balancers / uptime checks.
 router.get('/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok', uptime: process.uptime() } });
 });

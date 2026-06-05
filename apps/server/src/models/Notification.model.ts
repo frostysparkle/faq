@@ -1,5 +1,8 @@
+// In-app notification documents. One per delivered notification, surfaced in the bell/feed UI.
 import { Schema, model, type InferSchemaType, type HydratedDocument } from 'mongoose';
 
+// Kept in sync with NotificationType in @samagama/shared; duplicated here so the
+// Mongoose enum validator does not depend on the shared package at the DB layer.
 const NOTIFICATION_TYPES = [
   'answer_approved',
   'answer_rejected',
@@ -21,7 +24,9 @@ const notificationSchema = new Schema(
   { timestamps: true },
 );
 
+// Feed query: newest-first notifications for a given user.
 notificationSchema.index({ userId: 1, createdAt: -1 });
+// Unread-count / unread-filter query for a given user.
 notificationSchema.index({ userId: 1, read: 1 });
 
 export type NotificationDocument = HydratedDocument<InferSchemaType<typeof notificationSchema>>;

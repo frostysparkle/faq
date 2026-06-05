@@ -1,3 +1,4 @@
+// /api/help-data — exports the searchable help corpus the client indexes locally. Auth required.
 import { Router } from 'express';
 import { helpController } from '../controllers/help.controller.js';
 import { requireAuth } from '../middlewares/auth.js';

@@ -6,6 +6,7 @@ import { ok } from '../utils/api-response.js';
 import { ApiError } from '../utils/api-error.js';
 
 export const userController = {
+  // Paginated user list with role/status/search filters; returns items + pagination meta.
   async list(req: Request, res: Response) {
     const query: UserListQuery = {
       page: Number(req.query.page ?? 1),
@@ -23,6 +24,7 @@ export const userController = {
     });
   },
 
+  // Promote/demote a user to a different role (actor id recorded for the audit log).
   async changeRole(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized();
     const { role } = req.body as ChangeRoleInput;
@@ -30,18 +32,21 @@ export const userController = {
     return ok(res, user);
   },
 
+  // Suspend a user (blocks login until reactivated).
   async suspend(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized();
     const user = await userService.suspendUser(req.params.id!, req.user.id);
     return ok(res, user);
   },
 
+  // Reactivate a previously suspended user.
   async activate(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized();
     const user = await userService.activateUser(req.params.id!, req.user.id);
     return ok(res, user);
   },
 
+  // Soft-delete a user account.
   async deleteUser(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized();
     await userService.deleteUser(req.params.id!, req.user.id);

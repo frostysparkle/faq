@@ -1,3 +1,5 @@
+// Shared button primitive. Forwards all native <button> props and layers on a
+// `variant` (color intent) and `size`. Styling uses theme CSS variables.
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 type Variant = 'primary' | 'ghost' | 'danger' | 'success' | 'warning';

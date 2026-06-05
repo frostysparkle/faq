@@ -1,3 +1,5 @@
+// "Exclusive open" coordination: app-wide state ensuring at most one keyed thing
+// (dropdown, popover, expanded card, …) is open at once. Opening one closes the rest.
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
 
 interface ExclusiveOpenCtx {

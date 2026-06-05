@@ -4,6 +4,8 @@ import { auditService, type AuditListQuery } from '../services/audit.service.js'
 import { ok } from '../utils/api-response.js';
 
 export const auditController = {
+  // Paginated audit-log listing. Parses page/filter query params and returns
+  // the page items alongside pagination meta (total + total pages).
   async list(req: Request, res: Response) {
     const query: AuditListQuery = {
       page: Number(req.query.page ?? 1),

@@ -1,3 +1,5 @@
+// /api/qna — community Q&A: the Ask flow (existing-answer check → create), question/answer
+// listing, answer submission, and voting. All routes require auth (any role).
 import { Router } from 'express';
 import {
   answerCreateSchema,

@@ -1,9 +1,11 @@
+// Category CRUD HTTP layer. Thin pass-through to categoryService.
 import type { Request, Response } from 'express';
 import type { CategoryCreateInput, CategoryUpdateInput } from '@samagama/shared';
 import { categoryService } from '../services/category.service.js';
 import { created, noContent, ok } from '../utils/api-response.js';
 
 export const categoryController = {
+  // List categories. Admins can opt into seeing inactive ones via `?all=true`.
   async list(req: Request, res: Response) {
     const includeInactive = req.user?.role === 'admin' && req.query.all === 'true';
     return ok(res, await categoryService.list(includeInactive));
