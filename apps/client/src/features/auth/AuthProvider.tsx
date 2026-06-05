@@ -21,7 +21,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(payload.user);
   }, []);
 
-  // On mount: if we have an access token, fetch /me. If only a refresh token, exchange it.
+  // On mount: restore session from stored tokens.
+  // Try /me first; if that fails (e.g. access token expired), fall back to the refresh token
+  // before giving up — so the 7-day refresh window is actually honoured.
   useEffect(() => {
     let cancelled = false;
     async function bootstrap() {
@@ -29,8 +31,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const refresh = tokenStorage.getRefresh();
       try {
         if (access) {
-          const res = await apiClient.get('/api/auth/me');
-          if (!cancelled) setUser(res.data.data);
+          try {
+            // The 401 interceptor in api-client will silently refresh if needed and retry,
+            // so a successful response here already means we're fully up to date.
+            const res = await apiClient.get('/api/auth/me');
+            if (!cancelled) setUser(res.data.data);
+          } catch {
+            // Interceptor couldn't refresh (e.g. refresh token was absent from storage at
+            // intercept time). Try once more directly with the refresh token.
+            if (refresh) {
+              const res = await apiClient.post('/api/auth/refresh', { refreshToken: refresh });
+              if (!cancelled) applyAuth(res.data.data);
+            } else {
+              throw new Error('no refresh token');
+            }
+          }
         } else if (refresh) {
           const res = await apiClient.post('/api/auth/refresh', { refreshToken: refresh });
           if (!cancelled) applyAuth(res.data.data);
