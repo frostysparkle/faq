@@ -23,6 +23,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { StaffIdentity } from '../../components/ui/StaffIdentity';
 import {
   useAnswers,
   useApproveAnswer,
@@ -82,32 +83,6 @@ const dropdownStyle: React.CSSProperties = {
   cursor: 'pointer',
   appearance: 'auto',
 };
-
-// ─── Approved by Moderator badge (reused across Personal + Community cards) ───
-
-function ApprovedBadge() {
-  return (
-    <div
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 5,
-        fontSize: 11,
-        fontWeight: 700,
-        color: 'var(--color-success)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
-        background: 'var(--color-card)',
-        border: '1.5px solid var(--color-success)',
-        borderRadius: 6,
-        padding: '3px 9px',
-        marginBottom: 8,
-      }}
-    >
-      <CheckCircle2 size={11} /> Approved by Moderator
-    </div>
-  );
-}
 
 // ─── Tab search bar ────────────────────────────────────────────────────────────
 
@@ -869,18 +844,6 @@ function PersonalCard({ question }: { question: PublicQuestion }) {
           )}
           {!aLoading && answers && answers.length > 0 && (
             <div style={{ marginBottom: 16 }}>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--color-text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  marginBottom: 8,
-                }}
-              >
-                Moderator response{answers.length > 1 ? 's' : ''}
-              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {answers.map((a) => (
                   <div
@@ -893,31 +856,8 @@ function PersonalCard({ question }: { question: PublicQuestion }) {
                       padding: '9px 12px',
                     }}
                   >
-                    <ApprovedBadge />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                      <div
-                        style={{
-                          width: 22,
-                          height: 22,
-                          borderRadius: '50%',
-                          background: 'var(--color-success)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: 'white',
-                          flexShrink: 0,
-                        }}
-                      >
-                        {a.author.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)' }}>
-                        {a.author.name}
-                      </span>
-                      <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
-                        · {timeAgo(a.createdAt)}
-                      </span>
+                    <div style={{ marginBottom: 6 }}>
+                      <StaffIdentity name={a.author.name} role={a.author.role} timestamp={a.createdAt} avatarSize={22} />
                     </div>
                     <div
                       style={{
@@ -937,25 +877,6 @@ function PersonalCard({ question }: { question: PublicQuestion }) {
           )}
 
           {/* Resolved notice — no further input needed */}
-          {isResolved && !aLoading && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 12px',
-                background: 'var(--color-success-bg)',
-                border: '1px solid var(--color-success)',
-                borderRadius: 8,
-              }}
-            >
-              <CheckCircle size={14} color="var(--color-success)" style={{ flexShrink: 0 }} />
-              <span style={{ fontSize: 12, color: 'var(--color-success)', fontWeight: 600 }}>
-                This question is resolved. The student can view the response under My Questions.
-              </span>
-            </div>
-          )}
-
           {/* Compose area — only for open questions */}
           {!isResolved && (
             <>
@@ -1034,6 +955,10 @@ function CommunityCard({
   const taggedStudents = pendingAnswers[0]?.taggedStudents ?? [];
   const multiAsker = taggedStudents.length > 0;
   const respond = useRespondToPersonal();
+
+  // Load approved answers whenever the card is open so any prior mod response is visible.
+  const { data: existingAnswers, isLoading: aLoading } = useAnswers(expanded ? question.id : undefined);
+  const approvedAnswers = (existingAnswers ?? []).filter((a) => a.status === 'approved');
 
   const submitModAnswer = async () => {
     if (modBody.trim().length < 10) return;
@@ -1170,6 +1095,44 @@ function CommunityCard({
               />
             </div>
           )}
+          {/* Approved moderator answers — shown after posting */}
+          {aLoading && (
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 12 }}>
+              Loading responses…
+            </div>
+          )}
+          {!aLoading && approvedAnswers.length > 0 && (
+            <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {approvedAnswers.map((a) => (
+                <div
+                  key={a.id}
+                  style={{
+                    background: 'var(--color-success-bg)',
+                    border: '1px solid var(--color-success)',
+                    borderLeft: '3px solid var(--color-success)',
+                    borderRadius: 8,
+                    padding: '9px 12px',
+                  }}
+                >
+                  <div style={{ marginBottom: 6 }}>
+                    <StaffIdentity name={a.author.name} role={a.author.role} timestamp={a.createdAt} avatarSize={22} />
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: 'var(--color-text)',
+                      lineHeight: 1.55,
+                      whiteSpace: 'pre-wrap',
+                      paddingLeft: 28,
+                    }}
+                  >
+                    {a.body}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {hasPending && (
             <div style={{ marginBottom: 16 }}>
               <div
@@ -1634,29 +1597,7 @@ function RankedAnswerRow({ answer, rank }: { answer: PublicAnswer; rank: number 
         >
           {rank}
         </div>
-        <div
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: '50%',
-            background: 'var(--color-primary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 11,
-            fontWeight: 700,
-            color: 'white',
-            flexShrink: 0,
-          }}
-        >
-          {answer.author.name.charAt(0).toUpperCase()}
-        </div>
-        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)' }}>
-          {answer.author.name}
-        </span>
-        <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
-          · {timeAgo(answer.createdAt)}
-        </span>
+        <StaffIdentity name={answer.author.name} role={answer.author.role} timestamp={answer.createdAt} avatarSize={22} />
         <span
           style={{
             display: 'inline-flex',
@@ -1669,7 +1610,7 @@ function RankedAnswerRow({ answer, rank }: { answer: PublicAnswer; rank: number 
             letterSpacing: '0.05em',
           }}
         >
-          <CheckCircle2 size={12} /> Approved by Moderator
+          <CheckCircle2 size={12} /> Approved
         </span>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span
@@ -1770,29 +1711,7 @@ function ReviewPanel({ answers }: { answers: PendingAnswerSummary[] }) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-          <div
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: '50%',
-              background: isSelected ? 'var(--color-primary)' : 'var(--color-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 11,
-              fontWeight: 700,
-              color: isSelected ? 'white' : 'var(--color-text-muted)',
-              flexShrink: 0,
-            }}
-          >
-            {a.author.name.charAt(0).toUpperCase()}
-          </div>
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)' }}>
-            {a.author.name}
-          </span>
-          <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
-            · {timeAgo(a.createdAt)}
-          </span>
+          <StaffIdentity name={a.author.name} role={a.author.role} timestamp={a.createdAt} avatarSize={22} />
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span
               style={{

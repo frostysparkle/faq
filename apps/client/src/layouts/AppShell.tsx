@@ -5,6 +5,7 @@ import { useAuth } from '../features/auth/AuthProvider';
 import { useTheme } from '../features/theme/ThemeProvider';
 import { Sidebar } from './Sidebar';
 import { ChatbotFab } from './ChatbotFab';
+import { GlobalTooltip } from '../components/ui/GlobalTooltip';
 import {
   useMarkAllRead,
   useMarkRead,
@@ -22,6 +23,7 @@ export function AppShell() {
 
   return (
     <>
+      <GlobalTooltip />
       <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
         <Sidebar
           role={user.role}

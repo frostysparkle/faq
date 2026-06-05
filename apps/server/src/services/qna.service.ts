@@ -183,7 +183,7 @@ interface PopulatedQuestion extends Omit<QuestionDocument, 'category' | 'tags' |
 }
 
 interface PopulatedAnswer extends Omit<AnswerDocument, 'answeredBy'> {
-  answeredBy: { _id: Types.ObjectId; name: string };
+  answeredBy: { _id: Types.ObjectId; name: string; role: string };
 }
 
 function projectQuestion(q: PopulatedQuestion, viewerId?: string): PublicQuestion {
@@ -227,7 +227,7 @@ function projectAnswer(a: PopulatedAnswer, viewerId?: string): PublicAnswer {
     id: a._id.toString(),
     body: a.body,
     status: a.status,
-    author: { id: a.answeredBy._id.toString(), name: a.answeredBy.name },
+    author: { id: a.answeredBy._id.toString(), name: a.answeredBy.name, role: a.answeredBy.role },
     upvoteCount: a.upvoteCount,
     downvoteCount: a.downvoteCount,
     moderationNote: a.moderationNote ?? undefined,
@@ -616,7 +616,7 @@ export const qnaService = {
     const answers = await AnswerModel.find(filter)
       .select('+upvotes +downvotes')
       .sort({ upvoteCount: -1, createdAt: 1 })
-      .populate('answeredBy', 'name')
+      .populate('answeredBy', 'name role')
       .lean<PopulatedAnswer[]>();
     return answers.map((a) => projectAnswer(a, viewerId));
   },
@@ -669,7 +669,7 @@ export const qnaService = {
 
     const populated = await AnswerModel.findById(answer.id)
       .select('+upvotes +downvotes')
-      .populate('answeredBy', 'name')
+      .populate('answeredBy', 'name role')
       .lean<PopulatedAnswer>();
     return projectAnswer(populated!, userId);
   },

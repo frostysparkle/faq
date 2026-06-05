@@ -604,71 +604,10 @@ main > * {
   border: 0;
 }
 
-/* ── Tooltip bubbles ─────────────────────────────────────────────────────────
-   Attach a tooltip to any element by setting [data-tooltip="label"].
-   Only elements with an explicit [data-tooltip] attribute get a tooltip.
-   aria-label is intentionally excluded — it exists for screen-reader
-   accessibility only and must never produce a visible rendered label.
+/* ── Tooltips ────────────────────────────────────────────────────────────────
+   Tooltip rendering is handled by <GlobalTooltip> (GlobalTooltip.tsx).
+   Add data-tooltip="text" to any element; optionally hint the preferred side
+   with data-tooltip-placement="top|bottom|left|right" (default: top).
+   No CSS pseudo-elements — the React component renders into document.body
+   via a portal for correct z-index and viewport collision detection.
 ────────────────────────────────────────────────────────────────────────────── */
-[data-tooltip] {
-  position: relative;
-}
-
-[data-tooltip]::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%) scale(0.9);
-  background: #1e293b;
-  color: #f8fafc;
-  padding: 5px 10px;
-  border-radius: 7px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  transition:
-    opacity 0.14s ease,
-    transform 0.14s ease,
-    visibility 0s linear 0.14s;
-  z-index: 9999;
-  letter-spacing: 0.01em;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
-  font-family: inherit;
-  line-height: 1;
-}
-
-[data-tooltip]::before {
-  content: '';
-  position: absolute;
-  bottom: calc(100% + 3px);
-  left: 50%;
-  transform: translateX(-50%);
-  border: 5px solid transparent;
-  border-top-color: #1e293b;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  transition:
-    opacity 0.14s ease,
-    visibility 0s linear 0.14s;
-  z-index: 9999;
-}
-
-[data-tooltip]:hover::after,
-[data-tooltip]:hover::before {
-  opacity: 1;
-  visibility: visible;
-  transition:
-    opacity 0.14s ease,
-    transform 0.14s ease,
-    visibility 0s linear 0s;
-  transform: translateX(-50%) scale(1);
-}
-
-[data-tooltip]:hover::before {
-  transform: translateX(-50%);
-}

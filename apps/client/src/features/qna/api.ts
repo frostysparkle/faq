@@ -76,7 +76,7 @@ interface PendingAnswerSummary {
   body: string;
   questionId: string;
   questionTitle: string;
-  author: { id: string; name: string };
+  author: { id: string; name: string; role?: string };
   /** Other students who tagged themselves on the same question (Dashboard Spec). */
   taggedStudents: { id: string; name: string }[];
   upvoteCount: number;

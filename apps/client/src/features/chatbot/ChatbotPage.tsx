@@ -83,6 +83,13 @@ export function ChatbotPage() {
 
   const handleFeedback = (msgIdx: number, displayIdx: number, rating: 'helpful' | 'incorrect') => {
     if (!sessionId) return;
+    const current = messages[displayIdx]?.feedback;
+    if (current === rating) {
+      // Same button clicked again — undo (clear locally only)
+      setMessages((prev) => prev.map((m, i) => (i === displayIdx ? { ...m, feedback: undefined } : m)));
+      return;
+    }
+    // Different or no prior rating — switch/set and persist
     setMessages((prev) => prev.map((m, i) => (i === displayIdx ? { ...m, feedback: rating } : m)));
     feedbackMutation.mutate({ sessionId, messageIndex: msgIdx, rating });
   };
@@ -416,7 +423,7 @@ function MessageBubble({ msg, displayIndex, sessionId, onFeedback }: MessageBubb
               label="Helpful"
               active={msg.feedback === 'helpful'}
               color="var(--color-success)"
-              disabled={!!msg.feedback}
+              disabled={false}
               onClick={() => onFeedback(msg.messageIndex!, displayIndex, 'helpful')}
             />
             <FeedbackBtn
@@ -424,7 +431,7 @@ function MessageBubble({ msg, displayIndex, sessionId, onFeedback }: MessageBubb
               label="Not helpful"
               active={msg.feedback === 'incorrect'}
               color="var(--color-danger)"
-              disabled={!!msg.feedback}
+              disabled={false}
               onClick={() => onFeedback(msg.messageIndex!, displayIndex, 'incorrect')}
             />
           </div>

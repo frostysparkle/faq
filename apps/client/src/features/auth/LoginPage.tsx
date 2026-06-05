@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { loginSchema, type LoginInput } from '@samagama/shared';
 import { useAuth } from './AuthProvider';
+import { GlobalTooltip } from '../../components/ui/GlobalTooltip';
 
 export function LoginPage() {
   const { user, login } = useAuth();
@@ -38,6 +39,7 @@ export function LoginPage() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--color-bg)' }}>
+      <GlobalTooltip />
       {/* ── Left brand panel ────────────────────────────────────────────── */}
       <div
         style={{

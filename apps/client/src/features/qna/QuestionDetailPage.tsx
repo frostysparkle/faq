@@ -15,6 +15,7 @@ import {
   ZoomOut,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { StaffIdentity } from '../../components/ui/StaffIdentity';
 import { useAuth } from '../auth/AuthProvider';
 import { useSettings } from '../../hooks/useSettings';
 import { useAnswers, useQuestion, useSubmitAnswer, useVoteAnswer } from './queries';
@@ -552,7 +553,6 @@ function AnswerCard({
   voteMutationKey: string;
 }) {
   const vote = useVoteAnswer(voteMutationKey);
-  const color = avatarColor(answer.author.name);
   const isApproved = answer.status === 'approved';
 
   function castVote(direction: 'up' | 'down') {
@@ -566,12 +566,11 @@ function AnswerCard({
     <div
       style={
         {
-          background: 'var(--color-card)',
+          background: isApproved ? 'rgba(5,150,105,0.02)' : 'var(--color-card)',
           border: '1px solid var(--color-border)',
           borderLeft: `3px solid ${isApproved ? '#059669' : 'var(--color-border)'}`,
           borderRadius: 12,
           padding: '18px 22px',
-          background: isApproved ? 'rgba(5,150,105,0.02)' : 'var(--color-card)',
         } as React.CSSProperties
       }
     >
@@ -588,7 +587,7 @@ function AnswerCard({
         {answer.body}
       </p>
 
-      {/* Footer: avatar · name · votes · timestamp */}
+      {/* Footer: identity · votes · timestamp */}
       <div
         style={{
           display: 'flex',
@@ -600,29 +599,9 @@ function AnswerCard({
           fontSize: 13,
         }}
       >
-        {/* Avatar */}
-        <div
-          style={{
-            width: 26,
-            height: 26,
-            borderRadius: '50%',
-            flexShrink: 0,
-            background: color.bg,
-            color: color.fg,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 11,
-            fontWeight: 800,
-          }}
-        >
-          {answer.author.name.charAt(0).toUpperCase()}
-        </div>
+        <StaffIdentity name={answer.author.name} role={answer.author.role} avatarSize={26} />
 
-        {/* Name */}
-        <span style={{ fontWeight: 600, color: 'var(--color-text)' }}>{answer.author.name}</span>
-
-        {/* Approved indicator inline (no badge, just a small icon) */}
+        {/* Approved indicator inline */}
         {isApproved && <CheckCircle2 size={14} color="#059669" style={{ flexShrink: 0 }} />}
 
         {/* Votes — clickable if canVote, read-only otherwise */}

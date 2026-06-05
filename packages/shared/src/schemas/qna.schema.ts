@@ -62,6 +62,8 @@ export type ModerateAnswerInput = z.infer<typeof moderateAnswerSchema>;
 export interface PublicAuthor {
   id: string;
   name: string;
+  /** Present on answers; absent on questions (asker is always a student). */
+  role?: string;
 }
 
 export interface PublicAnswer {

@@ -118,8 +118,10 @@ export function useRespondToPersonal() {
   return useMutation({
     mutationFn: ({ questionId, body }: { questionId: string; body: string }) =>
       moderationApi.respondToPersonal(questionId, body),
-    onSuccess: () => {
-      // The personal-questions list and the asker's My Questions need to refresh.
+    onSuccess: (_data, { questionId }) => {
+      // Explicitly refetch the answers for this question so the response
+      // appears immediately without waiting for the questions-list refetch to race.
+      void qc.invalidateQueries({ queryKey: qnaKeys.answers(questionId) });
       void qc.invalidateQueries({ queryKey: qnaKeys.all });
     },
   });
