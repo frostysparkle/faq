@@ -1,6 +1,9 @@
+// React Query hooks for dashboard stats (student home cards, leaderboard, community idle buckets).
+// All cached for 60s since these aggregates change slowly.
 import { useQuery } from '@tanstack/react-query';
 import { statsApi } from './api';
 
+// Centralized query keys (leaderboard is parameterized by time range).
 export const statsKeys = {
   studentHome: ['stats', 'student-home'] as const,
   leaderboard: (range: 'week' | 'month' | 'all') => ['stats', 'leaderboard', range] as const,

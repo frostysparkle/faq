@@ -55,11 +55,13 @@ function toPublicUserAdmin(user: {
 }
 
 export const userService = {
+  // Paginated, filterable admin user list (by role/status + a name/email search).
   async list(query: UserListQuery): Promise<{ items: PublicUserAdmin[]; total: number }> {
     const filter: FilterQuery = {};
     if (query.role) filter.role = query.role;
     if (query.status) filter.status = query.status;
     if (query.q) {
+      // Escape regex metacharacters so the search term is treated literally (case-insensitive).
       const re = new RegExp(query.q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
       filter.$or = [{ name: re }, { email: re }];
     }
@@ -81,6 +83,8 @@ export const userService = {
     };
   },
 
+  // Change a user's role. Guards self-edits and protected admin accounts, resets the
+  // password on cross-boundary promotions, and records the change in the audit log.
   async changeRole(userId: string, newRole: UserRole, actorId: string): Promise<PublicUserAdmin> {
     if (userId === actorId) throw ApiError.badRequest('You cannot change your own role');
 
@@ -116,6 +120,7 @@ export const userService = {
     return toPublicUserAdmin(user as Parameters<typeof toPublicUserAdmin>[0]);
   },
 
+  // Suspend a user (blocks login, preserves their content). Idempotent if already suspended.
   async suspendUser(userId: string, actorId: string): Promise<PublicUserAdmin> {
     if (userId === actorId) throw ApiError.badRequest('You cannot suspend yourself');
 
@@ -142,6 +147,7 @@ export const userService = {
     return toPublicUserAdmin(user as Parameters<typeof toPublicUserAdmin>[0]);
   },
 
+  // Reactivate a suspended user. Idempotent if already active.
   async activateUser(userId: string, actorId: string): Promise<PublicUserAdmin> {
     const user = await UserModel.findById(userId);
     if (!user) throw ApiError.notFound('User not found');
@@ -164,6 +170,9 @@ export const userService = {
     return toPublicUserAdmin(user as Parameters<typeof toPublicUserAdmin>[0]);
   },
 
+  // Permanently delete a STUDENT account and cascade-remove everything tied to it
+  // (their questions/answers, plus flags, reviews, notifications, analytics, logs, and
+  // feedback referencing the user or that content). Non-students/admins are protected.
   async deleteUser(userId: string, actorId: string): Promise<void> {
     if (userId === actorId) throw ApiError.badRequest('You cannot delete yourself');
 

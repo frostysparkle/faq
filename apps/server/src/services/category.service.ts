@@ -7,11 +7,13 @@ import { ApiError } from '../utils/api-error.js';
 import { slugify } from '../utils/slugify.js';
 
 export const categoryService = {
+  // List categories alphabetically; inactive ones are hidden unless explicitly requested.
   async list(includeInactive = false) {
     const filter = includeInactive ? {} : { isActive: true };
     return CategoryModel.find(filter).sort({ name: 1 }).lean();
   },
 
+  // Create a category, rejecting duplicates by slug.
   async create(input: CategoryCreateInput) {
     const slug = slugify(input.name);
     const existing = await CategoryModel.findOne({ slug }).lean();
@@ -19,6 +21,7 @@ export const categoryService = {
     return CategoryModel.create({ ...input, slug });
   },
 
+  // Update a category; renaming also regenerates the slug to keep it in sync with the name.
   async update(id: string, input: CategoryUpdateInput) {
     const update: Record<string, unknown> = { ...input };
     if (input.name) update.slug = slugify(input.name);

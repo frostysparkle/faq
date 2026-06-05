@@ -1,3 +1,5 @@
+// /api/moderation — moderator/admin dashboard actions: answer approval queue, personal-question
+// responses, FAQ promotion, bulk operations, and the trash bin. Entire router is moderator/admin only.
 import { Router } from 'express';
 import { moderateAnswerSchema } from '@samagama/shared';
 import { moderationController } from '../controllers/moderation.controller.js';

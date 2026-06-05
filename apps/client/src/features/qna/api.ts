@@ -1,3 +1,6 @@
+// HTTP calls for Community Q&A. Two groups:
+//  - qnaApi: student-facing (ask flow, question/answer reads, voting).
+//  - moderationApi: moderator/admin actions (approve/reject, respond, FAQ conversion, trash).
 import type {
   AnswerCreateInput,
   ApiSuccess,
@@ -59,6 +62,8 @@ export const qnaApi = {
     return res.data.data;
   },
 
+  // Toggle a vote on an answer. allowPending=true so moderators can vote while previewing
+  // not-yet-approved answers. Returns the updated counts + the caller's current vote.
   async voteAnswer(
     answerId: string,
     direction: 'up' | 'down',
@@ -84,6 +89,8 @@ interface PendingAnswerSummary {
   createdAt: string;
 }
 
+// Moderator/admin Q&A actions: the pending-answer queue, personal-question responses,
+// FAQ promotion, and the trash bin for expired community posts.
 export const moderationApi = {
   async listPendingAnswers(): Promise<PendingAnswerSummary[]> {
     const res = await apiClient.get<ApiSuccess<PendingAnswerSummary[]>>(

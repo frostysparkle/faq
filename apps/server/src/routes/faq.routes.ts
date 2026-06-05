@@ -1,3 +1,5 @@
+// /api/faqs — FAQ browsing/feedback (any authenticated user) and FAQ authoring
+// (create/update/delete + similarity check, moderator/admin only).
 import { Router } from 'express';
 import {
   faqCreateSchema,

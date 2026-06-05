@@ -46,6 +46,7 @@ const SEEDS: SeedRow[] = [
 ];
 
 async function seed(): Promise<void> {
+  // Hard guard: never run destructive/sample-data seeds against a production database.
   if (env.isProduction) {
     logger.error('Refusing to seed chatbot feedback in production. Aborting.');
     process.exit(1);

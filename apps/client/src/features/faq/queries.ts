@@ -156,6 +156,10 @@ export function useFaqStats() {
     queryKey: ['stats', 'faqs'],
     queryFn: faqApi.getFaqStats,
     refetchInterval: 30_000,
+    // Dashboard counts (incl. Flagged FAQs) are driven mostly by actions in other sessions
+    // (students raising flags). Refetch on focus so returning to the dashboard shows fresh numbers
+    // rather than waiting up to 30s for the next poll.
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -164,6 +168,8 @@ export function useModeratorStats() {
     queryKey: ['stats', 'moderator'],
     queryFn: faqApi.getModeratorStats,
     refetchInterval: 30_000,
+    // See useFaqStats — refresh the moderator/admin dashboard cards on window focus.
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -194,6 +200,11 @@ export function useUpdateFaq() {
       void qc.invalidateQueries({ queryKey: faqKeys.lists() });
       void qc.invalidateQueries({ queryKey: faqKeys.detail(id) });
       void qc.invalidateQueries({ queryKey: ['stats', 'faqs'] });
+      // An edit can resolve flags (answer change or explicit reset) — refresh the
+      // flag inbox / moderation views so the FAQ drops out of flagged lists.
+      void qc.invalidateQueries({ queryKey: ['flags'] });
+      void qc.invalidateQueries({ queryKey: ['moderation'] });
+      void qc.invalidateQueries({ queryKey: ['stats'] });
     },
   });
 }

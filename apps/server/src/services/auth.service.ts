@@ -14,6 +14,7 @@ import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/
 
 const BCRYPT_ROUNDS = 12;
 
+// Map an internal user document to the safe, client-facing shape (never exposes passwordHash etc.).
 function toPublicUser(user: UserDocument): PublicUser {
   return {
     id: user.id,
@@ -27,6 +28,8 @@ function toPublicUser(user: UserDocument): PublicUser {
   };
 }
 
+// Build the standard login response: a short-lived access token, a longer-lived refresh
+// token (bound to the user's tokenVersion), and the public user profile.
 function buildAuthPayload(user: UserDocument): AuthTokenPayload {
   return {
     accessToken: signAccessToken({ sub: user.id, role: user.role }),
@@ -36,6 +39,8 @@ function buildAuthPayload(user: UserDocument): AuthTokenPayload {
 }
 
 export const authService = {
+  // Register a new account. Open registration creates students; only an admin requester
+  // may assign a different role. Rejects duplicate or previously-suspended emails.
   async register(input: RegisterInput, requesterRole?: UserRole): Promise<AuthTokenPayload> {
     const existing = await UserModel.findOne({ email: input.email }).lean();
     if (existing) {
@@ -61,6 +66,8 @@ export const authService = {
     return buildAuthPayload(user);
   },
 
+  // Verify credentials and issue tokens. Returns the same generic error for unknown email
+  // and wrong password so callers can't probe which emails are registered.
   async login(input: LoginInput): Promise<AuthTokenPayload> {
     const user = await UserModel.findOne({ email: input.email });
     if (!user) throw ApiError.unauthorized('Invalid credentials');
@@ -72,6 +79,8 @@ export const authService = {
     return buildAuthPayload(user);
   },
 
+  // Exchange a valid refresh token for a fresh token pair. The token's `ver` must still match
+  // the user's current tokenVersion, so a password change (which bumps it) revokes old tokens.
   async refresh(refreshToken: string): Promise<AuthTokenPayload> {
     const claims = verifyRefreshToken(refreshToken);
     const user = await UserModel.findById(claims.sub);
@@ -82,6 +91,7 @@ export const authService = {
     return buildAuthPayload(user);
   },
 
+  // Fetch the current user's public profile (backs GET /auth/me).
   async getProfile(userId: string): Promise<PublicUser> {
     const user = await UserModel.findById(userId);
     if (!user) throw ApiError.notFound('User not found');

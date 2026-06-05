@@ -1,15 +1,19 @@
 // String-literal enums consumed by both client and server.
 // Each list is the single source of truth used by Mongoose schemas, Zod validators, and UI badges.
 
+/** Access tiers, ordered low→high privilege. The "t-" prefixed roles are trainee variants with reduced rights. */
 export const USER_ROLES = ['student', 't-moderator', 'moderator', 't-admin', 'admin'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
+/** Account lifecycle states. Only `active` users can authenticate. */
 export const USER_STATUSES = ['active', 'suspended', 'deleted'] as const;
 export type UserStatus = (typeof USER_STATUSES)[number];
 
+/** Publication lifecycle for an FAQ entry. Only `published` entries are shown to students. */
 export const FAQ_STATUSES = ['draft', 'published', 'outdated'] as const;
 export type FaqStatus = (typeof FAQ_STATUSES)[number];
 
+/** Lifecycle of a community/personal question. */
 export const QUESTION_STATUSES = ['open', 'answered', 'resolved', 'duplicate', 'archived'] as const;
 export type QuestionStatus = (typeof QUESTION_STATUSES)[number];
 
@@ -17,18 +21,23 @@ export type QuestionStatus = (typeof QUESTION_STATUSES)[number];
 export const QUESTION_TYPES = ['personal', 'community'] as const;
 export type QuestionType = (typeof QUESTION_TYPES)[number];
 
+/** Moderation outcome for a student-submitted answer. `pending` answers are hidden from the public feed. */
 export const ANSWER_STATUSES = ['pending', 'approved', 'rejected', 'needs_changes'] as const;
 export type AnswerStatus = (typeof ANSWER_STATUSES)[number];
 
+/** Why a user flagged a piece of content. */
 export const FLAG_REASONS = ['incorrect', 'outdated', 'duplicate', 'unclear', 'other'] as const;
 export type FlagReason = (typeof FLAG_REASONS)[number];
 
+/** Review lifecycle of a raised flag. */
 export const FLAG_STATUSES = ['open', 'under_review', 'resolved', 'dismissed'] as const;
 export type FlagStatus = (typeof FLAG_STATUSES)[number];
 
+/** Kinds of content that can be flagged. */
 export const FLAG_ENTITY_TYPES = ['faq', 'question', 'answer', 'chatbot_response'] as const;
 export type FlagEntityType = (typeof FLAG_ENTITY_TYPES)[number];
 
+/** Thumbs-up / thumbs-down rating a user can give a chatbot answer. */
 export const CHAT_FEEDBACK_RATINGS = ['helpful', 'incorrect'] as const;
 export type ChatFeedbackRating = (typeof CHAT_FEEDBACK_RATINGS)[number];
 

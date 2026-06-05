@@ -1,3 +1,4 @@
+// /api/tags — tag CRUD. All routes require auth; writes require moderator/admin.
 import { Router } from 'express';
 import { tagCreateSchema, tagUpdateSchema } from '@samagama/shared';
 import { tagController } from '../controllers/tag.controller.js';

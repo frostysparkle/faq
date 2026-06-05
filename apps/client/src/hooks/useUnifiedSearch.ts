@@ -28,6 +28,12 @@ type WorkerResponse =
   | { type: 'ERROR'; payload: string }
   | { type: 'RESULTS'; payload: SearchDoc[]; timing: object };
 
+/**
+ * Spins up the search Web Worker, fetches + indexes the corpus from `dataEndpoint`,
+ * and exposes `search`/`clear` plus index status. Results arrive asynchronously via
+ * worker messages and are split into FAQ vs community buckets. The worker is torn
+ * down on unmount / when the endpoint changes.
+ */
 export function useUnifiedSearch(dataEndpoint: string) {
   const [results, setResults] = useState<SearchResults>({ faqs: [], community: [] });
   const [isReady, setIsReady] = useState(false);

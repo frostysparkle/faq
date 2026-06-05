@@ -1,3 +1,4 @@
+// /api/categories — category CRUD. All routes require auth; writes require moderator/admin.
 import { Router } from 'express';
 import { categoryCreateSchema, categoryUpdateSchema } from '@samagama/shared';
 import { categoryController } from '../controllers/category.controller.js';

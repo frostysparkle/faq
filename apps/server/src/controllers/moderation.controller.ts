@@ -1,3 +1,6 @@
+// Moderation HTTP layer. Endpoints for the moderator/admin dashboards: triaging the
+// pending-answer queue, responding to personal questions, FAQ promotion, and the trash bin.
+// Authorization (moderator/admin) is enforced at the route level.
 import type { Request, Response } from 'express';
 import type { ModerateAnswerInput } from '@samagama/shared';
 import { moderationService } from '../services/moderation.service.js';
@@ -5,6 +8,7 @@ import { noContent, ok } from '../utils/api-response.js';
 import { ApiError } from '../utils/api-error.js';
 
 export const moderationController = {
+  // Full queue of answers awaiting moderation, across all questions.
   async listPending(_req: Request, res: Response) {
     return ok(res, await moderationService.listPendingAnswers());
   },
@@ -23,6 +27,7 @@ export const moderationController = {
     return noContent(res);
   },
 
+  // Approve a pending answer (optionally edit body, award points, set visibility window).
   async approveAnswer(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized();
     await moderationService.approveAnswer(
@@ -33,6 +38,7 @@ export const moderationController = {
     return noContent(res);
   },
 
+  // Reject a pending answer (optionally with a moderator note explaining why).
   async rejectAnswer(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized();
     await moderationService.rejectAnswer(

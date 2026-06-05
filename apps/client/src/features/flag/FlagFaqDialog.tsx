@@ -93,7 +93,15 @@ export function FlagFaqButton({ faqId, faqUpdatedAt = '' }: Props) {
   // Already flagged — show confirmation + optional update notice.
   if (persisted && !open) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 6,
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+        }}
+      >
         <span
           style={{
             display: 'inline-flex',

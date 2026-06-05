@@ -1,3 +1,4 @@
+// HTTP calls for the notification bell: list feed, unread count, mark one/all read.
 import type { ApiSuccess, PublicNotification } from '@samagama/shared';
 import { apiClient } from '../../lib/api-client';
 

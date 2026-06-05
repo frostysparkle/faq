@@ -1,3 +1,5 @@
+// Small rounded status pill. `color` maps to a semantic palette via CSS variables,
+// so it adapts to light/dark theme automatically.
 import type { ReactNode } from 'react';
 
 export type BadgeColor = 'default' | 'accent' | 'success' | 'warning' | 'danger';

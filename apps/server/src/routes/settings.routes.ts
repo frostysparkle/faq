@@ -1,3 +1,4 @@
+// /api/settings — global system settings. Readable by any authenticated user; writable by admins only.
 import { Router } from 'express';
 import { settingsController } from '../controllers/settings.controller.js';
 import { requireAuth, requireRole } from '../middlewares/auth.js';
