@@ -37,6 +37,27 @@
   --color-input: #f8fafc;
   --color-orange: #ea580c;
   --color-orange-bg: #fff7ed;
+  --color-info: #2563eb;
+  --color-info-bg: #eff6ff;
+
+  /* Hero / login gradient */
+  --color-gradient-hero: linear-gradient(145deg, #8b5cf6 0%, #6d28d9 60%, #4c1d95 100%);
+
+  /* Avatar initials palette (bg + fg pairs) */
+  --avatar-purple-bg: #ede9fe; --avatar-purple-fg: #7c3aed;
+  --avatar-green-bg:  #d1fae5; --avatar-green-fg:  #059669;
+  --avatar-amber-bg:  #fef3c7; --avatar-amber-fg:  #d97706;
+  --avatar-blue-bg:   #dbeafe; --avatar-blue-fg:   #2563eb;
+  --avatar-red-bg:    #fee2e2; --avatar-red-fg:    #dc2626;
+  --avatar-pink-bg:   #fce7f3; --avatar-pink-fg:   #db2777;
+  --avatar-sky-bg:    #e0f2fe; --avatar-sky-fg:    #0284c7;
+  --avatar-violet-bg: #fdf4ff; --avatar-violet-fg: #7c3aed;
+
+  /* Rank colors (leaderboard podium) */
+  --color-rank-gold:   #d97706;
+  --color-rank-silver: #64748b;
+  --color-rank-bronze: #b45309;
+
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
 
   /* Spacing / radius tokens */
@@ -90,6 +111,27 @@
   --color-input: #0b1628;
   --color-orange: #fb923c;
   --color-orange-bg: #271500;
+  --color-info: #60a5fa;
+  --color-info-bg: #0a1f3d;
+
+  /* Hero / login gradient — slightly deeper for dark mode */
+  --color-gradient-hero: linear-gradient(145deg, #5b21b6 0%, #4c1d95 60%, #2e1065 100%);
+
+  /* Avatar initials palette — muted, readable on dark surfaces */
+  --avatar-purple-bg: #2e1065; --avatar-purple-fg: #c4b5fd;
+  --avatar-green-bg:  #042f1a; --avatar-green-fg:  #6ee7b7;
+  --avatar-amber-bg:  #431407; --avatar-amber-fg:  #fde68a;
+  --avatar-blue-bg:   #0a1f3d; --avatar-blue-fg:   #93c5fd;
+  --avatar-red-bg:    #2d0a0a; --avatar-red-fg:    #fca5a5;
+  --avatar-pink-bg:   #500724; --avatar-pink-fg:   #f9a8d4;
+  --avatar-sky-bg:    #082f49; --avatar-sky-fg:    #7dd3fc;
+  --avatar-violet-bg: #1e0d40; --avatar-violet-fg: #d8b4fe;
+
+  /* Rank colors (leaderboard podium) */
+  --color-rank-gold:   #fbbf24;
+  --color-rank-silver: #94a3b8;
+  --color-rank-bronze: #c97b3a;
+
   --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.3);
 
   /* Spacing / radius tokens */

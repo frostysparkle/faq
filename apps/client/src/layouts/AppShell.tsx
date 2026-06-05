@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useExclusiveOpen } from '../hooks/useExclusiveOpen';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Bell, Check, CheckCheck, Menu, Moon, Sun } from 'lucide-react';
 import { useAuth } from '../features/auth/AuthProvider';
@@ -84,7 +85,7 @@ export function AppShell() {
 // ─── Notification bell + dropdown ────────────────────────────────────────────
 
 function NotificationBell() {
-  const [open, setOpen] = useState(false);
+  const { isOpen: open, toggle, close } = useExclusiveOpen('notification-bell');
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -97,17 +98,17 @@ function NotificationBell() {
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) close();
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+  }, [open, close]);
 
   const handleClick = (n: PublicNotification) => {
     if (!n.read) markRead.mutate(n.id);
     if (n.relatedId) {
       navigate(`/community/${n.relatedId}`);
-      setOpen(false);
+      close();
     }
   };
 
@@ -126,7 +127,7 @@ function NotificationBell() {
         data-tooltip="Notifications"
         className="topbar-icon-btn"
         style={{ position: 'relative' }}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
       >
         <Bell size={18} />
         <span

@@ -19,6 +19,7 @@ import { Types } from 'mongoose';
 import type { ChatbotFeedbackStats, PublicChatFeedback } from '@samagama/shared';
 import { env } from '../config/env.js';
 import { logger } from '../config/logger.js';
+import { ApiError } from '../utils/api-error.js';
 import { createTtlCache } from '../utils/ttl-cache.js';
 import { generateEmbedding, cosineSimilarity } from './embedding.service.js';
 import { FaqModel } from '../models/Faq.model.js';
@@ -51,6 +52,16 @@ interface SessionData {
   userId: string;
   messages: ChatMessage[];
   fallbackUnlocked: boolean; // true after a fallback response — unlocks #escalate
+}
+
+// Thrown by callOllamaLlm when the Ollama process is not reachable.
+// Surfaces as a 503 OLLAMA_NOT_CONNECTED to the client instead of a silent fallback.
+class OllamaConnectionError extends Error {
+  constructor(cause?: unknown) {
+    super('Ollama service is not running or unreachable');
+    this.name = 'OllamaConnectionError';
+    if (cause instanceof Error) this.cause = cause;
+  }
 }
 
 // ─── In-process session cache (30-min idle TTL) ───────────────────────────────
@@ -127,13 +138,22 @@ export const chatbotService = {
     const history = session.messages.slice(-10); // keep last 5 turns (10 messages)
     const ragContext = sources.map((s) => `FAQ: ${s.title}\nAnswer: ${s.answer}`);
 
-    const { answer, fallback_triggered } = await callLlm({
-      system_instruction: SYSTEM_PROMPT,
-      rag_context: ragContext,
-      conversation_history: history,
-      current_message: trimmed,
-      sources,
-    });
+    let answer: string;
+    let fallback_triggered: boolean;
+    try {
+      ({ answer, fallback_triggered } = await callLlm({
+        system_instruction: SYSTEM_PROMPT,
+        rag_context: ragContext,
+        conversation_history: history,
+        current_message: trimmed,
+        sources,
+      }));
+    } catch (err) {
+      if (err instanceof OllamaConnectionError) {
+        throw new ApiError(503, 'OLLAMA_NOT_CONNECTED', 'Ollama service is not running.');
+      }
+      throw err;
+    }
 
     // ── Update session ─────────────────────────────────────────────────────────
     session.messages.push({ role: 'user', content: trimmed });
@@ -529,12 +549,8 @@ async function callOllamaLlm(opts: {
       answer === FALLBACK_STRING || answer.includes("I don't have an answer");
     return { answer, fallback_triggered };
   } catch (err) {
-    logger.warn({ err }, 'Ollama call failed — falling back to mock');
-    return mockLlm({
-      rag_context: opts.rag_context,
-      current_message: opts.current_message,
-      sources: opts.sources,
-    });
+    logger.error({ err }, 'Ollama connection failed — service may not be running');
+    throw new OllamaConnectionError(err);
   }
 }
 

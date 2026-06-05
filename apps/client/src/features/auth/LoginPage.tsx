@@ -44,7 +44,7 @@ export function LoginPage() {
       <div
         style={{
           width: '42%',
-          background: 'linear-gradient(145deg, #8b5cf6 0%, #6d28d9 60%, #4c1d95 100%)',
+          background: 'var(--color-gradient-hero)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',

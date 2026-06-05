@@ -20,15 +20,15 @@ import { useAuth } from '../auth/AuthProvider';
 import { useSettings } from '../../hooks/useSettings';
 import { useAnswers, useQuestion, useSubmitAnswer, useVoteAnswer } from './queries';
 
-// ── Avatar palette ─────────────────────────────────────────────────────────────
+// ── Avatar palette — CSS variable references adapt to dark/light mode automatically ─
 const AVATAR_PALETTE = [
-  { bg: '#EDE9FE', fg: '#7C3AED' },
-  { bg: '#D1FAE5', fg: '#059669' },
-  { bg: '#FEF3C7', fg: '#D97706' },
-  { bg: '#DBEAFE', fg: '#2563EB' },
-  { bg: '#FEE2E2', fg: '#DC2626' },
-  { bg: '#FCE7F3', fg: '#DB2777' },
-  { bg: '#E0F2FE', fg: '#0284C7' },
+  { bg: 'var(--avatar-purple-bg)', fg: 'var(--avatar-purple-fg)' },
+  { bg: 'var(--avatar-green-bg)',  fg: 'var(--avatar-green-fg)'  },
+  { bg: 'var(--avatar-amber-bg)',  fg: 'var(--avatar-amber-fg)'  },
+  { bg: 'var(--avatar-blue-bg)',   fg: 'var(--avatar-blue-fg)'   },
+  { bg: 'var(--avatar-red-bg)',    fg: 'var(--avatar-red-fg)'    },
+  { bg: 'var(--avatar-pink-bg)',   fg: 'var(--avatar-pink-fg)'   },
+  { bg: 'var(--avatar-sky-bg)',    fg: 'var(--avatar-sky-fg)'    },
 ];
 function avatarColor(name: string) {
   const idx = ((name.charCodeAt(0) ?? 0) + (name.charCodeAt(1) ?? 0)) % AVATAR_PALETTE.length;
@@ -56,35 +56,41 @@ function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-// ── Status config ──────────────────────────────────────────────────────────────
+// ── Status config — CSS variable references adapt to dark/light mode automatically ─
 const STATUS_CFG: Record<
   string,
   { label: string; bg: string; fg: string; border: string; accent: string }
 > = {
-  open: { label: 'Open', bg: '#EDE9FE', fg: '#7C3AED', border: '#C4B5FD', accent: '#7C3AED' },
+  open: {
+    label: 'Open',
+    bg: 'var(--color-primary-bg)',
+    fg: 'var(--color-primary)',
+    border: 'color-mix(in srgb, var(--color-primary) 35%, transparent)',
+    accent: 'var(--color-primary)',
+  },
   answered: {
     label: 'Answered',
-    bg: '#FEF3C7',
-    fg: '#D97706',
-    border: '#FDE68A',
-    accent: '#D97706',
+    bg: 'var(--color-warning-bg)',
+    fg: 'var(--color-warning)',
+    border: 'color-mix(in srgb, var(--color-warning) 35%, transparent)',
+    accent: 'var(--color-warning)',
   },
   resolved: {
     label: 'Resolved',
-    bg: '#D1FAE5',
-    fg: '#059669',
-    border: '#A7F3D0',
-    accent: '#059669',
+    bg: 'var(--color-success-bg)',
+    fg: 'var(--color-success)',
+    border: 'color-mix(in srgb, var(--color-success) 35%, transparent)',
+    accent: 'var(--color-success)',
   },
 };
 function getStatus(s: string) {
   return (
     STATUS_CFG[s] ?? {
       label: capitalize(s),
-      bg: '#F3F4F6',
-      fg: '#6B7280',
-      border: '#E5E7EB',
-      accent: '#E5E7EB',
+      bg: 'var(--color-pill)',
+      fg: 'var(--color-text-muted)',
+      border: 'var(--color-border)',
+      accent: 'var(--color-border)',
     }
   );
 }
@@ -568,7 +574,7 @@ function AnswerCard({
         {
           background: isApproved ? 'rgba(5,150,105,0.02)' : 'var(--color-card)',
           border: '1px solid var(--color-border)',
-          borderLeft: `3px solid ${isApproved ? '#059669' : 'var(--color-border)'}`,
+          borderLeft: `3px solid ${isApproved ? 'var(--color-success)' : 'var(--color-border)'}`,
           borderRadius: 12,
           padding: '18px 22px',
         } as React.CSSProperties
@@ -602,7 +608,7 @@ function AnswerCard({
         <StaffIdentity name={answer.author.name} role={answer.author.role} avatarSize={26} />
 
         {/* Approved indicator inline */}
-        {isApproved && <CheckCircle2 size={14} color="#059669" style={{ flexShrink: 0 }} />}
+        {isApproved && <CheckCircle2 size={14} color="var(--color-success)" style={{ flexShrink: 0 }} />}
 
         {/* Votes — clickable if canVote, read-only otherwise */}
         <VoteControl
@@ -648,7 +654,7 @@ function VoteControl({
   onVote: () => void;
 }) {
   const isUp = direction === 'up';
-  const activeColor = isUp ? '#059669' : '#DC2626';
+  const activeColor = isUp ? 'var(--color-success)' : 'var(--color-danger)';
   const Icon = isUp ? ThumbsUp : ThumbsDown;
 
   if (!canVote) {

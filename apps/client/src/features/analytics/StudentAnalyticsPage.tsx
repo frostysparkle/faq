@@ -19,7 +19,7 @@ export function StudentAnalyticsPage() {
       {/* Welcome banner */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 60%, #4c1d95 100%)',
+          background: 'var(--color-gradient-hero)',
           borderRadius: 20,
           padding: '28px 32px',
           marginBottom: 24,
@@ -305,10 +305,10 @@ function KaggleLeaderboard({
               const avatarSize = isFirst ? 76 : 60;
               const podiumColor =
                 podiumRank === 1
-                  ? 'linear-gradient(180deg, #fde68a 0%, #f59e0b 100%)'
+                  ? 'linear-gradient(180deg, color-mix(in srgb, var(--color-rank-gold) 60%, white) 0%, var(--color-rank-gold) 100%)'
                   : podiumRank === 2
-                    ? 'linear-gradient(180deg, #e2e8f0 0%, #94a3b8 100%)'
-                    : 'linear-gradient(180deg, #fde7c4 0%, #b45309 100%)';
+                    ? 'linear-gradient(180deg, color-mix(in srgb, var(--color-rank-silver) 40%, white) 0%, var(--color-rank-silver) 100%)'
+                    : 'linear-gradient(180deg, color-mix(in srgb, var(--color-rank-bronze) 40%, white) 0%, var(--color-rank-bronze) 100%)';
 
               return (
                 <div
@@ -333,7 +333,7 @@ function KaggleLeaderboard({
                       borderRadius: '50%',
                       flexShrink: 0,
                       background: isCurrentUser
-                        ? 'linear-gradient(135deg, #8b5cf6, #6d28d9)'
+                        ? 'var(--color-gradient-hero)'
                         : rankAvatarBg(podiumRank),
                       display: 'flex',
                       alignItems: 'center',
@@ -515,7 +515,7 @@ function KaggleLeaderboard({
                   borderRadius: '50%',
                   flexShrink: 0,
                   background: isCurrentUser
-                    ? 'linear-gradient(135deg, #8b5cf6, #6d28d9)'
+                    ? 'var(--color-gradient-hero)'
                     : rankAvatarBg(e.rank),
                   display: 'flex',
                   alignItems: 'center',
@@ -562,14 +562,14 @@ function KaggleLeaderboard({
                     borderRadius: 4,
                     width: `${pct}%`,
                     background: isCurrentUser
-                      ? 'linear-gradient(90deg, #8b5cf6, #6d28d9)'
+                      ? 'var(--color-gradient-hero)'
                       : e.rank === 1
-                        ? 'linear-gradient(90deg, #fbbf24, #d97706)'
+                        ? 'linear-gradient(90deg, color-mix(in srgb, var(--color-rank-gold) 70%, white), var(--color-rank-gold))'
                         : e.rank === 2
-                          ? 'linear-gradient(90deg, #94a3b8, #64748b)'
+                          ? 'linear-gradient(90deg, var(--color-rank-silver), color-mix(in srgb, var(--color-rank-silver) 70%, black))'
                           : e.rank === 3
-                            ? 'linear-gradient(90deg, #c97b3a, #92400e)'
-                            : 'linear-gradient(90deg, var(--color-primary), #2563eb)',
+                            ? 'linear-gradient(90deg, var(--color-rank-bronze), color-mix(in srgb, var(--color-rank-bronze) 70%, black))'
+                            : 'linear-gradient(90deg, var(--color-primary), var(--color-info))',
                     transition: 'width 0.4s ease',
                   }}
                 />
@@ -639,10 +639,10 @@ function KaggleLeaderboard({
 }
 
 function rankAvatarBg(rank: number): string {
-  if (rank === 1) return 'linear-gradient(135deg, #fde68a, #f59e0b)';
-  if (rank === 2) return 'linear-gradient(135deg, #e2e8f0, #94a3b8)';
-  if (rank === 3) return 'linear-gradient(135deg, #fde7c4, #b45309)';
-  return 'linear-gradient(135deg, #ddd6fe, #8b5cf6)';
+  if (rank === 1) return 'linear-gradient(135deg, color-mix(in srgb, var(--color-rank-gold) 50%, white), var(--color-rank-gold))';
+  if (rank === 2) return 'linear-gradient(135deg, color-mix(in srgb, var(--color-rank-silver) 40%, white), var(--color-rank-silver))';
+  if (rank === 3) return 'linear-gradient(135deg, color-mix(in srgb, var(--color-rank-bronze) 40%, white), var(--color-rank-bronze))';
+  return 'var(--color-primary-bg)';
 }
 
 function rangeLabel(r: Range): string {

@@ -10,15 +10,16 @@ function isStaff(role: string): role is StaffRole {
 }
 
 // ── avatarColor ────────────────────────────────────────────────────────────────
+// Values are CSS variable references so they adapt to dark/light mode automatically.
 const PALETTE = [
-  { bg: '#DBEAFE', fg: '#1E40AF' },
-  { bg: '#FCE7F3', fg: '#9D174D' },
-  { bg: '#D1FAE5', fg: '#065F46' },
-  { bg: '#FEF3C7', fg: '#92400E' },
-  { bg: '#EDE9FE', fg: '#5B21B6' },
-  { bg: '#FEE2E2', fg: '#991B1B' },
-  { bg: '#E0F2FE', fg: '#075985' },
-  { bg: '#FDF4FF', fg: '#7E22CE' },
+  { bg: 'var(--avatar-blue-bg)',   fg: 'var(--avatar-blue-fg)'   },
+  { bg: 'var(--avatar-pink-bg)',   fg: 'var(--avatar-pink-fg)'   },
+  { bg: 'var(--avatar-green-bg)',  fg: 'var(--avatar-green-fg)'  },
+  { bg: 'var(--avatar-amber-bg)',  fg: 'var(--avatar-amber-fg)'  },
+  { bg: 'var(--avatar-purple-bg)', fg: 'var(--avatar-purple-fg)' },
+  { bg: 'var(--avatar-red-bg)',    fg: 'var(--avatar-red-fg)'    },
+  { bg: 'var(--avatar-sky-bg)',    fg: 'var(--avatar-sky-fg)'    },
+  { bg: 'var(--avatar-violet-bg)', fg: 'var(--avatar-violet-fg)' },
 ];
 function avatarColor(name: string) {
   let n = 0;
@@ -38,13 +39,13 @@ function VerifiedCheckmark({ role }: { role: StaffRole }) {
         width: 13,
         height: 13,
         borderRadius: '50%',
-        background: isAdmin ? '#1D4ED8' : '#2563EB',
+        background: 'var(--color-info)',
         border: '1.5px solid var(--color-card)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         boxShadow: isAdmin
-          ? '0 0 0 2px rgba(29,78,216,0.25), 0 1px 3px rgba(0,0,0,0.2)'
+          ? '0 0 0 2px color-mix(in srgb, var(--color-info) 30%, transparent), 0 1px 3px rgba(0,0,0,0.2)'
           : '0 1px 3px rgba(0,0,0,0.15)',
         zIndex: 1,
       }}
@@ -64,27 +65,27 @@ function RolePill({ role }: { role: StaffRole }) {
 
   const pillStyles: React.CSSProperties = (() => {
     if (role === 'admin') return {
-      background: '#1E3A8A',
-      color: '#fff',
-      border: '1px solid #1D4ED8',
-      boxShadow: '0 0 0 2px rgba(29,78,216,0.18), 0 1px 4px rgba(29,78,216,0.25)',
+      background: 'var(--color-info)',
+      color: 'var(--color-card)',
+      border: '1px solid var(--color-info)',
+      boxShadow: '0 0 0 2px color-mix(in srgb, var(--color-info) 20%, transparent), 0 1px 4px color-mix(in srgb, var(--color-info) 30%, transparent)',
     };
     if (role === 't-admin') return {
-      background: 'linear-gradient(90deg, #312E81 0%, #1D4ED8 100%)',
-      color: '#fff',
-      border: '1px solid rgba(99,102,241,0.5)',
-      boxShadow: '0 0 0 1.5px rgba(99,102,241,0.2), 0 1px 4px rgba(99,102,241,0.2)',
+      background: 'var(--color-primary-bg)',
+      color: 'var(--color-primary)',
+      border: '1px solid color-mix(in srgb, var(--color-primary) 40%, transparent)',
+      boxShadow: '0 0 0 1.5px color-mix(in srgb, var(--color-primary) 15%, transparent)',
     };
     if (role === 'moderator') return {
-      background: '#EFF6FF',
-      color: '#1D4ED8',
-      border: '1px solid #BFDBFE',
+      background: 'var(--color-info-bg)',
+      color: 'var(--color-info)',
+      border: '1px solid color-mix(in srgb, var(--color-info) 35%, transparent)',
     };
     // t-moderator
     return {
-      background: 'linear-gradient(90deg, #FFFBEB 0%, #EFF6FF 100%)',
-      color: '#B45309',
-      border: '1px dashed #D97706',
+      background: 'var(--color-warning-bg)',
+      color: 'var(--color-warning)',
+      border: '1px dashed color-mix(in srgb, var(--color-warning) 60%, transparent)',
     };
   })();
 

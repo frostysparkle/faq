@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useExclusiveOpen } from '../../hooks/useExclusiveOpen';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -22,18 +23,18 @@ import { useQuestions } from './queries';
 // ─── Design tokens (match spec exactly) ──────────────────────────────────────
 
 const T = {
-  purple: '#7C3AED',
-  purpleLight: '#F3E8FF',
-  purpleHover: '#6D28D9',
-  orange: '#D97706',
-  green: '#059669',
-  red: '#DC2626',
-  gray: '#6B7280',
-  dark: '#111827',
-  border: '#E5E7EB',
-  panelBg: 'var(--color-card)',
-  rowHover: '#F9FAFB',
-  countBg: '#F3F4F6',
+  purple:     'var(--color-primary)',
+  purpleLight:'var(--color-primary-bg)',
+  purpleHover:'var(--color-primary)',
+  orange:     'var(--color-warning)',
+  green:      'var(--color-success)',
+  red:        'var(--color-danger)',
+  gray:       'var(--color-text-muted)',
+  dark:       'var(--color-text)',
+  border:     'var(--color-border)',
+  panelBg:    'var(--color-card)',
+  rowHover:   'var(--color-input)',
+  countBg:    'var(--color-pill)',
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -588,6 +589,7 @@ function FilterBar({
 
       {/* Filter dropdowns — no labels, placeholders carry the context */}
       <FilterSelect
+        dropdownKey="community-status"
         value={pending.status}
         options={statusOptions}
         onChange={(v) => setPending((p) => ({ ...p, status: v as StatusOption }))}
@@ -595,6 +597,7 @@ function FilterBar({
       />
 
       <FilterSelect
+        dropdownKey="community-category"
         value={pending.category}
         options={categoryOptions}
         onChange={(v) => setPending((p) => ({ ...p, category: v }))}
@@ -602,6 +605,7 @@ function FilterBar({
       />
 
       <FilterSelect
+        dropdownKey="community-activity"
         value={pending.activity}
         options={activityOptions}
         onChange={(v) => setPending((p) => ({ ...p, activity: v }))}
@@ -661,40 +665,42 @@ interface SelectOption {
 }
 
 function FilterSelect({
+  dropdownKey,
   label,
   value,
   options,
   onChange,
   style,
 }: {
+  dropdownKey: string;
   label?: string;
   value: string;
   options: SelectOption[];
   onChange: (v: string) => void;
   style?: React.CSSProperties;
 }) {
-  const [open, setOpen] = useState(false);
+  const { isOpen: open, toggle, close } = useExclusiveOpen(dropdownKey);
   const ref = useRef<HTMLDivElement>(null);
 
   // Close on outside click
   useEffect(() => {
     if (!open) return;
     const h = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) close();
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
-  }, [open]);
+  }, [open, close]);
 
   // Close on Escape
   useEffect(() => {
     if (!open) return;
     const h = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') close();
     };
     document.addEventListener('keydown', h);
     return () => document.removeEventListener('keydown', h);
-  }, [open]);
+  }, [open, close]);
 
   const current = options.find((o) => o.value === value) ?? options[0];
   const isActive = value !== options[0]?.value;
@@ -704,7 +710,7 @@ function FilterSelect({
       {/* Card trigger — value + chevron only */}
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         aria-haspopup="listbox"
         aria-expanded={open}
         style={{
@@ -797,13 +803,13 @@ function FilterSelect({
                 tabIndex={0}
                 onClick={() => {
                   onChange(opt.value);
-                  setOpen(false);
+                  close();
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     onChange(opt.value);
-                    setOpen(false);
+                    close();
                   }
                 }}
                 style={{

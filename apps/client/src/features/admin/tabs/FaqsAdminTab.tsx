@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Eye,
   Plus,
@@ -21,10 +22,10 @@ import {
 import type { PublicFaq, FaqCreateInput, FaqStatus } from '@samagama/shared';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
+import { useQueryClient } from '@tanstack/react-query';
 import { useDeleteFaq, useCategories, useFaqList, useTags } from '../../faq/queries';
 import { useFlagList, useUpdateFlagStatus } from '../../flag/queries';
 import { InlineFaqEditor } from './InlineFaqEditor';
-import { FlagInbox } from './FlagInbox';
 
 type Filter = 'all' | 'helpful' | 'flagged';
 const PAGE_SIZES = [5, 10, 20, 50];
@@ -139,35 +140,42 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
           flexWrap: 'wrap',
         }}
       >
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {(['all', 'helpful', 'flagged'] as Filter[]).map((f) => (
-            <FilterChip key={f} active={filter === f} onClick={() => switchFilter(f)}>
-              {f === 'all' ? (
-                'All'
-              ) : f === 'helpful' ? (
-                'Helpful FAQs'
-              ) : (
-                <>
-                  Flagged FAQs
-                  {flaggedCount > 0 && (
-                    <span
-                      style={{
-                        background: C.thumbDown,
-                        color: '#fff',
-                        borderRadius: 10,
-                        padding: '0 6px',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        marginLeft: 5,
-                      }}
-                    >
-                      {flaggedCount}
-                    </span>
-                  )}
-                </>
-              )}
-            </FilterChip>
-          ))}
+        {/* Filter dropdown */}
+        <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+          <select
+            value={filter}
+            onChange={(e) => switchFilter(e.target.value as Filter)}
+            style={{
+              fontSize: 13,
+              padding: '7px 32px 7px 12px',
+              borderRadius: 8,
+              border: `1px solid ${filter !== 'all' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+              background: filter !== 'all' ? 'var(--color-primary-bg)' : 'var(--color-input)',
+              color: filter !== 'all' ? 'var(--color-primary)' : 'var(--color-text)',
+              fontFamily: 'inherit',
+              fontWeight: 600,
+              cursor: 'pointer',
+              appearance: 'none',
+              outline: 'none',
+              transition: 'border-color .15s, background .15s',
+            }}
+          >
+            <option value="all">All</option>
+            <option value="helpful">Helpful FAQs</option>
+            <option value="flagged">
+              {flaggedCount > 0 ? `Flagged FAQs (${flaggedCount})` : 'Flagged FAQs'}
+            </option>
+          </select>
+          <ChevronRight
+            size={13}
+            style={{
+              position: 'absolute',
+              right: 8,
+              pointerEvents: 'none',
+              rotate: '90deg',
+              color: filter !== 'all' ? 'var(--color-primary)' : C.muted,
+            }}
+          />
         </div>
 
         {/* Search bar */}
@@ -239,9 +247,6 @@ export function FaqsAdminTab({ flaggedCount }: { flaggedCount: number }) {
           <InlineFaqEditor categories={categories} tags={tags} onClose={() => setCreating(false)} />
         </div>
       )}
-
-      {/* ── Flag inbox — shown when the Flagged filter is active ── */}
-      {filter === 'flagged' && <FlagInbox />}
 
       {/* ── Table ── */}
       <div className="mod-card mod-card-blue" style={{ overflow: 'hidden', borderRadius: 14 }}>
@@ -611,97 +616,44 @@ function FaqRow({
 
         {/* Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {!confirmingDelete ? (
-            <>
-              <ABtn
-                label={expanded ? 'Hide answer' : 'View answer'}
-                onClick={onToggleExpand}
-                bg={C.actionEye.bg}
-                fg={C.actionEye.fg}
-                border={C.actionEye.border}
-              >
-                <Eye size={15} strokeWidth={1.8} />
-              </ABtn>
-              <ABtn
-                label="Edit"
-                onClick={onEdit}
-                bg={C.actionEdit.bg}
-                fg={C.actionEdit.fg}
-                border={C.actionEdit.border}
-              >
-                <Pencil size={15} strokeWidth={1.8} />
-              </ABtn>
-              <ABtn
-                label="Delete (click to confirm)"
-                onClick={() => setConfirmingDelete(true)}
-                bg={C.actionDel.bg}
-                fg={C.actionDel.fg}
-                border={C.actionDel.border}
-              >
-                <Trash2 size={15} strokeWidth={1.8} />
-              </ABtn>
-            </>
-          ) : (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                background: 'var(--color-danger-bg)',
-                border: '1px solid var(--color-danger)',
-                borderRadius: 10,
-                padding: '5px 10px',
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--color-danger)',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                Delete?
-              </span>
-              <button
-                onClick={() => {
-                  deleteFaq.mutate(faq.id);
-                  setConfirmingDelete(false);
-                }}
-                disabled={deleteFaq.isPending}
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  padding: '3px 10px',
-                  borderRadius: 6,
-                  border: 'none',
-                  background: 'var(--color-danger)',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                Yes
-              </button>
-              <button
-                onClick={() => setConfirmingDelete(false)}
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  padding: '3px 10px',
-                  borderRadius: 6,
-                  border: '1px solid var(--color-border)',
-                  background: 'var(--color-card)',
-                  color: 'var(--color-text-muted)',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          )}
+          <ABtn
+            label={expanded ? 'Hide answer' : 'View answer'}
+            onClick={onToggleExpand}
+            bg={C.actionEye.bg}
+            fg={C.actionEye.fg}
+            border={C.actionEye.border}
+          >
+            <Eye size={15} strokeWidth={1.8} />
+          </ABtn>
+          <ABtn
+            label="Edit"
+            onClick={onEdit}
+            bg={C.actionEdit.bg}
+            fg={C.actionEdit.fg}
+            border={C.actionEdit.border}
+          >
+            <Pencil size={15} strokeWidth={1.8} />
+          </ABtn>
+          <ABtn
+            label="Delete"
+            onClick={() => setConfirmingDelete(true)}
+            bg={C.actionDel.bg}
+            fg={C.actionDel.fg}
+            border={C.actionDel.border}
+          >
+            <Trash2 size={15} strokeWidth={1.8} />
+          </ABtn>
         </div>
+
+        {/* Confirmation modal — portal so it's never clipped by table overflow */}
+        {confirmingDelete && (
+          <DeleteFaqDialog
+            title={faq.title}
+            isPending={deleteFaq.isPending}
+            onConfirm={() => deleteFaq.mutate(faq.id)}
+            onCancel={() => setConfirmingDelete(false)}
+          />
+        )}
       </div>
 
       {/* Expanded answer */}
@@ -722,7 +674,9 @@ function FaqRow({
       )}
 
       {/* Expanded flag feedback */}
-      {flagExpanded && flagCount > 0 && <FaqFlagPanel faqId={faq.id} isLast={isLast} />}
+      {flagExpanded && flagCount > 0 && (
+        <FaqFlagPanel faqId={faq.id} faqFlagCount={flagCount} isLast={isLast} />
+      )}
     </>
   );
 }
@@ -744,11 +698,25 @@ const SPURTI_OPTIONS = [
   { label: '−1 pt', value: -1 },
 ];
 
-function FaqFlagPanel({ faqId, isLast }: { faqId: string; isLast: boolean }) {
-  const { data: open } = useFlagList({ entityType: 'faq', status: 'open' });
-  const { data: underReview } = useFlagList({ entityType: 'faq', status: 'under_review' });
+function FaqFlagPanel({
+  faqId,
+  faqFlagCount,
+  isLast,
+}: {
+  faqId: string;
+  faqFlagCount: number;
+  isLast: boolean;
+}) {
+  const { data: open, isLoading: loadingOpen } = useFlagList({ entityType: 'faq', status: 'open' });
+  const { data: underReview, isLoading: loadingUnderReview } = useFlagList({
+    entityType: 'faq',
+    status: 'under_review',
+  });
   const update = useUpdateFlagStatus();
+  const qc = useQueryClient();
   const [spurtiMap, setSpurtiMap] = useState<Record<string, number>>({});
+
+  const isLoading = loadingOpen || loadingUnderReview;
 
   const flags = useMemo(
     () =>
@@ -757,6 +725,15 @@ function FaqFlagPanel({ faqId, isLast }: { faqId: string; isLast: boolean }) {
         .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
     [open, underReview, faqId],
   );
+
+  // When data has loaded but no live flags exist while the FAQ still shows a non-zero
+  // flagCount, the counter is stale (e.g. flags were auto-resolved after an answer edit).
+  // Invalidate the FAQ list so the row refreshes and disappears from the Flagged filter.
+  useEffect(() => {
+    if (!isLoading && flags.length === 0 && faqFlagCount > 0) {
+      void qc.invalidateQueries({ queryKey: ['faqs'] });
+    }
+  }, [isLoading, flags.length, faqFlagCount, qc]);
 
   const getSpurti = (id: string) => spurtiMap[id] ?? 0;
   const setSpurti = (id: string, pts: number) => setSpurtiMap((m) => ({ ...m, [id]: pts }));
@@ -773,7 +750,10 @@ function FaqFlagPanel({ faqId, isLast }: { faqId: string; isLast: boolean }) {
         gap: 10,
       }}
     >
-      {flags.length === 0 && (
+      {isLoading && (
+        <div style={{ fontSize: 12, color: C.muted }}>Loading flags…</div>
+      )}
+      {!isLoading && flags.length === 0 && (
         <div style={{ fontSize: 12, color: C.muted }}>No open flags for this FAQ.</div>
       )}
 
@@ -980,36 +960,6 @@ function ABtn({
   );
 }
 
-function FilterChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        fontSize: 12,
-        fontWeight: 500,
-        padding: '7px 16px',
-        borderRadius: 20,
-        border: `1px solid ${active ? 'var(--color-primary)' : 'var(--color-border)'}`,
-        background: active ? 'var(--color-primary)' : 'var(--color-card)',
-        color: active ? '#fff' : 'var(--color-text-muted)',
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        display: 'inline-flex',
-        alignItems: 'center',
-      }}
-    >
-      {children}
-    </button>
-  );
-}
 
 function PgBtn({
   children,
@@ -1102,3 +1052,165 @@ const vDivider: React.CSSProperties = {
 };
 
 export type { FaqCreateInput };
+
+// ── DeleteFaqDialog ────────────────────────────────────────────────────────────
+
+function DeleteFaqDialog({
+  title,
+  isPending,
+  onConfirm,
+  onCancel,
+}: {
+  title: string;
+  isPending: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onCancel]);
+
+  // Trap scroll on the body while open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="faq-delete-title"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 100000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+      }}
+    >
+      {/* Backdrop */}
+      <div
+        onClick={onCancel}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(0,0,0,0.45)',
+          backdropFilter: 'blur(2px)',
+        }}
+      />
+
+      {/* Panel */}
+      <div
+        style={{
+          position: 'relative',
+          background: 'var(--color-card)',
+          border: '1px solid var(--color-border)',
+          borderRadius: 16,
+          padding: '28px 28px 24px',
+          width: '100%',
+          maxWidth: 420,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+        }}
+      >
+        {/* Icon */}
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 12,
+            background: 'var(--color-danger-bg)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 16,
+          }}
+        >
+          <Trash2 size={22} color="var(--color-danger)" strokeWidth={1.8} />
+        </div>
+
+        {/* Heading */}
+        <div
+          id="faq-delete-title"
+          style={{ fontSize: 17, fontWeight: 700, color: 'var(--color-text)', marginBottom: 8 }}
+        >
+          Delete FAQ?
+        </div>
+
+        {/* Body */}
+        <div style={{ fontSize: 13, color: 'var(--color-text-muted)', lineHeight: 1.6, marginBottom: 6 }}>
+          You are about to permanently delete:
+        </div>
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: 'var(--color-text)',
+            background: 'var(--color-input)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 8,
+            padding: '8px 12px',
+            marginBottom: 20,
+            lineHeight: 1.5,
+          }}
+        >
+          {title.length > 120 ? title.slice(0, 117) + '…' : title}
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--color-danger)', marginBottom: 24, fontWeight: 500 }}>
+          This action cannot be undone. All flags and engagement data for this FAQ will also be removed.
+        </div>
+
+        {/* Buttons */}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <button
+            onClick={onCancel}
+            disabled={isPending}
+            style={{
+              padding: '9px 20px',
+              borderRadius: 8,
+              border: '1px solid var(--color-border)',
+              background: 'var(--color-card)',
+              color: 'var(--color-text-muted)',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: isPending ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit',
+              opacity: isPending ? 0.6 : 1,
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isPending}
+            style={{
+              padding: '9px 20px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--color-danger)',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: isPending ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit',
+              opacity: isPending ? 0.7 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <Trash2 size={13} strokeWidth={2} />
+            {isPending ? 'Deleting…' : 'Yes, delete'}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}

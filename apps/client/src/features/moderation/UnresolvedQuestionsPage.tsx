@@ -1,6 +1,7 @@
 // Unresolved Questions — three-tab layout: Personal · Community · Trash.
 // Each tab has its own search bar + inline filter/sort controls.
 import { useMemo, useState } from 'react';
+import { useExclusiveOpen } from '../../hooks/useExclusiveOpen';
 import {
   BookOpen,
   CheckCircle,
@@ -732,7 +733,7 @@ function StatusDot({ color, label }: { color: string; label: string }) {
 // ─── Personal card ────────────────────────────────────────────────────────────
 
 function PersonalCard({ question }: { question: PublicQuestion }) {
-  const [expanded, setExpanded] = useState(false);
+  const { isOpen: expanded, toggle: setExpandedToggle } = useExclusiveOpen(`mod-personal-${question.id}`);
   const [body, setBody] = useState('');
   const respond = useRespondToPersonal();
 
@@ -798,7 +799,7 @@ function PersonalCard({ question }: { question: PublicQuestion }) {
         }
         meta={meta}
         expanded={expanded}
-        onToggle={() => setExpanded((v) => !v)}
+        onToggle={setExpandedToggle}
       />
       {expanded && (
         <CardBody>
@@ -915,7 +916,7 @@ function PersonalCard({ question }: { question: PublicQuestion }) {
                   size="sm"
                   variant="ghost"
                   onClick={() => {
-                    setExpanded(false);
+                    setExpandedToggle();
                     setBody('');
                   }}
                 >
@@ -946,7 +947,7 @@ function CommunityCard({
   question: PublicQuestion;
   pendingAnswers: PendingAnswerSummary[];
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const { isOpen: expanded, toggle: setExpandedToggle } = useExclusiveOpen(`mod-community-${question.id}`);
   const [showModAnswer, setShowModAnswer] = useState(false);
   const [modBody, setModBody] = useState('');
   const [showStudents, setShowStudents] = useState(false);
@@ -1044,7 +1045,7 @@ function CommunityCard({
         }
         meta={meta}
         expanded={expanded}
-        onToggle={() => setExpanded((v) => !v)}
+        onToggle={setExpandedToggle}
       />
       {expanded && (
         <CardBody>
@@ -1229,7 +1230,7 @@ function CommunityCard({
 // ─── Resolved card ────────────────────────────────────────────────────────────
 
 function ResolvedCard({ question }: { question: PublicQuestion }) {
-  const [expanded, setExpanded] = useState(false);
+  const { isOpen: expanded, toggle: setExpandedToggle } = useExclusiveOpen(`mod-resolved-${question.id}`);
   const { data: rawAnswers, isLoading: aLoading } = useAnswers(expanded ? question.id : undefined);
   const convertToFaq = useConvertAnswerToFaq();
   const [faqDismissed, setFaqDismissed] = useState<Set<string>>(new Set());
@@ -1288,7 +1289,7 @@ function ResolvedCard({ question }: { question: PublicQuestion }) {
         }
         meta={meta}
         expanded={expanded}
-        onToggle={() => setExpanded((v) => !v)}
+        onToggle={setExpandedToggle}
       />
       {expanded && (
         <CardBody>
@@ -1394,7 +1395,7 @@ function ResolvedCard({ question }: { question: PublicQuestion }) {
 // ─── Trash card ───────────────────────────────────────────────────────────────
 
 function TrashCard({ question }: { question: TrashedQuestionRow }) {
-  const [expanded, setExpanded] = useState(false);
+  const { isOpen: expanded, toggle: setExpandedToggle } = useExclusiveOpen(`mod-trash-${question.id}`);
   const restore = useRestoreQuestion();
 
   const meta = (
@@ -1444,7 +1445,7 @@ function TrashCard({ question }: { question: TrashedQuestionRow }) {
         }
         meta={meta}
         expanded={expanded}
-        onToggle={() => setExpanded((v) => !v)}
+        onToggle={setExpandedToggle}
         extra={restoreBtn}
       />
       {expanded && (

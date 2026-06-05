@@ -1,5 +1,6 @@
 // Top-level router. Public routes are open; everything else requires auth.
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { ExclusiveOpenProvider } from './hooks/useExclusiveOpen';
 import { AppShell } from './layouts/AppShell';
 import { LoginPage } from './features/auth/LoginPage';
 import { RequireAuth } from './features/auth/RequireAuth';
@@ -19,7 +20,6 @@ import { AdminOverviewPage } from './features/admin/AdminOverviewPage';
 import { StudentAnalyticsPage } from './features/analytics/StudentAnalyticsPage';
 import { UserManagementPage } from './features/admin/UserManagementPage';
 import { FaqQualityPage } from './features/admin/FaqQualityPage';
-import { AuditLogsPage } from './features/admin/AuditLogsPage';
 import { ModerationLoadPage } from './features/admin/ModerationLoadPage';
 import { SettingsPage } from './features/admin/SettingsPage';
 import { ModeratorAnalyticsPage } from './features/moderation/ModeratorAnalyticsPage';
@@ -27,6 +27,7 @@ import { FaqCandidatesPage } from './features/moderation/FaqCandidatesPage';
 
 export function App() {
   return (
+    <ExclusiveOpenProvider>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
 
@@ -66,7 +67,6 @@ export function App() {
         <Route path="/admin/users" element={<UserManagementPage />} />
         <Route path="/admin/bot-feedback" element={<ChatbotFeedbackPage />} />
         <Route path="/admin/faq-quality" element={<FaqQualityPage />} />
-        <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
         <Route path="/admin/moderation-load" element={<ModerationLoadPage />} />
         <Route path="/admin/settings" element={<SettingsPage />} />
 
@@ -74,5 +74,6 @@ export function App() {
         <Route path="*" element={<Navigate to="/404" replace />} />
       </Route>
     </Routes>
+    </ExclusiveOpenProvider>
   );
 }

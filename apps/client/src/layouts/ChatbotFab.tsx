@@ -3,9 +3,10 @@
 // that matches the design at samagama.in/internship/faq#ym-panel.
 // Only rendered for the student role (see AppShell).
 import '../styles/yaksha-mini.css';
+import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ThumbsDown, ThumbsUp, TriangleAlert } from 'lucide-react';
+import { ThumbsDown, ThumbsUp, TriangleAlert, WifiOff, X } from 'lucide-react';
 import type { ChatQueryResponse } from '@samagama/shared';
 import { useSendMessage, useSubmitChatFeedback } from '../features/chatbot/queries';
 
@@ -70,6 +71,7 @@ export function ChatbotFab() {
   const [messages, setMessages] = useState<DisplayMessage[]>([WELCOME]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [ollamaError, setOllamaError] = useState(false);
 
   // Resize State
   const [dimensions, setDimensions] = useState({ width: 380, height: 580 });
@@ -169,15 +171,19 @@ export function ChatbotFab() {
           messageIndex: result.messageIndex,
         },
       ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: 'Sorry, something went wrong. Please try again.',
-          sources: [],
-        },
-      ]);
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.data?.error?.code === 'OLLAMA_NOT_CONNECTED') {
+        setOllamaError(true);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: 'Sorry, something went wrong. Please try again.',
+            sources: [],
+          },
+        ]);
+      }
     } finally {
       setIsTyping(false);
       inputRef.current?.focus();
@@ -271,6 +277,50 @@ export function ChatbotFab() {
         </button>
       </div>
 
+      {/* Ollama disconnected banner */}
+      {ollamaError && (
+        <div
+          role="alert"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 12px',
+            margin: '0 10px 6px',
+            background: 'color-mix(in srgb, #ef4444 12%, transparent)',
+            border: '1px solid color-mix(in srgb, #ef4444 35%, transparent)',
+            borderRadius: 8,
+            fontSize: 12,
+            color: '#ef4444',
+            fontWeight: 600,
+            lineHeight: 1.4,
+          }}
+        >
+          <WifiOff size={13} style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1 }}>
+            Ollama is not connected. Start the Ollama service and try again.
+          </span>
+          <button
+            type="button"
+            onClick={() => setOllamaError(false)}
+            aria-label="Dismiss"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'inherit',
+              padding: 2,
+              display: 'flex',
+              alignItems: 'center',
+              flexShrink: 0,
+              opacity: 0.7,
+            }}
+          >
+            <X size={12} />
+          </button>
+        </div>
+      )}
+
       {/* Chat log */}
       <div className="yaksha-mini-log" id="ym-log" role="log" aria-live="polite">
         {messages.map((m, i) => (
@@ -280,6 +330,10 @@ export function ChatbotFab() {
             displayIndex={i}
             sessionId={sessionId}
             onFeedback={handleFeedback}
+            onPrefill={(text) => {
+              setInput(text);
+              setTimeout(() => inputRef.current?.focus(), 0);
+            }}
           />
         ))}
 
@@ -350,9 +404,10 @@ interface MessageBubbleProps {
   displayIndex: number;
   sessionId: string | null;
   onFeedback: (msgIdx: number, displayIdx: number, rating: 'helpful' | 'incorrect') => void;
+  onPrefill: (text: string) => void;
 }
 
-function MessageBubble({ msg, displayIndex, sessionId, onFeedback }: MessageBubbleProps) {
+function MessageBubble({ msg, displayIndex, sessionId, onFeedback, onPrefill }: MessageBubbleProps) {
   const isUser = msg.role === 'user';
 
   return (
@@ -362,6 +417,17 @@ function MessageBubble({ msg, displayIndex, sessionId, onFeedback }: MessageBubb
           {msg.escalated && <TriangleAlert size={13} className="ym-escalated-icon" />}
           {msg.content}
         </div>
+
+        {/* Escalate hint — shown only after a fallback response */}
+        {!isUser && msg.fallback_triggered && (
+          <button
+            type="button"
+            className="ym-escalate-hint"
+            onClick={() => onPrefill('#escalate')}
+          >
+            ⚑ Type #escalate to flag this for a moderator
+          </button>
+        )}
 
         {/* Feedback buttons */}
         {!isUser && msg.messageIndex !== undefined && sessionId && (

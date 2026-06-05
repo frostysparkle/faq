@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { useExclusiveOpen } from '../../hooks/useExclusiveOpen';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Archive,
@@ -373,7 +374,7 @@ function StatusBadge({ status }: { status: PublicChatFeedback['status'] }) {
 // ─── Feedback row ─────────────────────────────────────────────────────────────
 
 function FeedbackRow({ row, onMutate }: { row: PublicChatFeedback; onMutate: () => void }) {
-  const [expanded, setExpanded] = useState(false);
+  const { isOpen: expanded, toggle: toggleExpanded } = useExclusiveOpen(`chatfb-${row.id}`);
   const { user: viewer } = useAuth();
   const isAdmin = viewer?.role === 'admin';
   const isHelpful = row.rating === 'helpful';
@@ -509,7 +510,7 @@ function FeedbackRow({ row, onMutate }: { row: PublicChatFeedback; onMutate: () 
 
             {/* View conversation toggle */}
             <button
-              onClick={() => setExpanded((v) => !v)}
+              onClick={toggleExpanded}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',

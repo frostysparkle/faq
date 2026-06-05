@@ -7,9 +7,9 @@ import { useFaqFeedback, useRecordFaqView } from './queries';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const STATUS_DOT: Record<string, string> = {
-  published: '#16a34a',
-  draft: '#6b7280',
-  outdated: '#d97706',
+  published: 'var(--color-success)',
+  draft:     'var(--color-text-muted)',
+  outdated:  'var(--color-warning)',
 };
 
 const CARD_COLOR: Record<string, string> = {
@@ -357,9 +357,9 @@ function YtVoteBar({
         style={{
           ...btnBase,
           cursor: readOnly ? 'default' : isPending ? 'default' : 'pointer',
-          background: likeActive ? 'rgba(22, 163, 74, 0.13)' : 'transparent',
+          background: likeActive ? 'color-mix(in srgb, var(--color-success) 18%, transparent)' : 'transparent',
           color: likeActive
-            ? '#16a34a'
+            ? 'var(--color-success)'
             : isPending && pendingRating !== 'helpful'
               ? 'var(--color-text-muted)'
               : 'var(--color-text)',
@@ -368,12 +368,12 @@ function YtVoteBar({
         onMouseEnter={(e) => {
           if (!readOnly && !isPending)
             (e.currentTarget as HTMLButtonElement).style.background = likeActive
-              ? 'rgba(22, 163, 74, 0.22)'
+              ? 'color-mix(in srgb, var(--color-success) 28%, transparent)'
               : 'var(--color-card)';
         }}
         onMouseLeave={(e) => {
           (e.currentTarget as HTMLButtonElement).style.background = likeActive
-            ? 'rgba(22, 163, 74, 0.13)'
+            ? 'color-mix(in srgb, var(--color-success) 18%, transparent)'
             : 'transparent';
         }}
       >
@@ -389,8 +389,8 @@ function YtVoteBar({
           <ThumbsUp
             size={16}
             strokeWidth={likeActive ? 2.5 : 1.8}
-            fill={likeActive ? '#16a34a' : 'none'}
-            color={likeActive ? '#16a34a' : 'currentColor'}
+            fill={likeActive ? 'var(--color-success)' : 'none'}
+            color={likeActive ? 'var(--color-success)' : 'currentColor'}
           />
         </span>
         <span>{formatCount(helpfulCount)}</span>
@@ -416,9 +416,9 @@ function YtVoteBar({
         style={{
           ...btnBase,
           cursor: readOnly ? 'default' : isPending ? 'default' : 'pointer',
-          background: dislikeActive ? 'rgba(220, 38, 38, 0.10)' : 'transparent',
+          background: dislikeActive ? 'color-mix(in srgb, var(--color-danger) 14%, transparent)' : 'transparent',
           color: dislikeActive
-            ? '#dc2626'
+            ? 'var(--color-danger)'
             : isPending && pendingRating !== 'unhelpful'
               ? 'var(--color-text-muted)'
               : 'var(--color-text)',
@@ -427,12 +427,12 @@ function YtVoteBar({
         onMouseEnter={(e) => {
           if (!readOnly && !isPending)
             (e.currentTarget as HTMLButtonElement).style.background = dislikeActive
-              ? 'rgba(220, 38, 38, 0.18)'
+              ? 'color-mix(in srgb, var(--color-danger) 24%, transparent)'
               : 'var(--color-card)';
         }}
         onMouseLeave={(e) => {
           (e.currentTarget as HTMLButtonElement).style.background = dislikeActive
-            ? 'rgba(220, 38, 38, 0.10)'
+            ? 'color-mix(in srgb, var(--color-danger) 14%, transparent)'
             : 'transparent';
         }}
       >
@@ -448,8 +448,8 @@ function YtVoteBar({
           <ThumbsDown
             size={16}
             strokeWidth={dislikeActive ? 2.5 : 1.8}
-            fill={dislikeActive ? '#dc2626' : 'none'}
-            color={dislikeActive ? '#dc2626' : 'currentColor'}
+            fill={dislikeActive ? 'var(--color-danger)' : 'none'}
+            color={dislikeActive ? 'var(--color-danger)' : 'currentColor'}
           />
         </span>
         <span>{formatCount(unhelpfulCount)}</span>

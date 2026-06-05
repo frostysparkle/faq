@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useExclusiveOpen } from '../../hooks/useExclusiveOpen';
 import { useSearchParams } from 'react-router-dom';
 import { BookOpen, Check, ChevronDown, RotateCcw, Search, X } from 'lucide-react';
 import type { FaqListQuery, FaqStatus } from '@samagama/shared';
@@ -137,6 +138,7 @@ export function FaqsPage() {
         {/* Category — multi-select */}
         {categories && categories.length > 0 && (
           <FaqMultiSelect
+            dropdownKey="faqs-categories"
             values={categoryIds}
             onChange={setCategoryIds}
             placeholder="All Categories"
@@ -149,6 +151,7 @@ export function FaqsPage() {
         {/* Tags — multi-select */}
         {tags && tags.length > 0 && (
           <FaqMultiSelect
+            dropdownKey="faqs-tags"
             values={tagIds}
             onChange={setTagIds}
             placeholder="All Tags"
@@ -161,6 +164,7 @@ export function FaqsPage() {
         {/* Status — mods/admins only, single-select */}
         {isMod && (
           <FaqFilterSelect
+            dropdownKey="faqs-status"
             value={status}
             onChange={(v) => setStatus(v as FaqStatus | undefined)}
             placeholder="All Statuses"
@@ -360,6 +364,7 @@ const VISIBLE = 5;
 const MAX_H = ITEM_H * VISIBLE + 8;
 
 function FaqMultiSelect({
+  dropdownKey,
   values,
   onChange,
   placeholder,
@@ -367,6 +372,7 @@ function FaqMultiSelect({
   options,
   width,
 }: {
+  dropdownKey: string;
   values: string[];
   onChange: (ids: string[]) => void;
   placeholder: string;
@@ -374,7 +380,7 @@ function FaqMultiSelect({
   options: { value: string; label: string }[];
   width?: number;
 }) {
-  const [open, setOpen] = useState(false);
+  const { isOpen: open, toggle, close } = useExclusiveOpen(dropdownKey);
   const ref = useRef<HTMLDivElement>(null);
   const isActive = values.length > 0;
 
@@ -388,22 +394,22 @@ function FaqMultiSelect({
   useEffect(() => {
     if (!open) return;
     const h = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) close();
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
-  }, [open]);
+  }, [open, close]);
 
   useEffect(() => {
     if (!open) return;
     const h = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') close();
     };
     document.addEventListener('keydown', h);
     return () => document.removeEventListener('keydown', h);
-  }, [open]);
+  }, [open, close]);
 
-  const toggle = (id: string) =>
+  const toggleOption = (id: string) =>
     onChange(values.includes(id) ? values.filter((v) => v !== id) : [...values, id]);
 
   return (
@@ -411,7 +417,7 @@ function FaqMultiSelect({
       {/* ── Trigger ─────────────────────────────────────────────── */}
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`${placeholder} filter — ${values.length} selected`}
@@ -540,7 +546,7 @@ function FaqMultiSelect({
                 key={o.value}
                 label={o.label}
                 selected={selected}
-                onToggle={() => toggle(o.value)}
+                onToggle={() => toggleOption(o.value)}
               />
             );
           })}
@@ -622,19 +628,21 @@ function MultiDropdownOption({
 // Single-select dropdown (used for Status by mods/admins).
 
 function FaqFilterSelect({
+  dropdownKey,
   value,
   onChange,
   placeholder,
   options,
   width,
 }: {
+  dropdownKey: string;
   value: string | undefined;
   onChange: (v: string | undefined) => void;
   placeholder: string;
   options: { value: string; label: string }[];
   width?: number;
 }) {
-  const [open, setOpen] = useState(false);
+  const { isOpen: open, toggle, close } = useExclusiveOpen(dropdownKey);
   const ref = useRef<HTMLDivElement>(null);
   const isActive = Boolean(value);
   const currentLabel = options.find((o) => o.value === value)?.label ?? placeholder;
@@ -643,25 +651,25 @@ function FaqFilterSelect({
   useEffect(() => {
     if (!open) return;
     const h = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) close();
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
-  }, [open]);
+  }, [open, close]);
 
   // Close on Escape
   useEffect(() => {
     if (!open) return;
     const h = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') close();
     };
     document.addEventListener('keydown', h);
     return () => document.removeEventListener('keydown', h);
-  }, [open]);
+  }, [open, close]);
 
   const select = (v: string) => {
     onChange(v || undefined);
-    setOpen(false);
+    close();
   };
 
   return (
@@ -669,7 +677,7 @@ function FaqFilterSelect({
       {/* ── Trigger button ─────────────────────────────────────── */}
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         aria-haspopup="listbox"
         aria-expanded={open}
         style={{

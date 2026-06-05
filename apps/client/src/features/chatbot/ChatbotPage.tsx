@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import {
   BookOpen,
@@ -7,6 +8,7 @@ import {
   ThumbsDown,
   ThumbsUp,
   TriangleAlert,
+  WifiOff,
   X,
 } from 'lucide-react';
 import type { ChatQueryResponse } from '@samagama/shared';
@@ -34,6 +36,7 @@ export function ChatbotPage() {
   const [messages, setMessages] = useState<DisplayMessage[]>([WELCOME]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [ollamaError, setOllamaError] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const sendMutation = useSendMessage();
@@ -66,15 +69,19 @@ export function ChatbotPage() {
           messageIndex: result.messageIndex,
         },
       ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: 'Sorry, something went wrong. Please try again.',
-          sources: [],
-        },
-      ]);
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.data?.error?.code === 'OLLAMA_NOT_CONNECTED') {
+        setOllamaError(true);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: 'Sorry, something went wrong. Please try again.',
+            sources: [],
+          },
+        ]);
+      }
     } finally {
       setIsTyping(false);
       inputRef.current?.focus();
@@ -98,6 +105,7 @@ export function ChatbotPage() {
     setSessionId(null);
     setMessages([WELCOME]);
     setInput('');
+    setOllamaError(false);
   };
 
   return (
@@ -192,6 +200,49 @@ export function ChatbotPage() {
           )}
         </div>
       </div>
+
+      {/* Ollama disconnected banner */}
+      {ollamaError && (
+        <div
+          role="alert"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '10px 16px',
+            marginBottom: 10,
+            background: 'color-mix(in srgb, var(--color-danger) 12%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--color-danger) 40%, transparent)',
+            borderRadius: 10,
+            fontSize: 13,
+            color: 'var(--color-danger)',
+            fontWeight: 600,
+          }}
+        >
+          <WifiOff size={16} style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1 }}>
+            Ollama is not connected. Please start the Ollama service and try again.
+          </span>
+          <button
+            type="button"
+            onClick={() => setOllamaError(false)}
+            aria-label="Dismiss"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'inherit',
+              padding: 2,
+              display: 'flex',
+              alignItems: 'center',
+              flexShrink: 0,
+              opacity: 0.7,
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Messages */}
       <div

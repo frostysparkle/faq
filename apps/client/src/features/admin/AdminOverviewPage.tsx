@@ -1,7 +1,7 @@
 // Admin overview. Enhanced "Intelligence" dashboard with system-wide KPIs,
 // action-required alerts, and quality alerts.
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, ChevronRight, Clock, Shield, Users } from 'lucide-react';
+import { BarChart3, ChevronRight, Shield, Users } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { ModerationQueueCards } from '../moderation/ModerationQueueCards';
@@ -74,15 +74,6 @@ export function AdminOverviewPage() {
           iconBg="var(--color-success-bg)"
           cardBg="var(--color-success-bg)"
           onClick={() => navigate('/admin/moderation-load')}
-        />
-        <QuickNavCard
-          label="Audit Logs"
-          subtitle="Track actions and history"
-          icon={Clock}
-          iconColor="var(--color-warning)"
-          iconBg="var(--color-warning-bg)"
-          cardBg="var(--color-warning-bg)"
-          onClick={() => navigate('/admin/audit-logs')}
         />
       </div>
     </div>
