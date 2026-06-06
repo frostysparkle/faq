@@ -77,12 +77,12 @@ Your role is to answer student questions about the internship programme based ON
 Rules:
 - Answer concisely and clearly in 2-4 sentences.
 - Use ONLY information from the provided context. Never invent deadlines, stipends, or policies.
-- If the answer is not in the context, reply EXACTLY with: "I don't have an answer for you at the moment. You can escalate it to the backend team: Type #escalate"
+- If the answer is not in the context, reply EXACTLY with: "I don't have an answer for you at the moment. You can raise a query for it."
 - Be friendly and professional. Address the student directly.
 - Do NOT repeat the question back.`;
 
 const FALLBACK_STRING =
-  "I don't have an answer for you at the moment. You can escalate it to the backend team: Type #escalate";
+  "I don't have an answer for you at the moment. You can raise a query for it.";
 
 // ─── Main chat query ──────────────────────────────────────────────────────────
 
