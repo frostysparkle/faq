@@ -4,13 +4,11 @@
 // the MongoDB-backed history work — auto-restoring the user's persisted thread on open and a
 // "start new" action. The two components keep their own JSX/styling and consume this hook so
 // the logic lives in exactly one place.
-import axios from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ChatQueryResponse } from '@samagama/shared';
+import { streamChatMessage } from './api';
 import {
   useActiveChatSession,
   useRetractChatFeedback,
-  useSendMessage,
   useStartNewChat,
   useSubmitChatFeedback,
 } from './queries';
@@ -38,10 +36,10 @@ export function useChatConversation({ welcome, active }: Options) {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [ollamaError, setOllamaError] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   // Guards against re-restoring (and clobbering live state) after the first hydration.
   const restoredRef = useRef(false);
 
-  const sendMutation = useSendMessage();
   const feedbackMutation = useSubmitChatFeedback();
   const retractMutation = useRetractChatFeedback();
   const newChatMutation = useStartNewChat();
@@ -69,48 +67,61 @@ export function useChatConversation({ welcome, active }: Options) {
 
   const send = useCallback(async () => {
     const text = input.trim();
-    if (!text || sendMutation.isPending) return;
+    if (!text || isTyping) return;
     setInput('');
     setMessages((prev) => [...prev, { role: 'user', content: text }]);
     setIsTyping(true);
-    try {
-      const result: ChatQueryResponse = await sendMutation.mutateAsync({
-        message: text,
-        sessionId: sessionId ?? undefined,
-      });
-      if (!sessionId) setSessionId(result.sessionId);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: result.answer,
-          sources: result.sources,
-          fallback_triggered: result.fallback_triggered,
-          escalated: result.escalated,
-          messageIndex: result.messageIndex,
-        },
-      ]);
-    } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.data?.error?.code === 'OLLAMA_NOT_CONNECTED') {
-        setOllamaError(true);
-      } else {
-        // A timeout (no response received) means the model is just slow, not broken.
-        const timedOut = axios.isAxiosError(err) && err.code === 'ECONNABORTED';
+    setElapsedSeconds(0);
+
+    const startedAt = Date.now();
+    const intervalId = window.setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+
+    const cleanupRef: { current?: () => void } = {};
+    const finish = () => {
+      window.clearInterval(intervalId);
+      cleanupRef.current?.();
+      setIsTyping(false);
+    };
+
+    cleanupRef.current = streamChatMessage(sessionId, text, (event) => {
+      if (event.type === 'response') {
+        const result = event.data;
+        setSessionId(result.sessionId);
         setMessages((prev) => [
           ...prev,
           {
             role: 'assistant',
-            content: timedOut
-              ? 'That took longer than expected and timed out. The assistant may be busy — please try asking again.'
-              : 'Sorry, something went wrong. Please try again.',
+            content: result.answer,
+            sources: result.sources,
+            fallback_triggered: result.fallback_triggered,
+            escalated: result.escalated,
+            messageIndex: result.messageIndex,
+          },
+        ]);
+        finish();
+      } else if (event.type === 'error') {
+        if (event.data.message.includes('OLLAMA')) setOllamaError(true);
+        setMessages((prev) => [
+          ...prev,
+          { role: 'assistant', content: 'Sorry, something went wrong. Please try again.', sources: [] },
+        ]);
+        finish();
+      } else if (event.type === 'timeout') {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content:
+              'This is taking longer than expected. The assistant may be busy — please try again.',
             sources: [],
           },
         ]);
+        finish();
       }
-    } finally {
-      setIsTyping(false);
-    }
-  }, [input, sendMutation, sessionId]);
+    });
+  }, [input, isTyping, sessionId]);
 
   const handleFeedback = useCallback(
     (msgIdx: number, displayIdx: number, rating: 'helpful' | 'incorrect') => {
@@ -142,6 +153,7 @@ export function useChatConversation({ welcome, active }: Options) {
     setMessages([welcome]);
     setInput('');
     setOllamaError(false);
+    setElapsedSeconds(0);
   }, [newChatMutation, welcome]);
 
   return {
@@ -155,6 +167,7 @@ export function useChatConversation({ welcome, active }: Options) {
     send,
     handleFeedback,
     startNew,
-    isSending: sendMutation.isPending,
+    isSending: isTyping,
+    elapsedSeconds,
   };
 }

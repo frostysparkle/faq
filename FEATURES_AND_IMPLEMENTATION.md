@@ -338,15 +338,17 @@ Provides moderators and admins with tools to review, approve, reject, or edit st
 
 ### What It Does
 
-An AI-powered chatbot named "Yaksha" that answers student questions using Retrieval-Augmented Generation (RAG). It retrieves relevant FAQ context via embedding similarity, passes it to an LLM, and returns a grounded answer. Includes escalation workflows when the bot can't help.
+An AI-powered chatbot named "Yaksha" that answers student questions using Retrieval-Augmented Generation (RAG). It retrieves relevant FAQ context via embedding similarity, passes it to an LLM, and returns a grounded answer. Includes SSE streaming for long-running queries and hierarchical context summarization for unbounded conversation history.
 
 ### User-Facing Features
 
 - **Chat interface:** Real-time conversational UI accessible from every page via a floating action button
 - **Source attribution:** Each response shows the FAQ titles used as sources
-- **Conversation history:** Session persists for 30 minutes of idle time (last 5 turns sent to LLM)
+- **Conversation history:** Session persists for 30 minutes of idle time with rolling window summarization
+- **Progress indicator:** "Thinking... (Xs)" elapsed time counter during LLM processing
 - **Feedback:** Students can rate each response as `helpful` or `incorrect`
 - **Escalation:** `#escalate` (after a fallback) or `#forceescalate [reason]` (anytime) routes the issue to moderators
+- **Timeout handling:** 5-minute hard timeout with friendly message instead of abrupt failure
 
 ### High-Level Implementation
 
@@ -358,8 +360,8 @@ Student message
   → Cosine similarity search against published FAQs (threshold from SystemSettings)
   → Cap results at chatbotMaxSources (default 6)
   → Fallback to text search if no embeddings are populated
-  → Assemble RAG payload: system prompt + FAQ context + conversation history
-  → Call LLM provider (mock / Gemini / local-llama)
+  → Assemble RAG payload: system prompt + FAQ context + conversation history + meta-summary
+  → Call LLM provider (mock / Gemini / local-llama / ollama / groq)
   → Detect fallback_triggered (bot couldn't answer)
   → Return answer + sources + fallback flag
 ```
@@ -368,9 +370,88 @@ Student message
 
 | Provider      | Trigger                                         | Detail                                                   |
 | ------------- | ----------------------------------------------- | -------------------------------------------------------- |
-| `local-llama` | `LLM_PROVIDER=local-llama` + `LLM_BASE_URL` set | Calls `POST /internal/llm/generate` on the LLM server    |
+| `local-llama` | `LLM_PROVIDER=local-llama` + `LLM_BASE_URL` set | Calls LLM server with SSE streaming support              |
+| `ollama`      | `LLM_PROVIDER=ollama`                           | Direct SSE streaming to Ollama                           |
 | `gemini`      | `LLM_PROVIDER=gemini` + `GEMINI_API_KEY` set    | Calls Google Gemini 2.0 Flash API directly               |
+| `groq`        | `LLM_PROVIDER=groq` + `GROQ_API_KEY` set         | Calls Groq API directly (OpenAI-compatible)             |
 | `mock`        | Default / fallback                              | Returns top FAQ excerpt as the answer; no external calls |
+
+#### SSE Streaming (local-llama and ollama only)
+
+For long-running LLM inference, the chatbot uses Server-Sent Events (SSE) instead of blocking HTTP requests:
+
+```
+Client                    Server                      LLM Server/Ollama
+  │                          │                              │
+  │──POST /api/chat/stream──→│                              │
+  │                          │──POST /internal/llm/────────→│
+  │                          │   generate-stream            │
+  │←─────────────────────────│                              │
+  │  data: {type:"ping"}     │←─ SSE: ping every 5s ───────│
+  │  data: {type:"ping"}     │                              │
+  │  data: {type:"ping"}     │←─ SSE: response ────────────│
+  │←─────────────────────────│                              │
+  │  data: {type:"response"}  │                              │
+```
+
+**Why SSE instead of WebSocket?**
+- Unidirectional (server → client only) — simpler, lower overhead
+- Works over HTTP/2 naturally
+- No need for a persistent bidirectional connection
+- Browser built-in `EventSource` API handles reconnection
+
+**Why not just increase the HTTP timeout?**
+- The previous 90-second timeout showed an abrupt error to the user with no progress indication
+- SSE allows the client to display "Thinking... (45s)" so users know processing is happening
+- A 5-minute hard timeout on the SSE stream provides a clear failure boundary
+
+#### Rolling Window with Hierarchical Summarization
+
+To handle unbounded conversation history without degrading LLM context quality, the chatbot uses a two-level summarization hierarchy:
+
+**Data Structure:**
+```typescript
+interface SummaryChunk {
+  summary: string;      // LLM-generated summary of 10 messages
+  messageCount: number; // How many messages this chunk represents
+}
+
+interface SessionData {
+  userId: string;
+  messages: ChatMessage[];      // Always last 10 messages ("recent window")
+  summaryChunks: SummaryChunk[]; // Max 10 chunks (covers last 100 messages)
+  metaSummary: string;           // Summary of all chunks
+  fallbackUnlocked: boolean;
+}
+```
+
+**Trigger:** When `messages.length >= 20`, the oldest 10 messages are summarized into a chunk.
+
+**LLM Context at Query Time:**
+```
+System: [Yaksha system prompt + FAQ context]
+Meta-summary: [metaSummary from all chunks]
+Recent: [last 10 messages]
+Current: [user's new message]
+```
+
+**Why hierarchical (chunk → meta-summary) instead of flat summarization?**
+
+| Approach | Summarization calls for 100 messages |
+|----------|--------------------------------------|
+| Flat (re-summarize all each time) | ~90 calls |
+| Hierarchical (chunks + meta) | ~11 calls |
+
+Hierarchical summarization is much more efficient for long conversations. The cost of re-summarizing grows logarithmically instead of linearly with conversation length.
+
+**Intuition for keeping last 10 unsummarized:**
+- Recent messages contain the most relevant context for the current query
+- 10 messages = ~5 conversation turns, which provides enough recent context for follow-up questions
+- The meta-summary + chunks capture the overall conversation arc
+
+**When meta-summary is regenerated:**
+- After every 10 new chunks (when `summaryChunks.length > MAX_CHUNKS`, oldest chunks are evicted)
+- The meta-summary is a "summary of summaries" that captures the overall conversation theme
 
 #### Escalation Flow
 
@@ -387,12 +468,14 @@ Student message
 | **Storage**        | In-process TTL cache (no Redis required for MVP) |
 | **TTL**            | 30 minutes after last message                    |
 | **Max entries**    | 500 concurrent sessions                          |
-| **History window** | Last 10 messages (5 turns) sent to LLM           |
+| **Recent window**  | Last 10 messages sent to LLM                     |
+| **Summary chunks** | Max 10 chunks (100 messages total coverage)      |
+| **Summarize at**   | 20 messages (triggers after 10 new messages)     |
 
 ### Key Files
 
-- **Backend:** `chatbot.service.ts` (433 lines), `chatbot.controller.ts`, `chatbot.routes.ts`
-- **Frontend:** `ChatbotPage.tsx` (11.8KB full chat UI), `ChatbotFab.tsx` (floating button)
+- **Backend:** `chatbot.service.ts` (~1050 lines), `chatbot.controller.ts`, `chatbot.routes.ts`
+- **Frontend:** `ChatbotPage.tsx` (chat UI with SSE handling), `api.ts` (SSE client function)
 - **LLM Server:** `apps/rag/llm-server/index.js` (Express server wrapping LM Studio)
 
 ### API Endpoints
@@ -400,7 +483,8 @@ Student message
 | Method | Path                           | Auth      | Description                                 |
 | ------ | ------------------------------ | --------- | ------------------------------------------- |
 | POST   | `/api/chat/query`              | Bearer    | Send a message to Yaksha (RAG + LLM)        |
-| GET    | `/api/chat/session/:sessionId` | Bearer    | Retrieve conversation history for a session |
+| POST   | `/api/chat/stream/:sessionId`  | Bearer    | SSE stream for long-running queries         |
+| GET    | `/api/chat/session/:sessionId` | Bearer    | Retrieve conversation history + meta-summary |
 | POST   | `/api/chat/feedback`           | Bearer    | Rate a bot response (helpful/incorrect)     |
 | GET    | `/api/chat/feedback`           | Mod/Admin | List all chatbot feedback                   |
 | GET    | `/api/chat/feedback/stats`     | Mod/Admin | Feedback counts (total, helpful, flagged)   |
@@ -933,14 +1017,16 @@ Generates vector embeddings for text (FAQ titles, search queries) and computes c
 
 ### What It Does
 
-A lightweight Express server that wraps LM Studio (local LLM) to expose two standardized internal APIs for the main backend to consume.
+A lightweight Express server that wraps LM Studio (local LLM) to expose standardized internal APIs for the main backend to consume. Supports both synchronous generation and SSE streaming, plus conversation summarization for multiple use cases.
 
 ### Endpoints
 
-| Method | Path                      | Purpose                                                                  |
-| ------ | ------------------------- | ------------------------------------------------------------------------ |
-| POST   | `/internal/llm/generate`  | Generate a RAG-grounded response from FAQ context + conversation history |
-| POST   | `/internal/llm/summarize` | Summarize a conversation for escalation tickets                          |
+| Method | Path                              | Purpose                                                                   |
+| ------ | --------------------------------- | ------------------------------------------------------------------------- |
+| POST   | `/internal/llm/generate`          | Generate a RAG-grounded response from FAQ context + conversation history |
+| POST   | `/internal/llm/generate-stream`   | SSE streaming version of generate with 5s pings and 5min timeout         |
+| POST   | `/internal/llm/summarize`         | Dual-purpose: escalation summary OR rolling window chunk summarization    |
+| POST   | `/internal/llm/summarize-chunks`  | Generate meta-summary from an array of chunk summaries                    |
 
 ### Authentication
 
@@ -954,14 +1040,33 @@ A lightweight Express server that wraps LM Studio (local LLM) to expose two stan
 | **Runtime**          | Node.js + Express (JavaScript, not TypeScript)                                                       |
 | **LLM backend**      | LM Studio via OpenAI-compatible `/chat/completions` API                                              |
 | **Generate**         | Assembles system prompt + RAG context + history into a chat completion call; detects fallback string |
-| **Summarize**        | Forces JSON output (`response_format: json_object`) with `summary` + `is_general_query` fields       |
-| **Temperature**      | Generate: 0.2 (factual), Summarize: 0 (deterministic)                                                |
-| **Max tokens**       | 500 per response                                                                                     |
+| **Generate-stream**  | SSE with ping every 5s, hard timeout 5min, sends `{type: 'ping'|'response'|'error'|'timeout'}`      |
+| **Summarize**        | Dual-mode: escalation (requires `escalation_type`) or rolling window (requires `keepRecentCount`)      |
+| **Summarize-chunks** | Takes `chunks[]` array, returns `metaSummary` — used for hierarchical summarization                  |
+| **Temperature**      | Generate: 0.2 (factual), Summarize: 0.3 (concise), Meta-summary: 0.3 (coherent)                     |
+| **Max tokens**       | Generate: 500, Summarize: 300, Meta-summary: 400                                                     |
 | **Markdown cleanup** | Strips ` ```json ` wrappers if the LLM adds them                                                     |
+
+### Rolling Window Summarization Flow
+
+```
+messages: [msg1, msg2, ..., msg20, msg21]
+
+When 20 messages reached:
+  → toSummarize = messages.slice(0, -10) = [msg1-msg10]
+  → POST /internal/llm/summarize { conversation_history: [msg1-msg10], keepRecentCount: 10 }
+  → Returns { summary: "...", summarizedCount: 10 }
+  → messages becomes [msg11-msg20], chunks = [{summary, messageCount: 10}]
+
+When 10 chunks reached (100 messages total):
+  → POST /internal/llm/summarize-chunks { chunks: [chunk1, chunk2, ..., chunk10] }
+  → Returns { metaSummary: "..." }
+  → Oldest chunks evicted, metaSummary prepended to all future context
+```
 
 ### Key Files
 
-- `apps/rag/llm-server/index.js` (121 lines)
+- `apps/rag/llm-server/index.js` (232 lines)
 - `apps/rag/knowledge_base.md` (FAQ knowledge base — 36.6KB)
 - `apps/rag/rag-detailed.md` (RAG architecture documentation)
 
@@ -1049,7 +1154,10 @@ npm run dev:client                       # http://localhost:5173
 - No retry/backoff on axios client (TanStack Query default retry suffices)
 - ESLint flat config does not yet include React-specific plugins
 - Chat session storage is in-process (not distributed); sessions are lost on server restart
+- **Chatbot SSE streaming:** Ollama direct streaming (`callOllamaStream`) lacks an explicit client-side timeout — relies on network-level timeout; consider adding a 5-minute abort timer in a future iteration
+- **Chatbot SSE streaming:** SSE line parsing splits on `\n` (single newline) rather than `\n\n` (double newline for strict SSE) — works correctly in practice but may misparse malformed streams
+- **Chatbot SSE streaming:** The `sendMutation` React Query hook in `ChatbotPage.tsx` is imported but unused after switching to SSE streaming — button disable logic still works via `!input.trim()`, but the dead code should be cleaned up
 
 ---
 
-> **Last Updated:** May 30, 2026
+> **Last Updated:** June 6, 2026

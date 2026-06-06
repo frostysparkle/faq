@@ -51,6 +51,11 @@ export interface ChatQueryResult {
   messageIndex: number;
 }
 
+export interface SummaryChunk {
+  summary: string;
+  messageCount: number;
+}
+
 interface SessionData {
   /** Mongo _id of the backing ChatSession — used to stamp ChatFeedback.chatSessionId. */
   _id: Types.ObjectId;
@@ -58,7 +63,10 @@ interface SessionData {
   sessionId: string;
   userId: string;
   messages: ChatMessage[];
-  fallbackUnlocked: boolean; // true after a fallback response — unlocks #escalate
+  summaryChunks: SummaryChunk[];
+  metaSummary: string;
+  summarizedMessageCount: number;
+  fallbackUnlocked: boolean;
 }
 
 // Thrown by callOllamaLlm when the Ollama process is not reachable.
@@ -71,7 +79,7 @@ class OllamaConnectionError extends Error {
   }
 }
 
-// ─── In-process session cache (30-min idle TTL) ───────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 // MongoDB (ChatSession collection) is the source of truth for conversation history.
 // This in-process cache is a read-through hot-path tier in front of it — losing the cache
@@ -91,6 +99,9 @@ function docToSession(doc: ChatSessionDocument): SessionData {
       content: m.content,
       createdAt: m.createdAt?.toISOString(),
     })),
+    summaryChunks: [],
+    metaSummary: '',
+    summarizedMessageCount: 0,
     fallbackUnlocked: doc.fallbackUnlocked,
   };
 }
@@ -162,6 +173,10 @@ async function persistTurn(session: SessionData, appended: ChatMessage[]): Promi
   );
 }
 
+const KEEP_RECENT_COUNT = 10;
+const SUMMARIZE_THRESHOLD = 20;
+const MAX_CHUNKS = 10;
+
 // ─── Yaksha system prompt ─────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `You are Yaksha, the official Samagama Internship Portal assistant. \
@@ -170,12 +185,187 @@ Your role is to answer student questions about the internship programme based ON
 Rules:
 - Answer concisely and clearly in 2-4 sentences.
 - Use ONLY information from the provided context. Never invent deadlines, stipends, or policies.
-- If the answer is not in the context, reply EXACTLY with: "I don't have an answer for you at the moment. You can escalate it to the backend team: Type #escalate"
+- If the answer is not in the context, reply EXACTLY with: "I don't have an answer for you at the moment. You can raise a query for it."
 - Be friendly and professional. Address the student directly.
 - Do NOT repeat the question back.`;
 
 const FALLBACK_STRING =
-  "I don't have an answer for you at the moment. You can escalate it to the backend team: Type #escalate";
+  "I don't have an answer for you at the moment. You can raise a query for it.";
+
+const pendingSummarizations = new Map<string, Promise<void>>();
+
+// ─── Helper: Build context for LLM (includes hierarchical summary) ───────────
+
+function buildLlmContext(session: SessionData): {
+  conversation_history: ChatMessage[];
+  metaContext: string;
+} {
+  const conversation_history = session.messages.slice(-KEEP_RECENT_COUNT);
+  const metaContext = session.metaSummary
+    ? `Previous conversation summary:\n${session.metaSummary}`
+    : '';
+  return { conversation_history, metaContext };
+}
+
+// ─── Helper: Trigger rolling window summarization ──────────────────────────────
+
+async function triggerSummarization(sid: string, session: SessionData): Promise<void> {
+  if (session.messages.length < SUMMARIZE_THRESHOLD) return;
+  if (env.LLM_PROVIDER !== 'local-llama' && env.LLM_PROVIDER !== 'ollama') return;
+  if (!env.LLM_BASE_URL && env.LLM_PROVIDER !== 'ollama') return;
+
+  const existing = pendingSummarizations.get(sid);
+  if (existing) return;
+
+  const toSummarize = session.messages.slice(
+    session.summarizedMessageCount,
+    -KEEP_RECENT_COUNT,
+  );
+  if (toSummarize.length === 0) return;
+
+  const promise = doSummarize(sid, session, toSummarize);
+  pendingSummarizations.set(sid, promise);
+
+  try {
+    await promise;
+  } finally {
+    pendingSummarizations.delete(sid);
+  }
+}
+
+async function doSummarize(sid: string, session: SessionData, toSummarize: ChatMessage[]): Promise<void> {
+  try {
+    if (env.LLM_PROVIDER === 'local-llama' && env.LLM_BASE_URL && env.LLM_INTERNAL_SECRET) {
+      const res = await fetch(`${env.LLM_BASE_URL}/internal/llm/summarize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${env.LLM_INTERNAL_SECRET}`,
+        },
+        body: JSON.stringify({
+          conversation_history: toSummarize,
+          keepRecentCount: KEEP_RECENT_COUNT,
+        }),
+      });
+
+      if (res.ok) {
+        const json = (await res.json()) as { status: string; data: { summary: string; summarizedCount: number } };
+        if (json.status === 'success') {
+          session.summaryChunks.push({
+            summary: json.data.summary,
+            messageCount: json.data.summarizedCount,
+          });
+        }
+      }
+    } else if (env.LLM_PROVIDER === 'ollama' && env.OLLAMA_BASE_URL) {
+      const res = await fetch(`${env.OLLAMA_BASE_URL}/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: env.OLLAMA_MODEL,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a conversation summarizer. Summarize the following conversation into a concise summary that captures the key points, topics discussed, and any important context. Keep the summary brief but informative. Do not include any preamble, just output the summary text.',
+            },
+            {
+              role: 'user',
+              content: `Summarize this conversation:\n${toSummarize.map((m) => `${m.role}: ${m.content}`).join('\n')}`,
+            },
+          ],
+          temperature: 0.3,
+          max_tokens: 300,
+        }),
+      });
+
+      if (res.ok) {
+        const json = (await res.json()) as { choices: { message: { content: string } }[] };
+        const summary = json.choices?.[0]?.message?.content?.trim() || '';
+        if (summary) {
+          session.summaryChunks.push({
+            summary,
+            messageCount: toSummarize.length,
+          });
+        }
+      }
+    }
+
+    if (session.summaryChunks.length > MAX_CHUNKS) {
+      session.summaryChunks = session.summaryChunks.slice(-MAX_CHUNKS);
+    }
+
+    if (session.summaryChunks.length > 0) {
+      await regenerateMetaSummary(session);
+    }
+
+    session.summarizedMessageCount += toSummarize.length;
+    sessionCache.set(sid, session);
+  } catch (err) {
+    logger.warn({ err }, 'Summarization failed — continuing without summarization');
+  }
+}
+
+async function regenerateMetaSummary(session: SessionData): Promise<void> {
+  if (session.summaryChunks.length === 0) return;
+
+  if (env.LLM_PROVIDER === 'local-llama' && env.LLM_BASE_URL && env.LLM_INTERNAL_SECRET) {
+    try {
+      const res = await fetch(`${env.LLM_BASE_URL}/internal/llm/summarize-chunks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${env.LLM_INTERNAL_SECRET}`,
+        },
+        body: JSON.stringify({ chunks: session.summaryChunks }),
+      });
+
+      if (res.ok) {
+        const json = (await res.json()) as { status: string; data: { metaSummary: string } };
+        if (json.status === 'success') {
+          session.metaSummary = json.data.metaSummary;
+        }
+      }
+    } catch (err) {
+      logger.warn({ err }, 'Meta-summary generation failed');
+    }
+  } else if (env.LLM_PROVIDER === 'ollama' && env.OLLAMA_BASE_URL) {
+    try {
+      const chunksText = session.summaryChunks
+        .map((c, i) => `Chunk ${i + 1}:\n${c.summary}`)
+        .join('\n\n');
+
+      const res = await fetch(`${env.OLLAMA_BASE_URL}/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: env.OLLAMA_MODEL,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a conversation archivist. Given a series of conversation summaries (chunks), create a coherent meta-summary that captures the overall topics, themes, and important context across all chunks. Keep it concise but comprehensive. Do not include any preamble, just output the meta-summary.',
+            },
+            {
+              role: 'user',
+              content: `Chunks:\n${chunksText}`,
+            },
+          ],
+          temperature: 0.3,
+          max_tokens: 400,
+        }),
+      });
+
+      if (res.ok) {
+        const json = (await res.json()) as { choices: { message: { content: string } }[] };
+        const metaSummary = json.choices?.[0]?.message?.content?.trim() || '';
+        if (metaSummary) {
+          session.metaSummary = metaSummary;
+        }
+      }
+    } catch (err) {
+      logger.warn({ err }, 'Meta-summary generation failed');
+    }
+  }
+}
 
 // ─── Main chat query ──────────────────────────────────────────────────────────
 
@@ -196,13 +386,7 @@ export const chatbotService = {
     const isEscalate = /^#escalate/i.test(trimmed) && !isForceEscalate;
 
     if (isForceEscalate || (isEscalate && session.fallbackUnlocked)) {
-      return this.handleEscalation(
-        userId,
-        sid,
-        session,
-        trimmed,
-        isForceEscalate ? 'force' : 'standard',
-      );
+      return this.handleEscalation(userId, sid, session, trimmed, isForceEscalate ? 'force' : 'standard');
     }
 
     if (isEscalate && !session.fallbackUnlocked) {
@@ -229,7 +413,7 @@ export const chatbotService = {
     const sources = await retrieveFaqSources(trimmed, { threshold, maxSources });
 
     // ── Call LLM ───────────────────────────────────────────────────────────────
-    const history = session.messages.slice(-10); // keep last 5 turns (10 messages)
+    const { conversation_history, metaContext } = buildLlmContext(session);
     const ragContext = sources.map((s) => `FAQ: ${s.title}\nAnswer: ${s.answer}`);
 
     let answer: string;
@@ -237,8 +421,9 @@ export const chatbotService = {
     try {
       ({ answer, fallback_triggered } = await callLlm({
         system_instruction: SYSTEM_PROMPT,
+        meta_context: metaContext,
         rag_context: ragContext,
-        conversation_history: history,
+        conversation_history,
         current_message: trimmed,
         sources,
       }));
@@ -256,12 +441,156 @@ export const chatbotService = {
     if (fallback_triggered) session.fallbackUnlocked = true;
     await persistTurn(session, [userMsg, botMsg]);
 
+    // ── Trigger rolling window summarization if needed ─────────────────────────
+    if (session.messages.length >= SUMMARIZE_THRESHOLD) {
+      triggerSummarization(sid, session);
+    }
+
     return {
       sessionId: sid,
       answer,
       sources: sources.map((s) => ({ id: s.id, title: s.title, similarity: s.similarity })),
       fallback_triggered,
       messageIndex: session.messages.length - 1,
+    };
+  },
+
+  /** Handle streaming SSE for long-running LLM calls (local-llama and ollama only). */
+  async *streamQuery(
+    userId: string,
+    sessionId: string | undefined,
+    message: string,
+  ): AsyncGenerator<{ type: 'ping' | 'response' | 'error' | 'timeout'; data?: unknown }> {
+    const session = await resolveSession(userId, sessionId);
+    const sid = session.sessionId;
+
+    const trimmed = message.trim();
+
+    const isForceEscalate = /^#forceescalate/i.test(trimmed);
+    const isEscalate = /^#escalate/i.test(trimmed) && !isForceEscalate;
+
+    if (isForceEscalate || (isEscalate && session.fallbackUnlocked)) {
+      const result = await this.handleEscalation(
+        userId,
+        sid,
+        session,
+        trimmed,
+        isForceEscalate ? 'force' : 'standard',
+      );
+      yield { type: 'response', data: result };
+      return;
+    }
+
+    if (isEscalate && !session.fallbackUnlocked) {
+      const answer =
+        'Escalation is only available after Yaksha cannot answer your question. Please ask your question first.';
+      const userMsg: ChatMessage = { role: 'user', content: trimmed };
+      const botMsg: ChatMessage = { role: 'assistant', content: answer };
+      session.messages.push(userMsg, botMsg);
+      await persistTurn(session, [userMsg, botMsg]);
+      yield {
+        type: 'response',
+        data: {
+          answer,
+          sources: [],
+          fallback_triggered: false,
+          sessionId: sid,
+          messageIndex: session.messages.length - 1,
+        },
+      };
+      return;
+    }
+
+    const settings = await SystemSettingsModel.findById('global').lean();
+    const threshold = settings?.chatbotConfidenceThreshold ?? 0.7;
+    const maxSources = settings?.chatbotMaxSources ?? 6;
+
+    const sources = await retrieveFaqSources(trimmed, { threshold, maxSources });
+    const { conversation_history, metaContext } = buildLlmContext(session);
+    const ragContext = sources.map((s) => `FAQ: ${s.title}\nAnswer: ${s.answer}`);
+
+    const supportsStreaming = env.LLM_PROVIDER === 'local-llama' || env.LLM_PROVIDER === 'ollama';
+
+    if (!supportsStreaming) {
+      yield { type: 'ping', data: { timestamp: Date.now() } };
+      const { answer, fallback_triggered } = await callLlm({
+        system_instruction: SYSTEM_PROMPT,
+        meta_context: metaContext,
+        rag_context: ragContext,
+        conversation_history,
+        current_message: trimmed,
+        sources,
+      });
+
+      const userMsg: ChatMessage = { role: 'user', content: trimmed };
+      const botMsg: ChatMessage = { role: 'assistant', content: answer };
+      session.messages.push(userMsg, botMsg);
+      if (fallback_triggered) session.fallbackUnlocked = true;
+      await persistTurn(session, [userMsg, botMsg]);
+
+      if (session.messages.length >= SUMMARIZE_THRESHOLD) {
+        triggerSummarization(sid, session);
+      }
+
+      yield {
+        type: 'response',
+        data: {
+          answer,
+          sources: sources.map((s) => ({ id: s.id, title: s.title, similarity: s.similarity })),
+          fallback_triggered,
+          sessionId: sid,
+          messageIndex: session.messages.length - 1,
+        },
+      };
+      return;
+    }
+
+    const stream = callLlmStream({
+      system_instruction: SYSTEM_PROMPT,
+      meta_context: metaContext,
+      rag_context: ragContext,
+      conversation_history,
+      current_message: trimmed,
+      sources,
+    });
+
+    let fullContent = '';
+    let fallback_triggered = false;
+
+    for await (const event of stream) {
+      if (event.type === 'ping') {
+        yield { type: 'ping', data: event.timestamp };
+      } else if (event.type === 'response') {
+        fullContent = event.content ?? '';
+        fallback_triggered = fullContent.includes(FALLBACK_STRING);
+      } else if (event.type === 'error') {
+        yield { type: 'error', data: { message: event.message } };
+        return;
+      } else if (event.type === 'timeout') {
+        yield { type: 'timeout' };
+        return;
+      }
+    }
+
+    const userMsg: ChatMessage = { role: 'user', content: trimmed };
+    const botMsg: ChatMessage = { role: 'assistant', content: fullContent };
+    session.messages.push(userMsg, botMsg);
+    if (fallback_triggered) session.fallbackUnlocked = true;
+    await persistTurn(session, [userMsg, botMsg]);
+
+    if (session.messages.length >= SUMMARIZE_THRESHOLD) {
+      triggerSummarization(sid, session);
+    }
+
+    yield {
+      type: 'response',
+      data: {
+        answer: fullContent,
+        sources: sources.map((s) => ({ id: s.id, title: s.title, similarity: s.similarity })),
+        fallback_triggered,
+        sessionId: sid,
+        messageIndex: session.messages.length - 1,
+      },
     };
   },
 
@@ -280,7 +609,6 @@ export const chatbotService = {
 
     let summary = `Issue escalated by student. Reason: ${forceReason}`;
 
-    // Try summarisation via LLM server if available.
     if (env.LLM_PROVIDER === 'local-llama' && env.LLM_BASE_URL && env.LLM_INTERNAL_SECRET) {
       try {
         const res = await fetch(`${env.LLM_BASE_URL}/internal/llm/summarize`, {
@@ -304,7 +632,6 @@ export const chatbotService = {
       }
     }
 
-    // Record escalation as a ChatFeedback with rating='incorrect' so it lands in the mod inbox.
     const lastUserMsg =
       session.messages.filter((m) => m.role === 'user').at(-1)?.content ?? message;
     await ChatFeedbackModel.create({
@@ -336,8 +663,9 @@ export const chatbotService = {
   },
 
   /** Get all messages in a specific session (cache → Mongo) for the frontend to restore. */
-  async getSession(sessionId: string): Promise<ChatMessage[]> {
-    return (await loadSession(sessionId))?.messages ?? [];
+  async getSession(sessionId: string): Promise<{ messages: ChatMessage[]; metaSummary: string }> {
+    const session = await loadSession(sessionId);
+    return { messages: session?.messages ?? [], metaSummary: session?.metaSummary ?? '' };
   },
 
   /**
@@ -383,8 +711,6 @@ export const chatbotService = {
     const answer = botMsg?.content ?? '';
     const messages = session?.messages ?? [];
 
-    // Upsert so re-rating the same message updates the existing record instead of
-    // creating a duplicate. Key on userId + messageIndex (unique per session message).
     await ChatFeedbackModel.findOneAndUpdate(
       { userId: new Types.ObjectId(opts.userId), messageIndex: opts.messageIndex },
       {
@@ -488,7 +814,6 @@ async function retrieveFaqSources(
 ): Promise<FaqSource[]> {
   const queryEmbedding = await generateEmbedding(query);
 
-  // Load published FAQs with their embeddings.
   const faqs = await FaqModel.find({ status: 'published' })
     .select('title answer embedding')
     .lean<{ _id: unknown; title: string; answer: string; embedding?: number[] }[]>();
@@ -505,7 +830,6 @@ async function retrieveFaqSources(
     .sort((a, b) => b.similarity - a.similarity)
     .slice(0, opts.maxSources);
 
-  // Fallback to text search when embeddings are not yet populated.
   if (scored.length === 0 && query.trim()) {
     const textResults = await FaqModel.find(
       { status: 'published', $text: { $search: query } },
@@ -519,7 +843,7 @@ async function retrieveFaqSources(
       id: (f._id as { toString(): string }).toString(),
       title: f.title,
       answer: f.answer,
-      similarity: 0.5, // no cosine score available
+      similarity: 0.5,
     }));
   }
 
@@ -530,6 +854,7 @@ async function retrieveFaqSources(
 
 async function callLlm(opts: {
   system_instruction: string;
+  meta_context: string;
   rag_context: string[];
   conversation_history: ChatMessage[];
   current_message: string;
@@ -551,12 +876,12 @@ async function callLlm(opts: {
     return callOllamaLlm(opts);
   }
 
-  // Mock LLM — derive answer from top FAQ source.
   return mockLlm(opts);
 }
 
 async function callLlmServer(opts: {
   system_instruction: string;
+  meta_context: string;
   rag_context: string[];
   conversation_history: ChatMessage[];
   current_message: string;
@@ -569,7 +894,7 @@ async function callLlmServer(opts: {
         Authorization: `Bearer ${env.LLM_INTERNAL_SECRET}`,
       },
       body: JSON.stringify({
-        system_instruction: opts.system_instruction,
+        system_instruction: opts.system_instruction + (opts.meta_context ? '\n\n' + opts.meta_context : ''),
         rag_context: opts.rag_context,
         conversation_history: opts.conversation_history,
         current_message: opts.current_message,
@@ -593,8 +918,71 @@ async function callLlmServer(opts: {
   }
 }
 
+async function* callLlmServerStream(opts: {
+  system_instruction: string;
+  meta_context: string;
+  rag_context: string[];
+  conversation_history: ChatMessage[];
+  current_message: string;
+}): AsyncGenerator<{ type: 'ping' | 'response' | 'error' | 'timeout'; content?: string; timestamp?: number; message?: string }> {
+  try {
+    const response = await fetch(`${env.LLM_BASE_URL}/internal/llm/generate-stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${env.LLM_INTERNAL_SECRET}`,
+      },
+      body: JSON.stringify({
+        system_instruction: opts.system_instruction + (opts.meta_context ? '\n\n' + opts.meta_context : ''),
+        rag_context: opts.rag_context,
+        conversation_history: opts.conversation_history,
+        current_message: opts.current_message,
+      }),
+    });
+
+    if (!response.ok) throw new Error(`LLM server returned ${response.status}`);
+    if (!response.body) throw new Error('No response body');
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.type === 'ping') {
+              yield { type: 'ping', timestamp: data.timestamp };
+            } else if (data.type === 'response') {
+              yield { type: 'response', content: data.content };
+            } else if (data.type === 'error') {
+              yield { type: 'error', message: data.message };
+            } else if (data.type === 'timeout') {
+              yield { type: 'timeout' };
+            }
+          } catch {
+            // Ignore malformed stream events and continue reading.
+          }
+        }
+      }
+    }
+  } catch (err) {
+    logger.warn({ err }, 'LLM server stream failed');
+    yield { type: 'error', message: err instanceof Error ? err.message : 'Stream failed' };
+  }
+}
+
 async function callGeminiLlm(opts: {
   system_instruction: string;
+  meta_context: string;
   rag_context: string[];
   conversation_history: ChatMessage[];
   current_message: string;
@@ -606,13 +994,15 @@ async function callGeminiLlm(opts: {
         ? `\n\nAPPROVED FAQ CONTEXT:\n${opts.rag_context.join('\n\n')}`
         : '';
 
+    const metaBlock = opts.meta_context ? `\n\n${opts.meta_context}` : '';
+
     const historyContents = opts.conversation_history.map((m) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }],
     }));
 
     const body = {
-      system_instruction: { parts: [{ text: opts.system_instruction + contextBlock }] },
+      system_instruction: { parts: [{ text: opts.system_instruction + contextBlock + metaBlock }] },
       contents: [...historyContents, { role: 'user', parts: [{ text: opts.current_message }] }],
       generationConfig: { temperature: 0.2, maxOutputTokens: 500 },
     };
@@ -643,6 +1033,7 @@ async function callGeminiLlm(opts: {
 
 async function callOllamaLlm(opts: {
   system_instruction: string;
+  meta_context: string;
   rag_context: string[];
   conversation_history: ChatMessage[];
   current_message: string;
@@ -654,8 +1045,10 @@ async function callOllamaLlm(opts: {
         ? `\n\nAPPROVED FAQ CONTEXT:\n${opts.rag_context.join('\n\n')}`
         : '';
 
+    const metaBlock = opts.meta_context ? `\n\n${opts.meta_context}` : '';
+
     const messages = [
-      { role: 'system', content: opts.system_instruction + contextBlock },
+      { role: 'system', content: opts.system_instruction + contextBlock + metaBlock },
       ...opts.conversation_history.map((m) => ({
         role: m.role === 'assistant' ? 'assistant' : 'user',
         content: m.content,
@@ -688,14 +1081,103 @@ async function callOllamaLlm(opts: {
   }
 }
 
-/**
- * Groq inference — uses llama-3.3-70b-versatile by default.
- * Free tier: 14,400 requests/day, 30 requests/minute.
- * Groq's API is OpenAI-compatible, so the request shape is identical to Ollama.
- * Typical response time: 200–500 ms (significantly faster than Gemini chat).
- */
+async function* callOllamaStream(opts: {
+  system_instruction: string;
+  meta_context: string;
+  rag_context: string[];
+  conversation_history: ChatMessage[];
+  current_message: string;
+}): AsyncGenerator<{ type: 'ping' | 'response' | 'error' | 'timeout'; content?: string; timestamp?: number; message?: string }> {
+  try {
+    const contextBlock =
+      opts.rag_context.length > 0
+        ? `\n\nAPPROVED FAQ CONTEXT:\n${opts.rag_context.join('\n\n')}`
+        : '';
+
+    const metaBlock = opts.meta_context ? `\n\n${opts.meta_context}` : '';
+
+    const messages = [
+      { role: 'system', content: opts.system_instruction + contextBlock + metaBlock },
+      ...opts.conversation_history.map((m) => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content,
+      })),
+      { role: 'user', content: opts.current_message },
+    ];
+
+    const response = await fetch(`${env.OLLAMA_BASE_URL}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: env.OLLAMA_MODEL,
+        messages,
+        temperature: 0.2,
+        max_tokens: 500,
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) throw new Error(`Ollama returned ${response.status}`);
+    if (!response.body) throw new Error('No response body');
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.choices?.[0]?.delta?.content) {
+              fullContent += parsed.choices[0].delta.content;
+            }
+          } catch {
+            // Ignore malformed stream events and continue reading.
+          }
+        }
+      }
+    }
+
+    yield { type: 'response', content: fullContent.trim() };
+  } catch (err) {
+    logger.warn({ err }, 'Ollama stream failed');
+    yield { type: 'error', message: err instanceof Error ? err.message : 'Stream failed' };
+  }
+}
+
+function callLlmStream(opts: {
+  system_instruction: string;
+  meta_context: string;
+  rag_context: string[];
+  conversation_history: ChatMessage[];
+  current_message: string;
+  sources: FaqSource[];
+}): AsyncGenerator<{ type: 'ping' | 'response' | 'error' | 'timeout'; content?: string; timestamp?: number; message?: string }> {
+  if (env.LLM_PROVIDER === 'local-llama' && env.LLM_BASE_URL && env.LLM_INTERNAL_SECRET) {
+    return callLlmServerStream(opts);
+  }
+
+  if (env.LLM_PROVIDER === 'ollama') {
+    return callOllamaStream(opts);
+  }
+
+  return (async function* () {
+    yield { type: 'error', message: 'Streaming not supported for this provider' };
+  })();
+}
+
 async function callGroqLlm(opts: {
   system_instruction: string;
+  meta_context: string;
   rag_context: string[];
   conversation_history: ChatMessage[];
   current_message: string;
@@ -707,8 +1189,10 @@ async function callGroqLlm(opts: {
         ? `\n\nAPPROVED FAQ CONTEXT:\n${opts.rag_context.join('\n\n')}`
         : '';
 
+    const metaBlock = opts.meta_context ? `\n\n${opts.meta_context}` : '';
+
     const messages = [
-      { role: 'system', content: opts.system_instruction + contextBlock },
+      { role: 'system', content: opts.system_instruction + contextBlock + metaBlock },
       ...opts.conversation_history.map((m) => ({
         role: m.role === 'assistant' ? 'assistant' : 'user',
         content: m.content,
@@ -740,11 +1224,7 @@ async function callGroqLlm(opts: {
     return { answer, fallback_triggered };
   } catch (err) {
     logger.warn({ err }, 'Groq call failed — falling back to mock');
-    return mockLlm({
-      rag_context: opts.rag_context,
-      current_message: opts.current_message,
-      sources: opts.sources,
-    });
+    return mockLlm(opts);
   }
 }
 
@@ -756,7 +1236,6 @@ function mockLlm(opts: { rag_context: string[]; current_message: string; sources
     return { answer: FALLBACK_STRING, fallback_triggered: true };
   }
 
-  // Extract the answer portion from the top source.
   const top = opts.sources[0];
   const excerpt = top.answer.length > 400 ? top.answer.slice(0, 400) + '…' : top.answer;
   return {

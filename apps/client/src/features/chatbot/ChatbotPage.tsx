@@ -32,6 +32,7 @@ export function ChatbotPage() {
     handleFeedback,
     startNew,
     isSending,
+    elapsedSeconds,
   } = useChatConversation({ welcome: WELCOME, active: true });
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -217,7 +218,12 @@ export function ChatbotPage() {
                 color: 'var(--color-text-muted)',
               }}
             >
-              <TypingDots />
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <TypingDots />
+                <span style={{ fontSize: 12 }}>
+                  {elapsedSeconds > 0 ? `Thinking... (${elapsedSeconds}s)` : 'Thinking...'}
+                </span>
+              </span>
             </div>
           </div>
         )}
