@@ -94,7 +94,12 @@ export function AskQuestionPage() {
         existingAnswerCheckToken: check.token,
       });
     },
-    onSuccess: () => setStep('done'),
+    onSuccess: () => {
+      setStep('done');
+      // Refresh the student dashboard cards (Questions asked / Pending) right away.
+      void qc.invalidateQueries({ queryKey: ['stats', 'student-dashboard'] });
+      void qc.invalidateQueries({ queryKey: qnaKeys.all });
+    },
   });
 
   const onWrite = handleSubmit((values) => {

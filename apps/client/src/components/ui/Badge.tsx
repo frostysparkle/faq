@@ -28,7 +28,7 @@ export function Badge({ children, color = 'default' }: BadgeProps) {
       style={{
         fontSize: 11,
         padding: '2px 8px',
-        borderRadius: 20,
+        borderRadius: 'var(--radius-full)',
         background: c.bg,
         color: c.text,
         border: `1px solid ${c.border}`,

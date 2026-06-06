@@ -1,4 +1,5 @@
 import { ArrowRight, BookOpen, Lightbulb } from 'lucide-react';
+import { hasAdminAccess } from '@samagama/shared';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { useFaqCandidates, useConvertToFaq } from '../admin/queries';
@@ -8,7 +9,7 @@ export function FaqCandidatesPage() {
   const { data, isLoading } = useFaqCandidates();
   const convert = useConvertToFaq();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = !!user && hasAdminAccess(user.role);
 
   return (
     <div>

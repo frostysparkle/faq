@@ -4,6 +4,13 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 const TOKEN_STORAGE_KEY = 'samagama:accessToken';
 const REFRESH_STORAGE_KEY = 'samagama:refreshToken';
+// Set ONLY when a previously-valid session can no longer be refreshed (a genuine expiry).
+// The login page reads this once to decide whether to show the "session expired" notice.
+// Kept in sessionStorage (not localStorage) so it never outlives the browser tab/session.
+const SESSION_EXPIRED_KEY = 'samagama:sessionExpired';
+// Stable per-browser identifier for anonymous actions (e.g. voting on FAQs from the login
+// page). ObjectId-shaped (24 hex) so the server can slot it into its existing vote arrays.
+const ANON_ID_KEY = 'samagama:anonId';
 
 export const tokenStorage = {
   getAccess: (): string | null => localStorage.getItem(TOKEN_STORAGE_KEY),
@@ -18,6 +25,58 @@ export const tokenStorage = {
   },
 };
 
+// Single source of truth for "the session genuinely expired". Logout, fresh logins, and
+// never-logged-in visits must NOT set this — only a failed token refresh does.
+export const sessionExpiry = {
+  mark: (): void => {
+    try {
+      sessionStorage.setItem(SESSION_EXPIRED_KEY, '1');
+    } catch {
+      /* storage unavailable — non-fatal */
+    }
+  },
+  peek: (): boolean => {
+    try {
+      return sessionStorage.getItem(SESSION_EXPIRED_KEY) === '1';
+    } catch {
+      return false;
+    }
+  },
+  clear: (): void => {
+    try {
+      sessionStorage.removeItem(SESSION_EXPIRED_KEY);
+    } catch {
+      /* storage unavailable — non-fatal */
+    }
+  },
+};
+
+// 24-hex (ObjectId-shaped) random id. Uses the Web Crypto API when available.
+function generateAnonId(): string {
+  const bytes = new Uint8Array(12);
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * 256);
+  }
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Stable anonymous id for this browser, created on first use and persisted. Lets the server
+// attribute anonymous votes/views to a consistent (but unidentifiable) visitor.
+export function getAnonId(): string {
+  try {
+    let id = localStorage.getItem(ANON_ID_KEY);
+    if (!id || !/^[0-9a-f]{24}$/.test(id)) {
+      id = generateAnonId();
+      localStorage.setItem(ANON_ID_KEY, id);
+    }
+    return id;
+  } catch {
+    return generateAnonId();
+  }
+}
+
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '',
   withCredentials: true,
@@ -27,6 +86,9 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use((config) => {
   const token = tokenStorage.getAccess();
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  // Always present so the server can attribute anonymous FAQ votes/views; it's ignored
+  // whenever a valid Bearer token identifies a real user.
+  config.headers['X-Anon-Id'] = getAnonId();
   return config;
 });
 
@@ -60,6 +122,7 @@ apiClient.interceptors.response.use(
       const refreshToken = tokenStorage.getRefresh();
       if (!refreshToken) {
         tokenStorage.clear();
+        sessionExpiry.mark();
         window.location.replace('/login');
         return Promise.reject(err);
       }
@@ -86,12 +149,15 @@ apiClient.interceptors.response.use(
         );
         const { accessToken, refreshToken: newRefresh } = res.data.data;
         tokenStorage.setTokens(accessToken, newRefresh);
+        // Refresh succeeded — the session is healthy, so drop any stale expiry flag.
+        sessionExpiry.clear();
         drainQueue(accessToken);
         config.headers = { ...config.headers, Authorization: `Bearer ${accessToken}` };
         return apiClient(config);
       } catch {
         refreshQueue = [];
         tokenStorage.clear();
+        sessionExpiry.mark();
         window.location.replace('/login');
         return Promise.reject(err);
       } finally {

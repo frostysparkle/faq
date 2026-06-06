@@ -24,7 +24,10 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace state={{ from: location, redirected: true }} />;
+    // No user here covers logout and never-logged-in visits too — neither is a session
+    // expiry, so we don't flag one. `from` lets the login page return the user afterwards;
+    // a genuine expiry is signalled separately via the sessionExpiry flag (see api-client).
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   return <>{children}</>;

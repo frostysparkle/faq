@@ -1,7 +1,7 @@
 // Auth state. Boots from a stored refresh token, exposes login/logout, and keeps the user object in sync.
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { AuthTokenPayload, LoginInput, PublicUser } from '@samagama/shared';
-import { apiClient, tokenStorage } from '../../lib/api-client';
+import { apiClient, sessionExpiry, tokenStorage } from '../../lib/api-client';
 
 interface AuthContextValue {
   user: PublicUser | null;
@@ -51,6 +51,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!cancelled) applyAuth(res.data.data);
         }
       } catch {
+        // A stored session existed but couldn't be restored (refresh token aged out / revoked)
+        // — that's a genuine expiry. A first-time visitor with no tokens is NOT flagged.
+        if (access || refresh) sessionExpiry.mark();
         tokenStorage.clear();
         if (!cancelled) setUser(null);
       } finally {
@@ -66,12 +69,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (input: LoginInput) => {
       const res = await apiClient.post('/api/auth/login', input);
+      // Fresh sign-in supersedes any prior expiry — clear the flag so the notice never lingers.
+      sessionExpiry.clear();
       applyAuth(res.data.data);
     },
     [applyAuth],
   );
 
   const logout = useCallback(() => {
+    // Intentional sign-out is not an expiry — make sure the notice can't show afterwards.
+    sessionExpiry.clear();
     tokenStorage.clear();
     setUser(null);
   }, []);

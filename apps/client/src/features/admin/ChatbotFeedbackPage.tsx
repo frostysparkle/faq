@@ -12,6 +12,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { ApiSuccess, ChatbotFeedbackStats, PublicChatFeedback } from '@samagama/shared';
+import { hasAdminAccess } from '@samagama/shared';
 import { apiClient } from '../../lib/api-client';
 import { useAuth } from '../auth/AuthProvider';
 
@@ -376,7 +377,7 @@ function StatusBadge({ status }: { status: PublicChatFeedback['status'] }) {
 function FeedbackRow({ row, onMutate }: { row: PublicChatFeedback; onMutate: () => void }) {
   const { isOpen: expanded, toggle: toggleExpanded } = useExclusiveOpen(`chatfb-${row.id}`);
   const { user: viewer } = useAuth();
-  const isAdmin = viewer?.role === 'admin';
+  const isAdmin = !!viewer && hasAdminAccess(viewer.role);
   const isHelpful = row.rating === 'helpful';
   const color = isHelpful ? 'var(--color-success)' : 'var(--color-danger)';
   const hasFullHistory = row.messages && row.messages.length > 0;

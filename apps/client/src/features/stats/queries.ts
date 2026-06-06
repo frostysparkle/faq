@@ -6,6 +6,7 @@ import { statsApi } from './api';
 // Centralized query keys (leaderboard is parameterized by time range).
 export const statsKeys = {
   studentHome: ['stats', 'student-home'] as const,
+  studentDashboard: ['stats', 'student-dashboard'] as const,
   leaderboard: (range: 'week' | 'month' | 'all') => ['stats', 'leaderboard', range] as const,
   communityIdle: ['stats', 'community-idle'] as const,
 };
@@ -15,6 +16,18 @@ export function useStudentHomeStats() {
     queryKey: statsKeys.studentHome,
     queryFn: statsApi.getStudentStats,
     staleTime: 60_000,
+  });
+}
+
+// Full student-dashboard payload. Polls every 30s and refetches on focus so the cards
+// stay near-real-time as the student asks questions, earns points, receives answers, etc.
+export function useStudentDashboard() {
+  return useQuery({
+    queryKey: statsKeys.studentDashboard,
+    queryFn: statsApi.getStudentDashboard,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 }
 

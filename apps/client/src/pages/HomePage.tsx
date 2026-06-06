@@ -1,22 +1,30 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
+  AlertTriangle,
+  ArrowUp,
+  Award,
+  BarChart3,
   CheckCircle2,
   ChevronRight,
   Circle,
   Clock,
+  Flame,
   Folder,
   HelpCircle,
-  MessageCircle,
   MessageSquare,
-  MessagesSquare,
   Sparkles,
+  ThumbsUp,
   User,
 } from 'lucide-react';
 import type React from 'react';
+import type { LucideIcon } from 'lucide-react';
+import type { PublicNotification } from '@samagama/shared';
+import { effectiveRole } from '@samagama/shared';
 import { useAuth } from '../features/auth/AuthProvider';
-import { useStudentHomeStats } from '../features/stats/queries';
-import { IdleBucketCards } from '../features/stats/IdleBucketCards';
+import { useStudentDashboard } from '../features/stats/queries';
+import type { StudentDashboardStats } from '../features/stats/api';
+import { useNotifications } from '../features/notifications/queries';
 import { useFaqList } from '../features/faq/queries';
 import { FaqCard } from '../features/faq/FaqCard';
 import { useQuestions } from '../features/qna/queries';
@@ -83,9 +91,10 @@ export function HomePage() {
         </div>
       </div>
 
-      {user.role === 'student' ? (
+      {/* Trainee roles land on the dashboard of the role they impersonate. */}
+      {effectiveRole(user.role) === 'student' ? (
         <StudentHome />
-      ) : user.role === 'moderator' ? (
+      ) : effectiveRole(user.role) === 'moderator' ? (
         <Navigate to="/moderation" replace />
       ) : (
         <Navigate to="/admin" replace />
@@ -94,306 +103,687 @@ export function HomePage() {
   );
 }
 
+// ─── Student dashboard ────────────────────────────────────────────────────────
+
 function StudentHome() {
-  const navigate = useNavigate();
-  const { data: stats, isLoading: statsLoading } = useStudentHomeStats();
-  const v = (n: number | undefined) => (statsLoading ? '…' : (n ?? 0));
+  const { data, isLoading, isError, refetch } = useStudentDashboard();
 
-  const statCardBase: React.CSSProperties = {
-    padding: '20px 20px 16px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 10,
-    position: 'relative',
-    overflow: 'hidden',
-    minHeight: 130,
-    cursor: 'pointer',
-    transition: 'transform 0.15s, box-shadow 0.15s',
-    userSelect: 'none',
-    outline: 'none',
-  };
-
-  const onHover = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    el.style.transform = 'translateY(-3px)';
-    el.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
-  };
-  const onLeave = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    el.style.transform = 'none';
-    el.style.boxShadow = '';
-  };
-  const onKeyNav = (e: React.KeyboardEvent<HTMLDivElement>, dest: string) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      navigate(dest);
-    }
-  };
+  if (isError) {
+    return (
+      <DashboardError onRetry={() => void refetch()} />
+    );
+  }
 
   return (
     <>
-      {/* Stat cards — 3-column layout: left & middle each have 2 stacked cards, right spans both rows */}
+      <StatCardRow data={data} loading={isLoading} />
+
+      {/* Recent activity + Open community Q&A */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1.2fr',
-          gridTemplateRows: 'auto auto',
-          gap: 14,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+          gap: 16,
           marginBottom: 24,
         }}
       >
-        {/* Col 1 · Row 1 — Open Community Q&A → /community */}
-        <div
-          className="mod-card mod-card-blue interactive"
-          style={statCardBase}
-          role="button"
-          tabIndex={0}
-          onClick={() => navigate('/community')}
-          onKeyDown={(e) => onKeyNav(e, '/community')}
-          onMouseEnter={onHover}
-          onMouseLeave={onLeave}
-        >
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              background: 'var(--color-primary-bg)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <MessagesSquare size={20} color="var(--color-primary)" />
-          </div>
-          <div
-            style={{
-              fontSize: 36,
-              fontWeight: 900,
-              color: 'var(--color-text)',
-              letterSpacing: '-0.04em',
-              lineHeight: 1,
-            }}
-          >
-            {v(stats?.openCommunityQuestions)}
-          </div>
-          <div
-            style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.2 }}
-          >
-            Open Community Q&A
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--color-primary-text)', fontWeight: 600 }}>
-            Answered + unanswered
-          </div>
-          <MessagesSquare
-            size={80}
-            color="var(--color-primary)"
-            style={{
-              position: 'absolute',
-              bottom: -16,
-              right: -16,
-              opacity: 0.06,
-              pointerEvents: 'none',
-            }}
-          />
-          <ChevronRight
-            size={14}
-            color="var(--color-primary)"
-            style={{ position: 'absolute', top: 14, right: 14, opacity: 0.5 }}
-          />
-        </div>
-
-        {/* Col 2 · Row 1 — Unanswered Q&A → /community (open, no answers) */}
-        <div
-          className="mod-card mod-card-orange interactive"
-          style={statCardBase}
-          role="button"
-          tabIndex={0}
-          onClick={() => navigate('/community')}
-          onKeyDown={(e) => onKeyNav(e, '/community')}
-          onMouseEnter={onHover}
-          onMouseLeave={onLeave}
-        >
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              background: 'var(--color-warning-bg)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <HelpCircle size={20} color="var(--color-warning)" />
-          </div>
-          <div
-            style={{
-              fontSize: 36,
-              fontWeight: 900,
-              color: 'var(--color-text)',
-              letterSpacing: '-0.04em',
-              lineHeight: 1,
-            }}
-          >
-            {v(stats?.unansweredCommunityQuestions)}
-          </div>
-          <div
-            style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.2 }}
-          >
-            Unanswered Q&A
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--color-warning)', fontWeight: 600 }}>
-            No answer yet
-          </div>
-          <HelpCircle
-            size={80}
-            color="var(--color-warning)"
-            style={{
-              position: 'absolute',
-              bottom: -16,
-              right: -16,
-              opacity: 0.06,
-              pointerEvents: 'none',
-            }}
-          />
-          <ChevronRight
-            size={14}
-            color="var(--color-warning)"
-            style={{ position: 'absolute', top: 14, right: 14, opacity: 0.5 }}
-          />
-        </div>
-
-        {/* Col 3 · Rows 1–2 — Idle bucket panel spanning full height */}
-        <IdleBucketCards style={{ marginBottom: 0, gridColumn: 3, gridRow: '1 / 3' }} />
-
-        {/* Col 1 · Row 2 — Questions Answered → /my-questions */}
-        <div
-          className="mod-card mod-card-green interactive"
-          style={statCardBase}
-          role="button"
-          tabIndex={0}
-          onClick={() => navigate('/my-questions')}
-          onKeyDown={(e) => onKeyNav(e, '/my-questions')}
-          onMouseEnter={onHover}
-          onMouseLeave={onLeave}
-        >
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              background: 'var(--color-success-bg)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <MessageCircle size={20} color="var(--color-success)" />
-          </div>
-          <div
-            style={{
-              fontSize: 36,
-              fontWeight: 900,
-              color: 'var(--color-text)',
-              letterSpacing: '-0.04em',
-              lineHeight: 1,
-            }}
-          >
-            {v(stats?.questionsYouAnswered)}
-          </div>
-          <div
-            style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.2 }}
-          >
-            Questions Answered
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--color-success)', fontWeight: 600 }}>
-            Approved answers, all-time
-          </div>
-          <MessageCircle
-            size={80}
-            color="var(--color-success)"
-            style={{
-              position: 'absolute',
-              bottom: -16,
-              right: -16,
-              opacity: 0.06,
-              pointerEvents: 'none',
-            }}
-          />
-          <ChevronRight
-            size={14}
-            color="var(--color-success)"
-            style={{ position: 'absolute', top: 14, right: 14, opacity: 0.5 }}
-          />
-        </div>
-
-        {/* Col 2 · Row 2 — Spurti Points → /analytics */}
-        <div
-          className="mod-card mod-card-purple interactive"
-          style={statCardBase}
-          role="button"
-          tabIndex={0}
-          onClick={() => navigate('/analytics')}
-          onKeyDown={(e) => onKeyNav(e, '/analytics')}
-          onMouseEnter={onHover}
-          onMouseLeave={onLeave}
-        >
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              background: 'var(--color-purple-bg)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Sparkles size={20} color="var(--color-purple)" />
-          </div>
-          <div
-            style={{
-              fontSize: 36,
-              fontWeight: 900,
-              color: 'var(--color-text)',
-              letterSpacing: '-0.04em',
-              lineHeight: 1,
-            }}
-          >
-            {v(stats?.spurtiPoints)}
-          </div>
-          <div
-            style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.2 }}
-          >
-            Spurti Points
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--color-purple)', fontWeight: 600 }}>
-            Earned via Community Q&A
-          </div>
-          <Sparkles
-            size={80}
-            color="var(--color-purple)"
-            style={{
-              position: 'absolute',
-              bottom: -16,
-              right: -16,
-              opacity: 0.06,
-              pointerEvents: 'none',
-            }}
-          />
-          <ChevronRight
-            size={14}
-            color="var(--color-purple)"
-            style={{ position: 'absolute', top: 14, right: 14, opacity: 0.5 }}
-          />
-        </div>
+        <RecentActivityCard />
+        <CommunityInsightsCard community={data?.community} loading={isLoading} />
       </div>
+
+      <ContributionSnapshot contribution={data?.contribution} loading={isLoading} />
 
       <ContentTabs />
     </>
   );
 }
+
+function DashboardError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div
+      className="mod-card mod-card-red"
+      style={{
+        padding: 32,
+        marginBottom: 24,
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 12,
+      }}
+    >
+      <AlertTriangle size={28} color="var(--color-danger)" />
+      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)' }}>
+        Couldn't load your dashboard
+      </div>
+      <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
+        Something went wrong while fetching your stats.
+      </div>
+      <button
+        onClick={onRetry}
+        style={{
+          marginTop: 4,
+          padding: '8px 18px',
+          borderRadius: 10,
+          border: 'none',
+          background: 'var(--color-danger)',
+          color: 'white',
+          fontWeight: 700,
+          fontSize: 13,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+        }}
+      >
+        Try again
+      </button>
+    </div>
+  );
+}
+
+// ─── Top stat cards ───────────────────────────────────────────────────────────
+
+interface StatCardConfig {
+  key: string;
+  cardClass: string;
+  icon: LucideIcon;
+  accent: string;
+  accentBg: string;
+  value: number | undefined;
+  label: string;
+  footer: React.ReactNode;
+  to: string;
+}
+
+function StatCardRow({
+  data,
+  loading,
+}: {
+  data: StudentDashboardStats | undefined;
+  loading: boolean;
+}) {
+  const navigate = useNavigate();
+
+  const cards: StatCardConfig[] = [
+    {
+      key: 'asked',
+      cardClass: 'mod-card-purple',
+      icon: HelpCircle,
+      accent: 'var(--color-purple)',
+      accentBg: 'var(--color-purple-bg)',
+      value: data?.questionsAsked.total,
+      label: 'Questions asked',
+      footer: <Delta value={data?.questionsAsked.thisWeek} />,
+      to: '/my-questions',
+    },
+    {
+      key: 'pending',
+      cardClass: 'mod-card-orange',
+      icon: Clock,
+      accent: 'var(--color-warning)',
+      accentBg: 'var(--color-warning-bg)',
+      value: data?.pending,
+      label: 'Pending',
+      footer: <span style={{ color: 'var(--color-warning)' }}>Awaiting response</span>,
+      to: '/my-questions',
+    },
+    {
+      key: 'answered',
+      cardClass: 'mod-card-green',
+      icon: CheckCircle2,
+      accent: 'var(--color-success)',
+      accentBg: 'var(--color-success-bg)',
+      value: data?.answered.total,
+      label: 'Answered',
+      footer: <Delta value={data?.answered.thisWeek} />,
+      to: '/my-questions',
+    },
+    {
+      key: 'points',
+      cardClass: 'mod-card-purple',
+      icon: Sparkles,
+      accent: 'var(--color-purple)',
+      accentBg: 'var(--color-purple-bg)',
+      value: data?.spurtiPoints,
+      label: 'Spurti points',
+      footer: (
+        <span
+          style={{
+            color: 'var(--color-primary-text)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
+          View rewards <ChevronRight size={12} />
+        </span>
+      ),
+      to: '/analytics',
+    },
+  ];
+
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: 14,
+        marginBottom: 24,
+      }}
+    >
+      {cards.map((c) => (
+        <StatCard key={c.key} config={c} loading={loading} onClick={() => navigate(c.to)} />
+      ))}
+    </div>
+  );
+}
+
+function StatCard({
+  config,
+  loading,
+  onClick,
+}: {
+  config: StatCardConfig;
+  loading: boolean;
+  onClick: () => void;
+}) {
+  const { icon: Icon, accent, accentBg, value, label, footer } = config;
+  return (
+    <div
+      className={`mod-card ${config.cardClass} interactive`}
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      style={{
+        padding: '20px 20px 18px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        position: 'relative',
+        minHeight: 150,
+        cursor: 'pointer',
+        userSelect: 'none',
+        outline: 'none',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            background: accentBg,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Icon size={22} color={accent} strokeWidth={2.4} />
+        </div>
+        <ChevronRight size={16} color={accent} style={{ opacity: 0.45 }} />
+      </div>
+      <div
+        style={{
+          fontSize: 38,
+          fontWeight: 800,
+          color: 'var(--color-text)',
+          letterSpacing: '-0.04em',
+          lineHeight: 1,
+          marginTop: 4,
+        }}
+      >
+        {loading || value === undefined ? '…' : value}
+      </div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.2 }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 12, fontWeight: 600 }}>{footer}</div>
+    </div>
+  );
+}
+
+function Delta({ value }: { value: number | undefined }) {
+  if (value === undefined) return <span style={{ color: 'var(--color-text-muted)' }}>—</span>;
+  if (value <= 0) {
+    return <span style={{ color: 'var(--color-text-muted)' }}>No change this week</span>;
+  }
+  return (
+    <span
+      style={{ color: 'var(--color-success)', display: 'inline-flex', alignItems: 'center', gap: 2 }}
+    >
+      <ArrowUp size={12} strokeWidth={3} />
+      {value} this week
+    </span>
+  );
+}
+
+// ─── Recent activity ──────────────────────────────────────────────────────────
+
+function RecentActivityCard() {
+  const navigate = useNavigate();
+  const { data: notifications, isLoading, isError } = useNotifications();
+  const items = (notifications ?? []).slice(0, 5);
+
+  return (
+    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <PanelHeader
+        title="Recent activity"
+        action={
+          <ViewAll onClick={() => navigate('/my-questions')} label="View all" />
+        }
+      />
+      <div style={{ padding: '4px 0' }}>
+        {isLoading ? (
+          <ActivitySkeleton />
+        ) : isError ? (
+          <PanelMessage text="Couldn't load recent activity." />
+        ) : items.length === 0 ? (
+          <PanelMessage text="No activity yet — ask or answer a question to get started." />
+        ) : (
+          items.map((n, i) => (
+            <ActivityRow key={n.id} n={n} last={i === items.length - 1} navigate={navigate} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function activityVisual(type: PublicNotification['type']): { icon: LucideIcon; color: string } {
+  switch (type) {
+    case 'answer_approved':
+    case 'question_answered':
+      return { icon: CheckCircle2, color: 'var(--color-success)' };
+    case 'answer_rejected':
+      return { icon: AlertTriangle, color: 'var(--color-danger)' };
+    case 'flag_reviewed':
+      return { icon: Award, color: 'var(--color-warning)' };
+    default:
+      return { icon: Sparkles, color: 'var(--color-purple)' };
+  }
+}
+
+function ActivityRow({
+  n,
+  last,
+  navigate,
+}: {
+  n: PublicNotification;
+  last: boolean;
+  navigate: (to: string) => void;
+}) {
+  const { icon: Icon, color } = activityVisual(n.type);
+  const clickable = Boolean(n.relatedId);
+  return (
+    <div
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onClick={clickable ? () => navigate(`/community/${n.relatedId}`) : undefined}
+      onKeyDown={
+        clickable
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate(`/community/${n.relatedId}`);
+              }
+            }
+          : undefined
+      }
+      style={{
+        display: 'flex',
+        gap: 12,
+        alignItems: 'flex-start',
+        padding: '14px 20px',
+        borderBottom: last ? 'none' : '1px solid var(--color-border)',
+        cursor: clickable ? 'pointer' : 'default',
+        outline: 'none',
+      }}
+    >
+      <div
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: '50%',
+          background: `color-mix(in srgb, ${color} 14%, transparent)`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <Icon size={17} color={color} strokeWidth={2.4} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: 13.5,
+            fontWeight: 700,
+            color: 'var(--color-text)',
+            lineHeight: 1.4,
+            marginBottom: 2,
+          }}
+        >
+          {n.title}
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{timeAgo(n.createdAt)}</div>
+      </div>
+    </div>
+  );
+}
+
+function ActivitySkeleton() {
+  return (
+    <div>
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '14px 20px' }}
+        >
+          <div className="skeleton" style={{ width: 34, height: 34, borderRadius: '50%' }} />
+          <div style={{ flex: 1 }}>
+            <div
+              className="skeleton"
+              style={{ height: 12, width: '70%', borderRadius: 6, marginBottom: 8 }}
+            />
+            <div className="skeleton" style={{ height: 10, width: '30%', borderRadius: 6 }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Open community Q&A insights ──────────────────────────────────────────────
+
+function CommunityInsightsCard({
+  community,
+  loading,
+}: {
+  community: StudentDashboardStats['community'] | undefined;
+  loading: boolean;
+}) {
+  const navigate = useNavigate();
+
+  const rows = [
+    {
+      key: 'active',
+      value: community?.activeLastHour,
+      label: 'Active in last 1 hour',
+      sub: 'Fresh community activity',
+      subColor: 'var(--color-success)',
+      icon: Flame,
+      color: 'var(--color-success)',
+      to: '/community?idle=last24h',
+    },
+    {
+      key: 'idle3',
+      value: community?.idleOver3Days,
+      label: 'Idle > 3 days',
+      sub: 'Needs attention',
+      subColor: 'var(--color-warning)',
+      icon: Clock,
+      color: 'var(--color-warning)',
+      to: '/community?idle=over3days',
+    },
+    {
+      key: 'idle7',
+      value: community?.idleOver1Week,
+      label: 'Idle > 1 week',
+      sub: 'Follow up required',
+      subColor: 'var(--color-danger)',
+      icon: AlertTriangle,
+      color: 'var(--color-danger)',
+      to: '/community?idle=over1week',
+    },
+  ];
+
+  return (
+    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <PanelHeader
+        title="Open community Q&A"
+        action={
+          <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--color-text)' }}>
+            {loading || community === undefined ? '…' : community.totalOpen}
+          </span>
+        }
+        onClick={() => navigate('/community')}
+      />
+      <div>
+        {rows.map((r, i) => {
+          const Icon = r.icon;
+          return (
+            <button
+              key={r.key}
+              onClick={() => navigate(r.to)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                padding: '16px 20px',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: i < rows.length - 1 ? '1px solid var(--color-border)' : 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontFamily: 'inherit',
+              }}
+            >
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  background: `color-mix(in srgb, ${r.color} 14%, transparent)`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Icon size={19} color={r.color} strokeWidth={2.4} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 800,
+                    color: 'var(--color-text)',
+                    lineHeight: 1,
+                    marginBottom: 3,
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  {loading || r.value === undefined ? '…' : r.value}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>
+                  {r.label}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: r.subColor }}>{r.sub}</div>
+              </div>
+              <ChevronRight size={18} color="var(--color-text-muted)" style={{ opacity: 0.5 }} />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Contribution snapshot ────────────────────────────────────────────────────
+
+function ContributionSnapshot({
+  contribution,
+  loading,
+}: {
+  contribution: StudentDashboardStats['contribution'] | undefined;
+  loading: boolean;
+}) {
+  const items = [
+    {
+      key: 'accepted',
+      value: contribution?.acceptedAnswers,
+      label: 'Accepted answers',
+      sub: 'On your questions',
+      icon: CheckCircle2,
+      color: 'var(--color-success)',
+    },
+    {
+      key: 'given',
+      value: contribution?.answersGiven,
+      label: 'Answers given',
+      sub: 'To the community',
+      icon: MessageSquare,
+      color: 'var(--color-primary)',
+    },
+    {
+      key: 'upvotes',
+      value: contribution?.upvotesReceived,
+      label: 'Upvotes received',
+      sub: 'On your answers',
+      icon: ThumbsUp,
+      color: 'var(--color-purple)',
+    },
+    {
+      key: 'rate',
+      value: contribution?.responseRate,
+      suffix: '%',
+      label: 'Response rate',
+      sub: 'Questions answered',
+      icon: BarChart3,
+      color: 'var(--color-warning)',
+    },
+  ];
+
+  return (
+    <div className="card" style={{ padding: '24px 24px 28px', marginBottom: 24 }}>
+      <div
+        style={{
+          fontSize: 19,
+          fontWeight: 800,
+          color: 'var(--color-text)',
+          letterSpacing: '-0.02em',
+          marginBottom: 24,
+        }}
+      >
+        Your contribution snapshot
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gap: 20,
+        }}
+      >
+        {items.map((it) => {
+          const Icon = it.icon;
+          return (
+            <div
+              key={it.key}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                gap: 4,
+              }}
+            >
+              <div
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: '50%',
+                  background: `color-mix(in srgb, ${it.color} 14%, transparent)`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 8,
+                }}
+              >
+                <Icon size={28} color={it.color} strokeWidth={2.2} />
+              </div>
+              <div
+                style={{
+                  fontSize: 30,
+                  fontWeight: 800,
+                  color: 'var(--color-text)',
+                  letterSpacing: '-0.03em',
+                  lineHeight: 1,
+                }}
+              >
+                {loading || it.value === undefined ? '…' : `${it.value}${it.suffix ?? ''}`}
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)' }}>
+                {it.label}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{it.sub}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Shared panel bits ────────────────────────────────────────────────────────
+
+function PanelHeader({
+  title,
+  action,
+  onClick,
+}: {
+  title: string;
+  action?: React.ReactNode;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '18px 20px',
+        borderBottom: '1px solid var(--color-border)',
+        cursor: onClick ? 'pointer' : 'default',
+      }}
+    >
+      <div
+        style={{
+          fontSize: 17,
+          fontWeight: 800,
+          color: 'var(--color-text)',
+          letterSpacing: '-0.02em',
+        }}
+      >
+        {title}
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function PanelMessage({ text }: { text: string }) {
+  return (
+    <div
+      style={{
+        padding: '28px 20px',
+        textAlign: 'center',
+        fontSize: 13,
+        color: 'var(--color-text-muted)',
+      }}
+    >
+      {text}
+    </div>
+  );
+}
+
+// ─── Knowledge feed (unchanged) ───────────────────────────────────────────────
 
 function ContentTabs() {
   const [tab, setTab] = useState<ContentTab>('recent-added-faqs');
@@ -703,10 +1093,13 @@ function RecentQuestionsList() {
   );
 }
 
-function ViewAll({ onClick }: { onClick: () => void }) {
+function ViewAll({ onClick, label = 'View all' }: { onClick: () => void; label?: string }) {
   return (
     <button
-      onClick={onClick}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -721,7 +1114,7 @@ function ViewAll({ onClick }: { onClick: () => void }) {
         padding: 0,
       }}
     >
-      View all <ChevronRight size={14} />
+      {label} <ChevronRight size={14} />
     </button>
   );
 }

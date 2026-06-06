@@ -150,6 +150,54 @@
   --transition: 0.18s ease;
 }
 
+/* ── Theme-independent scale tokens (mirror lib/tokens.ts) ───────────────────
+   Type scale, spacing grid, weights, and tracking. These do not change between
+   light/dark, so they live in a single :root block. Keep in sync with tokens.ts. */
+:root {
+  /* Radius (also defined per-theme above for back-compat; values are identical) */
+  --radius-xs: 6px;
+  --radius-full: 9999px;
+
+  /* Type scale */
+  --text-caption: 11px;
+  --text-sm: 12px;
+  --text-body: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 26px;
+  --text-3xl: 32px;
+  --text-4xl: 40px;
+
+  /* Font weights (constrained to four steps) */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Line heights */
+  --leading-tight: 1.1;
+  --leading-heading: 1.25;
+  --leading-body: 1.5;
+
+  /* Letter spacing */
+  --tracking-heading: -0.02em;
+  --tracking-display: -0.03em;
+  --tracking-label: 0.06em;
+
+  /* Spacing grid (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -477,6 +525,59 @@ a:hover {
 }
 .btn-danger:hover:not(:disabled) {
   filter: brightness(1.1);
+}
+
+.btn-success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+.btn-success:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+.btn-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+.btn-warning:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+/* Size modifiers — default (.btn) is the medium size */
+.btn-sm {
+  padding: 6px 13px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
+}
+.btn-lg {
+  padding: 11px 22px;
+  font-size: var(--text-md);
+}
+
+/* Full-width */
+.btn-block {
+  width: 100%;
+}
+
+/* Loading state — swap label for a spinner, keep width stable */
+.btn[data-loading='true'] {
+  pointer-events: none;
+  opacity: 0.85;
+}
+.btn[data-loading='true'] > :not(.btn-spinner) {
+  visibility: hidden;
+}
+.btn-spinner {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+.btn {
+  position: relative;
 }
 
 /* ── Form inputs ────────────────────────────────────────────────────────────── */

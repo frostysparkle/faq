@@ -1,9 +1,39 @@
 // String-literal enums consumed by both client and server.
 // Each list is the single source of truth used by Mongoose schemas, Zod validators, and UI badges.
 
-/** Access tiers, ordered low→high privilege. The "t-" prefixed roles are trainee variants with reduced rights. */
+/**
+ * Access tiers, ordered low→high privilege. The "t-" prefixed roles are temporary
+ * trainee variants: while assigned, a t-moderator has the FULL access of a moderator and
+ * a t-admin has the FULL access of an admin. The trainee role is a temporary identity that
+ * fully shadows the user's original (e.g. student) account until it is reverted.
+ */
 export const USER_ROLES = ['student', 't-moderator', 'moderator', 't-admin', 'admin'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
+
+/**
+ * Collapses a temporary trainee role to the role it impersonates, so all
+ * routing/authorization/feature-gating treats a trainee exactly like the real thing:
+ *   t-moderator → moderator, t-admin → admin. Every other role maps to itself.
+ *
+ * Use this for the CURRENT user's own capabilities — never to relabel other users in
+ * admin views, where the real trainee role must remain visible.
+ */
+export function effectiveRole(role: UserRole): UserRole {
+  if (role === 't-moderator') return 'moderator';
+  if (role === 't-admin') return 'admin';
+  return role;
+}
+
+/** True for any role with moderator-level access (moderator/t-moderator and admin/t-admin). */
+export function hasModeratorAccess(role: UserRole): boolean {
+  const r = effectiveRole(role);
+  return r === 'moderator' || r === 'admin';
+}
+
+/** True for any role with admin-level access (admin and t-admin). */
+export function hasAdminAccess(role: UserRole): boolean {
+  return effectiveRole(role) === 'admin';
+}
 
 /** Account lifecycle states. Only `active` users can authenticate. */
 export const USER_STATUSES = ['active', 'suspended', 'deleted'] as const;

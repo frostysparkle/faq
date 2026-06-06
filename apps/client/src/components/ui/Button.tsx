@@ -1,5 +1,6 @@
-// Shared button primitive. Forwards all native <button> props and layers on a
-// `variant` (color intent) and `size`. Styling uses theme CSS variables.
+// Shared button primitive. Renders the canonical `.btn` styles from globals.css
+// (gradient primary, 12px radius, semibold) so every button in the app looks and
+// behaves identically. `variant` picks the colour intent, `size` the scale.
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 type Variant = 'primary' | 'ghost' | 'danger' | 'success' | 'warning';
@@ -9,56 +10,47 @@ interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'chi
   children: ReactNode;
   variant?: Variant;
   size?: Size;
+  /** Show a spinner and block interaction without collapsing the button's width. */
+  loading?: boolean;
+  /** Stretch to fill the container width. */
+  fullWidth?: boolean;
 }
 
-const SIZES: Record<Size, { fontSize: number; padding: string }> = {
-  sm: { fontSize: 12, padding: '5px 12px' },
-  md: { fontSize: 13, padding: '8px 16px' },
-  lg: { fontSize: 14, padding: '10px 20px' },
-};
-
-const VARIANTS: Record<Variant, { background: string; color: string; border?: string }> = {
-  primary: { background: 'var(--color-primary)', color: 'white' },
-  ghost: {
-    background: 'transparent',
-    color: 'var(--color-text-muted)',
-    border: '1px solid var(--color-border)',
-  },
-  danger: { background: 'var(--color-danger-bg)', color: 'var(--color-danger)' },
-  success: { background: 'var(--color-success-bg)', color: 'var(--color-success)' },
-  warning: { background: 'var(--color-warning-bg)', color: 'var(--color-warning)' },
+const SIZE_CLASS: Record<Size, string> = {
+  sm: 'btn-sm',
+  md: '',
+  lg: 'btn-lg',
 };
 
 export function Button({
   children,
   variant = 'primary',
   size = 'md',
+  loading = false,
+  fullWidth = false,
   disabled,
-  style,
+  className,
   ...rest
 }: ButtonProps) {
-  const v = VARIANTS[variant];
-  const s = SIZES[size];
+  const classes = [
+    'btn',
+    `btn-${variant}`,
+    SIZE_CLASS[size],
+    fullWidth ? 'btn-block' : '',
+    className ?? '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <button
       {...rest}
-      disabled={disabled}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        borderRadius: 8,
-        fontWeight: 500,
-        border: v.border ?? 'none',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.55 : 1,
-        transition: 'opacity 0.15s, transform 0.05s',
-        fontFamily: 'inherit',
-        ...v,
-        ...s,
-        ...style,
-      }}
+      className={classes}
+      disabled={disabled || loading}
+      data-loading={loading || undefined}
+      aria-busy={loading || undefined}
     >
+      {loading && <span className="btn-spinner" aria-hidden="true" />}
       {children}
     </button>
   );

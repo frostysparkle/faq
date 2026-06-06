@@ -1,14 +1,16 @@
-// /api/tags — tag CRUD. All routes require auth; writes require moderator/admin.
+// /api/tags — tag CRUD. GET is public (login-page FAQ filters); writes require moderator/admin.
 import { Router } from 'express';
 import { tagCreateSchema, tagUpdateSchema } from '@samagama/shared';
 import { tagController } from '../controllers/tag.controller.js';
-import { requireAuth, requireRole } from '../middlewares/auth.js';
+import { optionalAuth, requireRole } from '../middlewares/auth.js';
 import { validate } from '../middlewares/validate.js';
 import { asyncHandler } from '../utils/async-handler.js';
 
 const router = Router();
 
-router.use(requireAuth);
+// Listing is public so the login-page FAQ browser can offer tag filters; the list controller
+// only exposes inactive tags to signed-in admins. Writes stay gated below.
+router.use(optionalAuth);
 router.get('/', asyncHandler(tagController.list));
 router.post(
   '/',

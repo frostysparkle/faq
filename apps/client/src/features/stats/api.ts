@@ -9,6 +9,25 @@ export interface StudentHomeStats {
   spurtiPoints: number;
 }
 
+export interface StudentDashboardStats {
+  questionsAsked: { total: number; thisWeek: number };
+  pending: number;
+  answered: { total: number; thisWeek: number };
+  spurtiPoints: number;
+  community: {
+    totalOpen: number;
+    activeLastHour: number;
+    idleOver3Days: number;
+    idleOver1Week: number;
+  };
+  contribution: {
+    acceptedAnswers: number;
+    answersGiven: number;
+    upvotesReceived: number;
+    responseRate: number;
+  };
+}
+
 export interface IdleBuckets {
   last24h: number;
   over3days: number;
@@ -36,6 +55,13 @@ export interface LeaderboardResponse {
 export const statsApi = {
   async getStudentStats(): Promise<StudentHomeStats> {
     const res = await apiClient.get<ApiSuccess<StudentHomeStats>>('/api/stats/student');
+    return res.data.data;
+  },
+
+  async getStudentDashboard(): Promise<StudentDashboardStats> {
+    const res = await apiClient.get<ApiSuccess<StudentDashboardStats>>(
+      '/api/stats/student-dashboard',
+    );
     return res.data.data;
   },
 

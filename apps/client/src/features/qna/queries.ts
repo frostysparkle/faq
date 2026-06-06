@@ -46,6 +46,8 @@ export function useSubmitAnswer(questionId: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qnaKeys.answers(questionId) });
       void qc.invalidateQueries({ queryKey: qnaKeys.question(questionId) });
+      // Bump "Answers given" on the asker's/answerer's dashboard snapshot.
+      void qc.invalidateQueries({ queryKey: ['stats', 'student-dashboard'] });
     },
   });
 }
@@ -58,6 +60,8 @@ export function useVoteAnswer(questionId: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qnaKeys.answers(questionId) });
       void qc.invalidateQueries({ queryKey: ['stats', 'leaderboard'] });
+      // "Upvotes received" on the dashboard depends on vote totals.
+      void qc.invalidateQueries({ queryKey: ['stats', 'student-dashboard'] });
     },
   });
 }

@@ -1,11 +1,16 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { loginSchema, type LoginInput } from '@samagama/shared';
 import { useAuth } from './AuthProvider';
+import { sessionExpiry } from '../../lib/api-client';
 import { GlobalTooltip } from '../../components/ui/GlobalTooltip';
+import { Modal } from '../../components/ui/Modal';
+import { Button } from '../../components/ui/Button';
+
+const INTERNSHIP_URL = 'https://samagama.in/internship';
 
 export function LoginPage() {
   const { user, login } = useAuth();
@@ -13,6 +18,10 @@ export function LoginPage() {
   const location = useLocation();
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginPromptOpen, setLoginPromptOpen] = useState(false);
+  // Read the genuine-expiry flag once, on first render. `peek` doesn't mutate, so the
+  // value is stable even under StrictMode's double-invoked initializer.
+  const [sessionExpired] = useState(() => sessionExpiry.peek());
 
   const {
     register,
@@ -20,12 +29,16 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
 
+  // Consume the flag after it's been shown so reloads / re-renders of the login page
+  // don't keep resurfacing the same notice.
+  useEffect(() => {
+    if (sessionExpired) sessionExpiry.clear();
+  }, [sessionExpired]);
+
   if (user) {
     const redirectTo = (location.state as { from?: Location })?.from?.pathname ?? '/';
     return <Navigate to={redirectTo} replace />;
   }
-
-  const wasRedirected = (location.state as { redirected?: boolean })?.redirected === true;
 
   const onSubmit = async (data: LoginInput) => {
     setServerError(null);
@@ -146,23 +159,12 @@ export function LoginPage() {
 
           <div
             style={{
-              fontSize: 11,
-              color: 'rgba(255,255,255,0.5)',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              marginBottom: 12,
-            }}
-          >
-            Your knowledge hub
-          </div>
-          <div
-            style={{
               fontSize: 30,
               fontWeight: 900,
               color: 'white',
               letterSpacing: '-0.03em',
               lineHeight: 1.2,
-              marginBottom: 14,
+              marginBottom: 44,
             }}
           >
             Everything you
@@ -171,61 +173,112 @@ export function LoginPage() {
             <br />
             internship
           </div>
-          <div
-            style={{
-              fontSize: 14,
-              color: 'rgba(255,255,255,0.6)',
-              lineHeight: 1.6,
-              marginBottom: 44,
-            }}
-          >
-            150+ curated FAQs, peer Q&amp;A, and Yaksha — your AI assistant grounded in approved
-            knowledge.
-          </div>
 
-          {/* Feature highlights */}
+          {/* Feature highlights — "Internship Overview" and "Browse FAQs" are public;
+              Community Q&A and Yaksha AI require sign-in, so they carry a lock badge and
+              open a login prompt. */}
           {[
             {
-              emoji: '📚',
-              title: 'Curated FAQs',
-              sub: '150+ answered questions, freshness-ranked',
+              emoji: '📘',
+              title: 'Internship Overview',
+              sub: 'Read complete details about the Vicharanashala internship programme, eligibility, selection process, badges, expectations, and how to get started.',
+              onClick: () => navigate('/internship-overview'),
             },
-            { emoji: '💬', title: 'Community Q&A', sub: 'Peer answers, moderator approved' },
-            { emoji: '🤖', title: 'Yaksha AI', sub: 'RAG chatbot grounded in approved FAQs' },
-          ].map((f) => (
-            <div
-              key={f.title}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: 14,
-                padding: '12px 16px',
-                marginBottom: 10,
-                backdropFilter: 'blur(4px)',
-                transition: 'background 0.18s, transform 0.18s',
-                cursor: 'default',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.13)';
-                (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.08)';
-                (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)';
-              }}
-            >
-              <div style={{ fontSize: 22, flexShrink: 0 }}>{f.emoji}</div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>{f.title}</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 1 }}>
-                  {f.sub}
+            {
+              emoji: '📚',
+              title: 'Browse FAQs',
+              sub: 'Read curated answers and vote — no sign-in needed.',
+              onClick: () => navigate('/browse-faqs'),
+            },
+            {
+              emoji: '💬',
+              title: 'Community Q&A',
+              sub: 'Peer answers, moderator approved',
+              locked: true,
+              onClick: () => setLoginPromptOpen(true),
+            },
+            {
+              emoji: '🤖',
+              title: 'Yaksha AI',
+              sub: 'RAG chatbot grounded in approved FAQs',
+              locked: true,
+              onClick: () => setLoginPromptOpen(true),
+            },
+          ].map((f) => {
+            const clickable = 'onClick' in f && typeof f.onClick === 'function';
+            const locked = 'locked' in f && f.locked === true;
+            return (
+              <div
+                key={f.title}
+                role={clickable ? 'button' : undefined}
+                tabIndex={clickable ? 0 : undefined}
+                aria-label={locked ? `${f.title} — login required` : undefined}
+                onClick={clickable ? f.onClick : undefined}
+                onKeyDown={
+                  clickable
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          f.onClick!();
+                        }
+                      }
+                    : undefined
+                }
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 14,
+                  padding: '12px 16px',
+                  marginBottom: 10,
+                  backdropFilter: 'blur(4px)',
+                  transition: 'background 0.18s, transform 0.18s',
+                  cursor: clickable ? 'pointer' : 'default',
+                  outline: 'none',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.13)';
+                  (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.08)';
+                  (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)';
+                }}
+              >
+                <div style={{ fontSize: 22, flexShrink: 0 }}>{f.emoji}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>{f.title}</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 1 }}>
+                    {f.sub}
+                  </div>
                 </div>
+                {locked && (
+                  <span
+                    style={{
+                      marginLeft: 'auto',
+                      flexShrink: 0,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: '3px 9px',
+                      borderRadius: 999,
+                      background: 'rgba(255,255,255,0.16)',
+                      border: '1px solid rgba(255,255,255,0.22)',
+                      color: 'rgba(255,255,255,0.92)',
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      letterSpacing: '0.01em',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    🔒 Login Required
+                  </span>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -279,7 +332,7 @@ export function LoginPage() {
               </div>
             </div>
 
-            {wasRedirected && (
+            {sessionExpired && (
               <div
                 role="status"
                 style={{
@@ -408,19 +461,44 @@ export function LoginPage() {
               </button>
             </form>
           </div>
-
-          <div
-            style={{
-              textAlign: 'center',
-              marginTop: 18,
-              fontSize: 12,
-              color: 'var(--color-text-muted)',
-            }}
-          >
-            Samagama Internship Portal · Powered by Yaksha AI
-          </div>
         </div>
       </div>
+
+      <Modal
+        open={loginPromptOpen}
+        onClose={() => setLoginPromptOpen(false)}
+        title="Sign in to continue"
+        description="Community Q&A and Yaksha AI are available exclusively to registered students."
+        width={420}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setLoginPromptOpen(false)}>
+              Login
+            </Button>
+            <a href={INTERNSHIP_URL} target="_blank" rel="noopener noreferrer">
+              <Button variant="primary">Register</Button>
+            </a>
+          </>
+        }
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '14px 16px',
+            borderRadius: 12,
+            background: 'var(--color-purple-bg)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          <div style={{ fontSize: 26, flexShrink: 0 }}>🔒</div>
+          <div style={{ fontSize: 13, color: 'var(--color-text-muted)', lineHeight: 1.55 }}>
+            Already have an account? Use the form on the right to sign in. New here? Registration is
+            part of the Samagama internship program.
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
