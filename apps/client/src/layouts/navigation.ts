@@ -19,7 +19,6 @@ import {
   MessageSquare,
   MessageSquarePlus,
   Settings,
-  BarChart3,
   Bot,
   Users,
   type LucideIcon,
@@ -42,7 +41,6 @@ const studentNav: NavItem[] = [
   { label: 'Community Q&A', path: '/community', icon: MessageCircle },
   { section: 'My Activity', label: 'Ask a Question', path: '/ask', icon: MessageSquarePlus },
   { label: 'My Questions', path: '/my-questions', icon: Bookmark },
-  { label: 'Analytics', path: '/analytics', icon: BarChart3 },
 ];
 
 const moderatorNav: NavItem[] = [

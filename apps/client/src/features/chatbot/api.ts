@@ -1,10 +1,12 @@
 // HTTP calls for the Yaksha chatbot feature: send a message, load a session, submit feedback.
 import type {
+  ActiveChatSessionResponse,
   ApiSuccess,
   ChatFeedbackInput,
   ChatMessage,
   ChatQueryInput,
   ChatQueryResponse,
+  ChatRetractFeedbackInput,
 } from '@samagama/shared';
 import { apiClient } from '../../lib/api-client';
 
@@ -25,6 +27,22 @@ export async function getChatSession(sessionId: string): Promise<ChatMessage[]> 
   return res.data.data;
 }
 
+// The caller's current conversation thread (resolved server-side by userId) — used to
+// auto-restore history when the chat surface opens.
+export async function getActiveChatSession(): Promise<ActiveChatSessionResponse> {
+  const res = await apiClient.get<ApiSuccess<ActiveChatSessionResponse>>('/api/chat/active');
+  return res.data.data;
+}
+
+// "Clear / Start new" — closes the active thread so the next message begins a fresh one.
+export async function startNewChat(): Promise<void> {
+  await apiClient.post('/api/chat/new');
+}
+
 export async function submitChatFeedback(input: ChatFeedbackInput): Promise<void> {
   await apiClient.post('/api/chat/feedback', input);
+}
+
+export async function retractChatFeedback(input: ChatRetractFeedbackInput): Promise<void> {
+  await apiClient.post('/api/chat/feedback/retract', input);
 }

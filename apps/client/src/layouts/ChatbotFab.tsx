@@ -3,23 +3,13 @@
 // that matches the design at samagama.in/internship/faq#ym-panel.
 // Only rendered for the student role (see AppShell).
 import '../styles/yaksha-mini.css';
-import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ThumbsDown, ThumbsUp, TriangleAlert, WifiOff, X } from 'lucide-react';
-import type { ChatQueryResponse } from '@samagama/shared';
-import { useSendMessage, useSubmitChatFeedback } from '../features/chatbot/queries';
-
-/* ── Types ────────────────────────────────────────────────────────────── */
-interface DisplayMessage {
-  role: 'user' | 'assistant';
-  content: string;
-  sources?: { id: string; title: string; similarity: number }[];
-  fallback_triggered?: boolean;
-  escalated?: boolean;
-  messageIndex?: number;
-  feedback?: 'helpful' | 'incorrect';
-}
+import { Plus, ThumbsDown, ThumbsUp, TriangleAlert, WifiOff, X } from 'lucide-react';
+import {
+  useChatConversation,
+  type DisplayMessage,
+} from '../features/chatbot/useChatConversation';
 
 const WELCOME: DisplayMessage = {
   role: 'assistant',
@@ -67,11 +57,19 @@ function SendIcon() {
 /* ── Main widget component ────────────────────────────────────────────── */
 export function ChatbotFab() {
   const [open, setOpen] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<DisplayMessage[]>([WELCOME]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [ollamaError, setOllamaError] = useState(false);
+  const {
+    sessionId,
+    messages,
+    input,
+    setInput,
+    isTyping,
+    ollamaError,
+    setOllamaError,
+    send,
+    handleFeedback,
+    startNew,
+    isSending,
+  } = useChatConversation({ welcome: WELCOME, active: open });
 
   // Resize State
   const [dimensions, setDimensions] = useState({ width: 380, height: 580 });
@@ -79,8 +77,6 @@ export function ChatbotFab() {
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const sendMutation = useSendMessage();
-  const feedbackMutation = useSubmitChatFeedback();
 
   /* Auto-scroll on new messages */
   useEffect(() => {
@@ -94,6 +90,11 @@ export function ChatbotFab() {
     const t = setTimeout(() => inputRef.current?.focus(), 100);
     return () => clearTimeout(t);
   }, [open]);
+
+  /* Return focus to the input once a reply settles */
+  useEffect(() => {
+    if (open && !isTyping) inputRef.current?.focus();
+  }, [open, isTyping]);
 
   // Resizing logic for Top, Left, and Top-Left edges
   const startResize = (direction: 'top' | 'left' | 'top-left', e: React.PointerEvent) => {
@@ -144,63 +145,10 @@ export function ChatbotFab() {
     el.style.height = Math.min(el.scrollHeight, 120) + 'px';
   };
 
-  /* Send a message */
-  const send = async () => {
-    const text = input.trim();
-    if (!text || sendMutation.isPending) return;
-    setInput('');
-    if (inputRef.current) {
-      inputRef.current.style.height = 'auto';
-    }
-    setMessages((prev) => [...prev, { role: 'user', content: text }]);
-    setIsTyping(true);
-    try {
-      const result: ChatQueryResponse = await sendMutation.mutateAsync({
-        message: text,
-        sessionId: sessionId ?? undefined,
-      });
-      if (!sessionId) setSessionId(result.sessionId);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: result.answer,
-          sources: result.sources,
-          fallback_triggered: result.fallback_triggered,
-          escalated: result.escalated,
-          messageIndex: result.messageIndex,
-        },
-      ]);
-    } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.data?.error?.code === 'OLLAMA_NOT_CONNECTED') {
-        setOllamaError(true);
-      } else {
-        // A timeout (no response received) means the model is just slow, not broken.
-        const timedOut = axios.isAxiosError(err) && err.code === 'ECONNABORTED';
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: timedOut
-              ? "That took longer than expected and timed out. The assistant may be busy — please try asking again."
-              : 'Sorry, something went wrong. Please try again.',
-            sources: [],
-          },
-        ]);
-      }
-    } finally {
-      setIsTyping(false);
-      inputRef.current?.focus();
-    }
-  };
-
-  const handleFeedback = (msgIdx: number, displayIdx: number, rating: 'helpful' | 'incorrect') => {
-    if (!sessionId) return;
-    // If the user clicks the already-active rating, do nothing (idempotent).
-    const current = messages[displayIdx]?.feedback;
-    if (current === rating) return;
-    setMessages((prev) => prev.map((m, i) => (i === displayIdx ? { ...m, feedback: rating } : m)));
-    feedbackMutation.mutate({ sessionId, messageIndex: msgIdx, rating });
+  /* Reset the textarea height, then delegate to the shared send logic. */
+  const onSend = () => {
+    if (inputRef.current) inputRef.current.style.height = 'auto';
+    void send();
   };
 
   /* ── Launcher (visible when panel is closed) ────────────────────────── */
@@ -269,16 +217,29 @@ export function ChatbotFab() {
             </span>
           </span>
         </div>
-        <button
-          type="button"
-          className="ym-close"
-          id="ym-close"
-          aria-label="Close chat"
-          data-tooltip="Close chat"
-          onClick={() => setOpen(false)}
-        >
-          &times;
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {messages.length > 1 && (
+            <button
+              type="button"
+              className="ym-close"
+              aria-label="Start a new conversation"
+              data-tooltip="New chat"
+              onClick={() => void startNew()}
+            >
+              <Plus size={18} />
+            </button>
+          )}
+          <button
+            type="button"
+            className="ym-close"
+            id="ym-close"
+            aria-label="Close chat"
+            data-tooltip="Close chat"
+            onClick={() => setOpen(false)}
+          >
+            &times;
+          </button>
+        </div>
       </div>
 
       {/* Ollama disconnected banner */}
@@ -363,7 +324,7 @@ export function ChatbotFab() {
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
-          send();
+          onSend();
         }}
       >
         <textarea
@@ -382,7 +343,7 @@ export function ChatbotFab() {
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
-              send();
+              onSend();
             }
           }}
         />
@@ -392,7 +353,7 @@ export function ChatbotFab() {
           id="ym-send-btn"
           aria-label="Send message"
           data-tooltip="Send message"
-          disabled={!input.trim() || sendMutation.isPending}
+          disabled={!input.trim() || isSending}
         >
           <SendIcon />
         </button>
@@ -439,6 +400,7 @@ function MessageBubble({ msg, displayIndex, sessionId, onFeedback, onPrefill }: 
             <button
               type="button"
               className={`ym-fb-btn${msg.feedback === 'helpful' ? ' active-helpful' : msg.feedback === 'incorrect' ? ' ym-fb-inactive' : ''}`}
+              title={msg.feedback === 'helpful' ? 'Click again to undo' : 'Mark as helpful'}
               onClick={() => onFeedback(msg.messageIndex!, displayIndex, 'helpful')}
             >
               <ThumbsUp size={10} /> Helpful
@@ -446,6 +408,7 @@ function MessageBubble({ msg, displayIndex, sessionId, onFeedback, onPrefill }: 
             <button
               type="button"
               className={`ym-fb-btn${msg.feedback === 'incorrect' ? ' active-incorrect' : msg.feedback === 'helpful' ? ' ym-fb-inactive' : ''}`}
+              title={msg.feedback === 'incorrect' ? 'Click again to undo' : 'Mark as not helpful'}
               onClick={() => onFeedback(msg.messageIndex!, displayIndex, 'incorrect')}
             >
               <ThumbsDown size={10} /> Not helpful

@@ -25,12 +25,15 @@ import { generateEmbedding, cosineSimilarity } from './embedding.service.js';
 import { FaqModel } from '../models/Faq.model.js';
 import { SystemSettingsModel } from '../models/SystemSettings.model.js';
 import { ChatFeedbackModel, type ChatFeedbackDocument } from '../models/ChatFeedback.model.js';
+import { ChatSessionModel, type ChatSessionDocument } from '../models/ChatSession.model.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  /** ISO timestamp; present on messages loaded from Mongo, omitted for freshly-pushed ones. */
+  createdAt?: string;
 }
 
 export interface ChatSource {
@@ -49,6 +52,10 @@ export interface ChatQueryResult {
 }
 
 interface SessionData {
+  /** Mongo _id of the backing ChatSession — used to stamp ChatFeedback.chatSessionId. */
+  _id: Types.ObjectId;
+  /** Stable UUID surfaced to the client. */
+  sessionId: string;
   userId: string;
   messages: ChatMessage[];
   fallbackUnlocked: boolean; // true after a fallback response — unlocks #escalate
@@ -66,8 +73,94 @@ class OllamaConnectionError extends Error {
 
 // ─── In-process session cache (30-min idle TTL) ───────────────────────────────
 
+// MongoDB (ChatSession collection) is the source of truth for conversation history.
+// This in-process cache is a read-through hot-path tier in front of it — losing the cache
+// (restart, eviction, TTL) never loses history, it just re-reads from Mongo. The cache
+// only ever holds *active* threads; startNewSession evicts on close.
 const SESSION_TTL_MS = 30 * 60 * 1000;
 const sessionCache = createTtlCache<SessionData>({ ttlMs: SESSION_TTL_MS, maxEntries: 500 });
+
+/** Map a persisted ChatSession document into the in-memory working shape. */
+function docToSession(doc: ChatSessionDocument): SessionData {
+  return {
+    _id: doc._id,
+    sessionId: doc.sessionId,
+    userId: doc.userId.toString(),
+    messages: doc.messages.map((m) => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+      createdAt: m.createdAt?.toISOString(),
+    })),
+    fallbackUnlocked: doc.fallbackUnlocked,
+  };
+}
+
+/** Read a session by id (cache → Mongo), without creating one. Warms the cache on hit. */
+async function loadSession(sessionId: string): Promise<SessionData | null> {
+  const cached = sessionCache.get(sessionId);
+  if (cached) return cached;
+  const doc = await ChatSessionModel.findOne({ sessionId });
+  if (!doc) return null;
+  const session = docToSession(doc);
+  sessionCache.set(sessionId, session);
+  return session;
+}
+
+/**
+ * Resolve the working session for a message: an explicit (own, active) session if given,
+ * else the user's current active thread, else a freshly created one. Always returns a
+ * session backed by a Mongo document.
+ */
+async function resolveSession(userId: string, sessionId?: string): Promise<SessionData> {
+  if (sessionId) {
+    const cached = sessionCache.get(sessionId);
+    if (cached && cached.userId === userId) return cached;
+    const doc = await ChatSessionModel.findOne({ sessionId, userId, status: 'active' });
+    if (doc) {
+      const session = docToSession(doc);
+      sessionCache.set(sessionId, session);
+      return session;
+    }
+    // Unknown/foreign/closed id → fall through to the user's active thread or a new one.
+  }
+
+  const active = await ChatSessionModel.findOne({ userId, status: 'active' }).sort({
+    updatedAt: -1,
+  });
+  if (active) {
+    const session = docToSession(active);
+    sessionCache.set(session.sessionId, session);
+    return session;
+  }
+
+  const doc = await ChatSessionModel.create({
+    sessionId: randomUUID(),
+    userId: new Types.ObjectId(userId),
+    messages: [],
+    fallbackUnlocked: false,
+    status: 'active',
+  });
+  const session = docToSession(doc);
+  sessionCache.set(session.sessionId, session);
+  return session;
+}
+
+/**
+ * Durably append turns to a session: mirror into the cache and $push to Mongo (atomic).
+ * `appended` are the messages just pushed onto `session.messages`; we stamp createdAt at
+ * write time since raw $push bypasses Mongoose subdocument defaults.
+ */
+async function persistTurn(session: SessionData, appended: ChatMessage[]): Promise<void> {
+  sessionCache.set(session.sessionId, session);
+  const now = new Date();
+  await ChatSessionModel.updateOne(
+    { sessionId: session.sessionId },
+    {
+      $push: { messages: { $each: appended.map((m) => ({ role: m.role, content: m.content, createdAt: now })) } },
+      $set: { fallbackUnlocked: session.fallbackUnlocked, lastMessageAt: now },
+    },
+  );
+}
 
 // ─── Yaksha system prompt ─────────────────────────────────────────────────────
 
@@ -93,8 +186,8 @@ export const chatbotService = {
     sessionId: string | undefined,
     message: string,
   ): Promise<ChatQueryResult> {
-    const sid = sessionId ?? randomUUID();
-    const session = sessionCache.get(sid) ?? { userId, messages: [], fallbackUnlocked: false };
+    const session = await resolveSession(userId, sessionId);
+    const sid = session.sessionId;
 
     const trimmed = message.trim();
 
@@ -115,9 +208,10 @@ export const chatbotService = {
     if (isEscalate && !session.fallbackUnlocked) {
       const answer =
         'Escalation is only available after Yaksha cannot answer your question. Please ask your question first.';
-      session.messages.push({ role: 'user', content: trimmed });
-      session.messages.push({ role: 'assistant', content: answer });
-      sessionCache.set(sid, session);
+      const userMsg: ChatMessage = { role: 'user', content: trimmed };
+      const botMsg: ChatMessage = { role: 'assistant', content: answer };
+      session.messages.push(userMsg, botMsg);
+      await persistTurn(session, [userMsg, botMsg]);
       return {
         sessionId: sid,
         answer,
@@ -155,11 +249,12 @@ export const chatbotService = {
       throw err;
     }
 
-    // ── Update session ─────────────────────────────────────────────────────────
-    session.messages.push({ role: 'user', content: trimmed });
-    session.messages.push({ role: 'assistant', content: answer });
+    // ── Persist the turn (Mongo source of truth + cache mirror) ────────────────
+    const userMsg: ChatMessage = { role: 'user', content: trimmed };
+    const botMsg: ChatMessage = { role: 'assistant', content: answer };
+    session.messages.push(userMsg, botMsg);
     if (fallback_triggered) session.fallbackUnlocked = true;
-    sessionCache.set(sid, session);
+    await persistTurn(session, [userMsg, botMsg]);
 
     return {
       sessionId: sid,
@@ -213,7 +308,7 @@ export const chatbotService = {
     const lastUserMsg =
       session.messages.filter((m) => m.role === 'user').at(-1)?.content ?? message;
     await ChatFeedbackModel.create({
-      chatSessionId: undefined,
+      chatSessionId: session._id,
       messageIndex: session.messages.length,
       query: lastUserMsg,
       answer: summary,
@@ -224,10 +319,11 @@ export const chatbotService = {
     });
 
     const answer = `✅ Your issue has been escalated to the moderation team. They'll review it shortly.\n\n**Summary:** ${summary}`;
-    session.messages.push({ role: 'user', content: message });
-    session.messages.push({ role: 'assistant', content: answer });
+    const userMsg: ChatMessage = { role: 'user', content: message };
+    const botMsg: ChatMessage = { role: 'assistant', content: answer };
+    session.messages.push(userMsg, botMsg);
     session.fallbackUnlocked = false;
-    sessionCache.set(sessionId, session);
+    await persistTurn(session, [userMsg, botMsg]);
 
     return {
       sessionId,
@@ -239,9 +335,35 @@ export const chatbotService = {
     };
   },
 
-  /** Get all messages in a session for the frontend to restore state. */
-  getSession(sessionId: string): ChatMessage[] {
-    return sessionCache.get(sessionId)?.messages ?? [];
+  /** Get all messages in a specific session (cache → Mongo) for the frontend to restore. */
+  async getSession(sessionId: string): Promise<ChatMessage[]> {
+    return (await loadSession(sessionId))?.messages ?? [];
+  },
+
+  /**
+   * The caller's current thread, resolved by userId — the basis for auto-restore. Reads
+   * straight from Mongo (authoritative, includes timestamps). Returns a null sessionId when
+   * the user has no active thread yet.
+   */
+  async getActiveSession(
+    userId: string,
+  ): Promise<{ sessionId: string | null; messages: ChatMessage[] }> {
+    const active = await ChatSessionModel.findOne({ userId, status: 'active' }).sort({
+      updatedAt: -1,
+    });
+    if (!active) return { sessionId: null, messages: [] };
+    sessionCache.set(active.sessionId, docToSession(active));
+    return { sessionId: active.sessionId, messages: docToSession(active).messages };
+  },
+
+  /**
+   * "Clear / Start new": close the user's active thread(s) so the next message opens a fresh
+   * one. Closed threads are retained permanently in Mongo. Evicts them from the cache.
+   */
+  async startNewSession(userId: string): Promise<void> {
+    const active = await ChatSessionModel.find({ userId, status: 'active' }).select('sessionId');
+    for (const doc of active) sessionCache.delete(doc.sessionId);
+    await ChatSessionModel.updateMany({ userId, status: 'active' }, { $set: { status: 'closed' } });
   },
 
   /** Student rates a bot response (helpful / incorrect). */
@@ -252,7 +374,8 @@ export const chatbotService = {
     rating: 'helpful' | 'incorrect';
     comment?: string;
   }): Promise<void> {
-    const session = sessionCache.get(opts.sessionId);
+    // Read-only load (cache → Mongo) — never create a session as a side effect of feedback.
+    const session = await loadSession(opts.sessionId);
     const botMsg = session?.messages[opts.messageIndex];
     const userMsg = session?.messages[opts.messageIndex - 1];
 
@@ -272,11 +395,22 @@ export const chatbotService = {
           query,
           answer,
           messages,
+          chatSessionId: session?._id,
         },
-        $setOnInsert: { chatSessionId: undefined },
       },
       { upsert: true, new: true },
     );
+  },
+
+  // Remove a student's own rating for a message (undo an accidental thumbs-up/down).
+  async retractFeedback(opts: {
+    userId: string;
+    messageIndex: number;
+  }): Promise<void> {
+    await ChatFeedbackModel.deleteOne({
+      userId: new Types.ObjectId(opts.userId),
+      messageIndex: opts.messageIndex,
+    });
   },
 
   // ── Admin/mod read paths (unchanged) ──────────────────────────────────────

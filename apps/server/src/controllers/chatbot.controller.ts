@@ -15,7 +15,20 @@ export const chatbotController = {
   // Fetch the message history for an existing chat session.
   async getSession(req: Request, res: Response) {
     const { sessionId } = req.params;
-    return ok(res, chatbotService.getSession(sessionId));
+    return ok(res, await chatbotService.getSession(sessionId));
+  },
+
+  // Auto-restore: the caller's current conversation thread (resolved by userId).
+  async getActiveSession(req: Request, res: Response) {
+    const userId = (req as Request & { user: { id: string } }).user.id;
+    return ok(res, await chatbotService.getActiveSession(userId));
+  },
+
+  // "Clear / Start new": close the caller's active thread so the next message starts fresh.
+  async startNewSession(req: Request, res: Response) {
+    const userId = (req as Request & { user: { id: string } }).user.id;
+    await chatbotService.startNewSession(userId);
+    return ok(res, { success: true });
   },
 
   // Record a student's thumbs-up/down rating on a specific chatbot answer.
@@ -28,6 +41,14 @@ export const chatbotController = {
       comment?: string;
     };
     await chatbotService.submitFeedback({ userId, sessionId, messageIndex, rating, comment });
+    return ok(res, { success: true });
+  },
+
+  // Remove the student's own rating on an answer (undo an accidental click).
+  async retractFeedback(req: Request, res: Response) {
+    const userId = (req as Request & { user: { id: string } }).user.id;
+    const { messageIndex } = req.body as { sessionId: string; messageIndex: number };
+    await chatbotService.retractFeedback({ userId, messageIndex });
     return ok(res, { success: true });
   },
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -6,24 +6,35 @@ import {
   Award,
   BarChart3,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   Circle,
   Clock,
   Flame,
   Folder,
   HelpCircle,
   MessageSquare,
+  MoreHorizontal,
+  Search,
   Sparkles,
   ThumbsUp,
+  Trophy,
   User,
+  X,
 } from 'lucide-react';
 import type React from 'react';
 import type { LucideIcon } from 'lucide-react';
 import type { PublicNotification } from '@samagama/shared';
 import { effectiveRole } from '@samagama/shared';
 import { useAuth } from '../features/auth/AuthProvider';
-import { useStudentDashboard } from '../features/stats/queries';
-import type { StudentDashboardStats } from '../features/stats/api';
+import { useStudentDashboard, useLeaderboard, useLeaderboardRange } from '../features/stats/queries';
+import type {
+  StudentDashboardStats,
+  LeaderboardRow,
+  LeaderboardGap,
+  LeaderboardResponse,
+} from '../features/stats/api';
 import { useNotifications } from '../features/notifications/queries';
 import { useFaqList } from '../features/faq/queries';
 import { FaqCard } from '../features/faq/FaqCard';
@@ -134,8 +145,15 @@ function StudentHome() {
       <ContributionSnapshot contribution={data?.contribution} loading={isLoading} />
 
       <ContentTabs />
+
+      <LeaderboardSection />
     </>
   );
+}
+
+/** Smooth-scrolls the home page to the leaderboard section (used by the Spurti points card). */
+function scrollToLeaderboard() {
+  document.getElementById('leaderboard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function DashboardError({ onRetry }: { onRetry: () => void }) {
@@ -254,10 +272,10 @@ function StatCardRow({
             gap: 2,
           }}
         >
-          View rewards <ChevronRight size={12} />
+          View ranking <ChevronRight size={12} />
         </span>
       ),
-      to: '/analytics',
+      to: '#leaderboard',
     },
   ];
 
@@ -271,7 +289,12 @@ function StatCardRow({
       }}
     >
       {cards.map((c) => (
-        <StatCard key={c.key} config={c} loading={loading} onClick={() => navigate(c.to)} />
+        <StatCard
+          key={c.key}
+          config={c}
+          loading={loading}
+          onClick={() => (c.to === '#leaderboard' ? scrollToLeaderboard() : navigate(c.to))}
+        />
       ))}
     </div>
   );
@@ -1091,6 +1114,611 @@ function RecentQuestionsList() {
       <ViewAll onClick={() => navigate('/community')} />
     </>
   );
+}
+
+// ─── Leaderboard / Ranking (Kaggle-style) ─────────────────────────────────────
+//
+// All data is live from /api/stats/leaderboard. Default view shows the top 5, the current
+// user's own rank (only when they're outside the visible head/tail), and the bottom 2. The
+// search box queries the full ranked cohort server-side by rank #, name, or student ID. The
+// query hook polls every 30s so rankings update automatically as Spurti Points change.
+
+function LeaderboardSection() {
+  const { user } = useAuth();
+  const [input, setInput] = useState('');
+  const [search, setSearch] = useState('');
+
+  // Debounce so a request fires once the user pauses typing, not on every keystroke.
+  useEffect(() => {
+    const id = setTimeout(() => setSearch(input.trim()), 300);
+    return () => clearTimeout(id);
+  }, [input]);
+
+  const { data, isLoading, isError, refetch } = useLeaderboard(search);
+  const searching = search.length > 0;
+
+  return (
+    <div id="leaderboard" style={{ marginTop: 28, scrollMarginTop: 16 }}>
+      {/* Heading */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        <div
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            background: 'var(--color-card)',
+            boxShadow: '0 2px 8px rgba(245,158,11,0.22)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <Trophy size={16} color="#f59e0b" />
+        </div>
+        <div>
+          <div
+            style={{
+              fontSize: 19,
+              fontWeight: 800,
+              color: 'var(--color-text)',
+              letterSpacing: '-0.02em',
+              lineHeight: 1.1,
+            }}
+          >
+            Leaderboard
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
+            Ranked by Spurti Points
+            {data ? ` · ${data.totalStudents} student${data.totalStudents === 1 ? '' : 's'}` : ''}
+          </div>
+        </div>
+      </div>
+
+      {/* Search */}
+      <LeaderboardSearch value={input} onChange={setInput} onClear={() => setInput('')} />
+
+      <div
+        className="card"
+        style={{ overflow: 'hidden', border: '1.5px solid var(--color-border)', padding: 0 }}
+      >
+        <LeaderboardColumnHeader />
+        {isError ? (
+          <LeaderboardMessage text="Couldn't load the leaderboard." onRetry={() => void refetch()} />
+        ) : isLoading || !data ? (
+          <LeaderboardSkeleton />
+        ) : searching ? (
+          // While a new query loads, `data` may still be the prior payload (placeholderData) whose
+          // `search` is null — show a skeleton until the matching search response arrives.
+          data.search ? (
+            <SearchResultRows
+              rows={data.search.results}
+              currentUserId={user?.id}
+              query={search}
+            />
+          ) : (
+            <LeaderboardSkeleton />
+          )
+        ) : (
+          <DefaultLeaderboard data={data} currentUserId={user?.id} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LeaderboardSearch({
+  value,
+  onChange,
+  onClear,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onClear: () => void;
+}) {
+  return (
+    <div style={{ position: 'relative', marginBottom: 14 }}>
+      <Search
+        size={16}
+        color="var(--color-text-muted)"
+        style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}
+      />
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Search by rank, name, or student ID…"
+        aria-label="Search leaderboard"
+        style={{
+          width: '100%',
+          boxSizing: 'border-box',
+          padding: '11px 38px 11px 40px',
+          borderRadius: 12,
+          border: '1.5px solid var(--color-border)',
+          background: 'var(--color-card)',
+          color: 'var(--color-text)',
+          fontSize: 13.5,
+          fontFamily: 'inherit',
+          outline: 'none',
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = 'var(--color-primary)';
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = 'var(--color-border)';
+        }}
+      />
+      {value && (
+        <button
+          onClick={onClear}
+          aria-label="Clear search"
+          style={{
+            position: 'absolute',
+            right: 10,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 4,
+            color: 'var(--color-text-muted)',
+          }}
+        >
+          <X size={15} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function LeaderboardColumnHeader() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '10px 16px',
+        borderBottom: '1px solid var(--color-border)',
+        background: 'var(--color-input)',
+      }}
+    >
+      <span style={{ ...lbHeaderCellStyle, width: 36, textAlign: 'center', flexShrink: 0 }}>Rank</span>
+      <span style={{ width: 34, flexShrink: 0 }} aria-hidden />
+      <span style={{ ...lbHeaderCellStyle, flex: 1, minWidth: 0 }}>Participant</span>
+      <span style={{ ...lbHeaderCellStyle, textAlign: 'right', flexShrink: 0 }}>Points</span>
+    </div>
+  );
+}
+
+const lbHeaderCellStyle: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 700,
+  color: 'var(--color-text-muted)',
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+};
+
+function DefaultLeaderboard({
+  data,
+  currentUserId,
+}: {
+  data: LeaderboardResponse;
+  currentUserId?: string;
+}) {
+  // The #1 score anchors every score bar so widths stay comparable across collapsed sections.
+  const maxScore = Math.max(data.full?.[0]?.spurtiPoints ?? data.top[0]?.spurtiPoints ?? 0, 1);
+
+  // Small cohort: the server returned everyone — render plainly, no collapsed gaps.
+  if (data.full) {
+    return (
+      <>
+        {data.full.map((r) => (
+          <LeaderboardRow
+            key={r.userId}
+            row={r}
+            maxScore={maxScore}
+            me={r.userId === currentUserId}
+          />
+        ))}
+      </>
+    );
+  }
+
+  return (
+    <>
+      {data.top.map((r) => (
+        <LeaderboardRow key={r.userId} row={r} maxScore={maxScore} me={r.userId === currentUserId} />
+      ))}
+
+      {data.gapTop && (
+        <LeaderboardGapRow gap={data.gapTop} maxScore={maxScore} currentUserId={currentUserId} />
+      )}
+
+      {data.me && (
+        <>
+          <LeaderboardDivider label="Your Rank" />
+          <LeaderboardRow row={data.me} maxScore={maxScore} me />
+        </>
+      )}
+
+      {data.gapBottom && (
+        <LeaderboardGapRow gap={data.gapBottom} maxScore={maxScore} currentUserId={currentUserId} />
+      )}
+
+      {data.bottom.map((r) => (
+        <LeaderboardRow key={r.userId} row={r} maxScore={maxScore} me={r.userId === currentUserId} />
+      ))}
+    </>
+  );
+}
+
+// Collapsed range of ranks rendered as one expandable row (e.g. "Ranks 6–156 · View 151 more").
+// Expanding lazily fetches just that slice via /api/stats/leaderboard/range.
+function LeaderboardGapRow({
+  gap,
+  maxScore,
+  currentUserId,
+}: {
+  gap: LeaderboardGap;
+  maxScore: number;
+  currentUserId?: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const { data, isLoading, isError, refetch } = useLeaderboardRange(
+    gap.fromRank,
+    gap.toRank,
+    expanded,
+  );
+
+  return (
+    <>
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '12px 16px',
+          background: 'var(--color-input)',
+          border: 'none',
+          borderTop: '2px dashed var(--color-border)',
+          borderBottom: '1px solid var(--color-border)',
+          cursor: 'pointer',
+          textAlign: 'left',
+          fontFamily: 'inherit',
+        }}
+      >
+        <div
+          style={{
+            width: 36,
+            display: 'flex',
+            justifyContent: 'center',
+            flexShrink: 0,
+            color: 'var(--color-text-muted)',
+          }}
+        >
+          <MoreHorizontal size={18} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: 'var(--color-text)',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            Ranks {gap.fromRank}–{gap.toRank}
+          </div>
+          <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 1 }}>
+            {gap.count} student{gap.count === 1 ? '' : 's'} hidden
+          </div>
+        </div>
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '6px 12px',
+            borderRadius: 999,
+            border: '1.5px solid var(--color-border)',
+            background: 'var(--color-card)',
+            color: 'var(--color-primary-text)',
+            fontSize: 12,
+            fontWeight: 700,
+            flexShrink: 0,
+          }}
+        >
+          {expanded ? 'Collapse' : `View ${gap.count} more`}
+          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </span>
+      </button>
+
+      {expanded && (
+        <div style={{ animation: 'pageIn 0.2s ease-out' }}>
+          {isError ? (
+            <LeaderboardMessage text="Couldn't load these ranks." onRetry={() => void refetch()} />
+          ) : isLoading || !data ? (
+            <LeaderboardSkeleton />
+          ) : (
+            data.rows.map((r) => (
+              <LeaderboardRow
+                key={r.userId}
+                row={r}
+                maxScore={maxScore}
+                me={r.userId === currentUserId}
+              />
+            ))
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+function SearchResultRows({
+  rows,
+  currentUserId,
+  query,
+}: {
+  rows: LeaderboardRow[];
+  currentUserId?: string;
+  query: string;
+}) {
+  if (rows.length === 0) {
+    return (
+      <LeaderboardMessage text={`No students match “${query}”. Try a name, rank number, or student ID.`} />
+    );
+  }
+  const maxScore = Math.max(...rows.map((r) => r.spurtiPoints), 1);
+  return (
+    <>
+      {rows.map((r) => (
+        <LeaderboardRow key={r.userId} row={r} maxScore={maxScore} me={r.userId === currentUserId} />
+      ))}
+    </>
+  );
+}
+
+function LeaderboardRow({
+  row,
+  maxScore,
+  me,
+}: {
+  row: LeaderboardRow;
+  maxScore: number;
+  me: boolean;
+}) {
+  const pct = Math.max((row.spurtiPoints / maxScore) * 100, 2);
+  const barFill = me
+    ? 'var(--color-gradient-hero)'
+    : row.rank === 1
+      ? 'linear-gradient(90deg, color-mix(in srgb, var(--color-rank-gold) 70%, white), var(--color-rank-gold))'
+      : row.rank === 2
+        ? 'linear-gradient(90deg, var(--color-rank-silver), color-mix(in srgb, var(--color-rank-silver) 70%, black))'
+        : row.rank === 3
+          ? 'linear-gradient(90deg, var(--color-rank-bronze), color-mix(in srgb, var(--color-rank-bronze) 70%, black))'
+          : 'linear-gradient(90deg, var(--color-primary), var(--color-info))';
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '12px 16px',
+        borderBottom: '1px solid var(--color-border)',
+        background: me ? 'rgba(139,92,246,0.06)' : 'transparent',
+        borderLeft: me ? '3px solid var(--color-purple)' : '3px solid transparent',
+      }}
+    >
+      {/* Rank */}
+      <div style={{ width: 36, textAlign: 'center', flexShrink: 0 }}>
+        {row.rank <= 3 ? (
+          <span style={{ fontSize: 20, lineHeight: 1 }}>{medalFor(row.rank)}</span>
+        ) : (
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 800,
+              color: 'var(--color-text-muted)',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            #{row.rank}
+          </span>
+        )}
+      </div>
+
+      {/* Avatar */}
+      <div
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: '50%',
+          flexShrink: 0,
+          background: me ? 'var(--color-gradient-hero)' : rankAvatarBg(row.rank),
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 13,
+          fontWeight: 800,
+          color: 'white',
+        }}
+      >
+        {row.name.charAt(0).toUpperCase()}
+      </div>
+
+      {/* Name + meta + score bar */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: 13.5,
+            fontWeight: me ? 700 : 600,
+            color: me ? 'var(--color-purple)' : 'var(--color-text)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {me ? `${row.name} (You)` : row.name}
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 1 }}>
+          {row.studentId} · {row.approvedAnswers} approved
+        </div>
+        <div
+          style={{
+            marginTop: 6,
+            height: 6,
+            borderRadius: 4,
+            background: 'var(--color-border)',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              height: '100%',
+              width: `${pct}%`,
+              borderRadius: 4,
+              background: barFill,
+              transition: 'width 0.4s ease',
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Points */}
+      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+        <div
+          style={{
+            fontSize: 15,
+            fontWeight: 800,
+            color: me ? 'var(--color-purple)' : 'var(--color-text)',
+            fontVariantNumeric: 'tabular-nums',
+            lineHeight: 1,
+          }}
+        >
+          {row.spurtiPoints}
+        </div>
+        <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--color-text-muted)', marginTop: 2 }}>
+          pts
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LeaderboardDivider({ label }: { label: string }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '8px 16px',
+        background: 'var(--color-input)',
+        borderTop: '2px dashed var(--color-border)',
+        borderBottom: '1px solid var(--color-border)',
+      }}
+    >
+      <span
+        style={{
+          fontSize: 11,
+          fontWeight: 800,
+          color: 'var(--color-purple)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+        }}
+      >
+        {label}
+      </span>
+      <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
+    </div>
+  );
+}
+
+function LeaderboardSkeleton() {
+  return (
+    <div>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <div
+          key={i}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '12px 16px',
+            borderBottom: '1px solid var(--color-border)',
+          }}
+        >
+          <div className="skeleton" style={{ width: 20, height: 14, borderRadius: 4 }} />
+          <div className="skeleton" style={{ width: 34, height: 34, borderRadius: '50%' }} />
+          <div style={{ flex: 1 }}>
+            <div className="skeleton" style={{ height: 12, width: '40%', borderRadius: 6, marginBottom: 8 }} />
+            <div className="skeleton" style={{ height: 6, width: '80%', borderRadius: 4 }} />
+          </div>
+          <div className="skeleton" style={{ width: 32, height: 16, borderRadius: 6 }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LeaderboardMessage({ text, onRetry }: { text: string; onRetry?: () => void }) {
+  return (
+    <div
+      style={{
+        padding: '28px 20px',
+        textAlign: 'center',
+        fontSize: 13,
+        color: 'var(--color-text-muted)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 10,
+      }}
+    >
+      <div>{text}</div>
+      {onRetry && (
+        <button
+          onClick={onRetry}
+          style={{
+            padding: '7px 16px',
+            borderRadius: 10,
+            border: '1.5px solid var(--color-border)',
+            background: 'var(--color-card)',
+            color: 'var(--color-text)',
+            fontWeight: 700,
+            fontSize: 12.5,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          Try again
+        </button>
+      )}
+    </div>
+  );
+}
+
+function rankAvatarBg(rank: number): string {
+  if (rank === 1)
+    return 'linear-gradient(135deg, color-mix(in srgb, var(--color-rank-gold) 50%, white), var(--color-rank-gold))';
+  if (rank === 2)
+    return 'linear-gradient(135deg, color-mix(in srgb, var(--color-rank-silver) 40%, white), var(--color-rank-silver))';
+  if (rank === 3)
+    return 'linear-gradient(135deg, color-mix(in srgb, var(--color-rank-bronze) 40%, white), var(--color-rank-bronze))';
+  // Rank 4+ : solid purple so the white initial stays legible in both themes.
+  return 'linear-gradient(135deg, var(--color-primary), var(--color-purple))';
+}
+
+function medalFor(rank: number): string {
+  return rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉';
 }
 
 function ViewAll({ onClick, label = 'View all' }: { onClick: () => void; label?: string }) {

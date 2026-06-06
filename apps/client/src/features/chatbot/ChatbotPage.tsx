@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   BookOpen,
   Bot,
@@ -11,18 +10,7 @@ import {
   WifiOff,
   X,
 } from 'lucide-react';
-import type { ChatQueryResponse } from '@samagama/shared';
-import { useSendMessage, useSubmitChatFeedback } from './queries';
-
-interface DisplayMessage {
-  role: 'user' | 'assistant';
-  content: string;
-  sources?: { id: string; title: string; similarity: number }[];
-  fallback_triggered?: boolean;
-  escalated?: boolean;
-  messageIndex?: number;
-  feedback?: 'helpful' | 'incorrect';
-}
+import { useChatConversation, type DisplayMessage } from './useChatConversation';
 
 const WELCOME: DisplayMessage = {
   role: 'assistant',
@@ -32,85 +20,30 @@ const WELCOME: DisplayMessage = {
 };
 
 export function ChatbotPage() {
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<DisplayMessage[]>([WELCOME]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [ollamaError, setOllamaError] = useState(false);
+  const {
+    sessionId,
+    messages,
+    input,
+    setInput,
+    isTyping,
+    ollamaError,
+    setOllamaError,
+    send,
+    handleFeedback,
+    startNew,
+    isSending,
+  } = useChatConversation({ welcome: WELCOME, active: true });
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const sendMutation = useSendMessage();
-  const feedbackMutation = useSubmitChatFeedback();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const send = async () => {
-    const text = input.trim();
-    if (!text || sendMutation.isPending) return;
-    setInput('');
-    setMessages((prev) => [...prev, { role: 'user', content: text }]);
-    setIsTyping(true);
-    try {
-      const result: ChatQueryResponse = await sendMutation.mutateAsync({
-        message: text,
-        sessionId: sessionId ?? undefined,
-      });
-      if (!sessionId) setSessionId(result.sessionId);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: result.answer,
-          sources: result.sources,
-          fallback_triggered: result.fallback_triggered,
-          escalated: result.escalated,
-          messageIndex: result.messageIndex,
-        },
-      ]);
-    } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.data?.error?.code === 'OLLAMA_NOT_CONNECTED') {
-        setOllamaError(true);
-      } else {
-        // A timeout (no response received) means the model is just slow, not broken.
-        const timedOut = axios.isAxiosError(err) && err.code === 'ECONNABORTED';
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: timedOut
-              ? "That took longer than expected and timed out. The assistant may be busy — please try asking again."
-              : 'Sorry, something went wrong. Please try again.',
-            sources: [],
-          },
-        ]);
-      }
-    } finally {
-      setIsTyping(false);
-      inputRef.current?.focus();
-    }
-  };
-
-  const handleFeedback = (msgIdx: number, displayIdx: number, rating: 'helpful' | 'incorrect') => {
-    if (!sessionId) return;
-    const current = messages[displayIdx]?.feedback;
-    if (current === rating) {
-      // Same button clicked again — undo (clear locally only)
-      setMessages((prev) => prev.map((m, i) => (i === displayIdx ? { ...m, feedback: undefined } : m)));
-      return;
-    }
-    // Different or no prior rating — switch/set and persist
-    setMessages((prev) => prev.map((m, i) => (i === displayIdx ? { ...m, feedback: rating } : m)));
-    feedbackMutation.mutate({ sessionId, messageIndex: msgIdx, rating });
-  };
-
-  const clearChat = () => {
-    setSessionId(null);
-    setMessages([WELCOME]);
-    setInput('');
-    setOllamaError(false);
-  };
+  // Return focus to the input once a reply settles.
+  useEffect(() => {
+    if (!isTyping) inputRef.current?.focus();
+  }, [isTyping]);
 
   return (
     <div
@@ -183,7 +116,7 @@ export function ChatbotPage() {
           {messages.length > 1 && (
             <button
               type="button"
-              onClick={clearChat}
+              onClick={startNew}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -324,7 +257,7 @@ export function ChatbotPage() {
         <button
           type="button"
           onClick={send}
-          disabled={!input.trim() || sendMutation.isPending}
+          disabled={!input.trim() || isSending}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -338,7 +271,7 @@ export function ChatbotPage() {
             fontSize: 13,
             fontWeight: 700,
             fontFamily: 'inherit',
-            opacity: !input.trim() || sendMutation.isPending ? 0.5 : 1,
+            opacity: !input.trim() || isSending ? 0.5 : 1,
             boxShadow: '0 2px 8px rgba(124,58,237,0.25)',
             transition: 'opacity 0.15s',
           }}

@@ -19,7 +19,6 @@ import { ModerationOverviewPage } from './features/moderation/ModerationOverview
 import { FaqManagementPage } from './features/admin/FaqManagementPage';
 import { ChatbotFeedbackPage } from './features/admin/ChatbotFeedbackPage';
 import { AdminOverviewPage } from './features/admin/AdminOverviewPage';
-import { StudentAnalyticsPage } from './features/analytics/StudentAnalyticsPage';
 import { UserManagementPage } from './features/admin/UserManagementPage';
 import { FaqQualityPage } from './features/admin/FaqQualityPage';
 import { ModerationLoadPage } from './features/admin/ModerationLoadPage';
@@ -50,7 +49,8 @@ export function App() {
         <Route path="/community/:id" element={<QuestionDetailPage />} />
         <Route path="/ask" element={<AskQuestionPage />} />
         <Route path="/my-questions" element={<MyQuestionsPage />} />
-        <Route path="/analytics" element={<StudentAnalyticsPage />} />
+        {/* Legacy redirect — the student Analytics page was replaced by the home leaderboard. */}
+        <Route path="/analytics" element={<Navigate to="/" replace />} />
         <Route path="/chatbot" element={<ChatbotPage />} />
         {/* Moderation (shared between moderator and admin per Dashboard Spec) */}
         <Route path="/moderation" element={<ModerationOverviewPage />} />

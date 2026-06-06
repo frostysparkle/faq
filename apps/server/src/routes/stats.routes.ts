@@ -26,6 +26,12 @@ router.get(
 
 // Spurti Points leaderboard — students only (moderators/admins don't accumulate points).
 router.get('/leaderboard', requireRole('student'), asyncHandler(statsController.getLeaderboard));
+// Expand one collapsed gap range on the leaderboard.
+router.get(
+  '/leaderboard/range',
+  requireRole('student'),
+  asyncHandler(statsController.getLeaderboardRange),
+);
 
 // Idle-bucket counts for the community queue. Available to all authenticated roles.
 router.get('/community-idle', asyncHandler(statsController.getCommunityIdle));
@@ -35,6 +41,13 @@ router.get(
   '/admin-intelligence',
   requireRole('admin'),
   asyncHandler(statsController.getAdminIntelligence),
+);
+
+// Consolidated Admin Dashboard — moderator/admin (shared dashboard surface).
+router.get(
+  '/admin-dashboard',
+  requireRole('moderator', 'admin'),
+  asyncHandler(statsController.getAdminDashboard),
 );
 
 // Per-moderator performance — admin only.

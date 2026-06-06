@@ -8,7 +8,7 @@
 // Fire-and-forget — never blocks startup or request handling.
 import { FaqModel } from '../models/Faq.model.js';
 import { QuestionModel } from '../models/Question.model.js';
-import { generateEmbedding } from '../services/embedding.service.js';
+import { generateEmbedding, composeQuestionEmbeddingText } from '../services/embedding.service.js';
 import { logger } from '../config/logger.js';
 
 const BATCH_SIZE = 5;
@@ -57,8 +57,8 @@ async function backfillQuestions(): Promise<void> {
   const questions = await QuestionModel.find({
     embedding: { $exists: false },
   })
-    .select('_id title')
-    .lean<{ _id: unknown; title: string }[]>();
+    .select('_id title description')
+    .lean<{ _id: unknown; title: string; description: string }[]>();
 
   logger.info({ count: questions.length }, 'Questions needing embedding');
 
@@ -67,7 +67,11 @@ async function backfillQuestions(): Promise<void> {
     await Promise.all(
       batch.map(async (q) => {
         try {
-          const embedding = await generateEmbedding(q.title);
+          // Embed title + description (same as the query side) so the vector
+          // captures the whole question, not just its first line.
+          const embedding = await generateEmbedding(
+            composeQuestionEmbeddingText(q.title, q.description),
+          );
           await QuestionModel.updateOne({ _id: q._id }, { embedding });
         } catch (err) {
           logger.warn({ err, questionId: q._id }, 'Failed to embed Question');

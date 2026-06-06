@@ -6,8 +6,11 @@
 //      • Fallback: MongoDB $text if no embeddings are populated yet (keyword).
 //    This catches paraphrased questions that share no keywords with the FAQ.
 //    A short-lived signed token is returned; createQuestion requires it (PRD QNA-002).
-//  - Community-question duplicate check (step 2) stays keyword-based ($text) — sufficient
-//    for open questions which share vocabulary with the student's draft.
+//  - Community-question duplicate check (step 2) is HYBRID too: cosine similarity on
+//    question embeddings built from title + description (same construction as the
+//    student's query — see composeQuestionEmbeddingText), with a $text keyword fallback
+//    when no embeddings exist yet. Embedding the full question (not just the derived
+//    first-line title) is what keeps "Check Community" matches as relevant as FAQ search.
 //  - Personal questions are visible only to the asker, moderators, and admins.
 //  - Community-question answer cap: hard server-side guard at COMMUNITY_ANSWER_CAP (Change Spec §5.5).
 //  - Tag-me: any student may register their interest in an existing community question.
@@ -33,7 +36,11 @@ import { UserModel } from '../models/User.model.js';
 import { ApiError } from '../utils/api-error.js';
 import { createTtlCache } from '../utils/ttl-cache.js';
 import { env } from '../config/env.js';
-import { generateEmbedding, cosineSimilarity } from './embedding.service.js';
+import {
+  generateEmbedding,
+  cosineSimilarity,
+  composeQuestionEmbeddingText,
+} from './embedding.service.js';
 import { settingsService } from './settings.service.js';
 
 /** Signed token TTL for the existing-answer check (15 minutes). Long enough to read suggestions, short enough to limit replay. */
@@ -255,9 +262,15 @@ function projectAnswer(a: PopulatedAnswer, viewerId?: string): PublicAnswer {
  * calls can use cosine similarity instead of falling back to keyword search.
  * Mirrors the pattern used by scheduleEmbedding in faq.service.ts.
  */
-async function scheduleQuestionEmbedding(questionId: string, title: string): Promise<void> {
+async function scheduleQuestionEmbedding(
+  questionId: string,
+  title: string,
+  description?: string,
+): Promise<void> {
   try {
-    const embedding = await generateEmbedding(title);
+    // Embed title + description (matching the query side) so the stored vector
+    // captures the whole question, not just its first line.
+    const embedding = await generateEmbedding(composeQuestionEmbeddingText(title, description));
     await QuestionModel.updateOne({ _id: questionId }, { embedding });
   } catch {
     // Swallow — embedding failures must never block the request path.
@@ -300,7 +313,9 @@ export const qnaService = {
       matchedQuestions = cached.questionMatches;
     } else {
       // Build the query text used by both the embedding call and the $text fallback.
-      const queryText = `${input.title} ${input.description ?? ''}`.trim();
+      // Same construction as the stored question vector (composeQuestionEmbeddingText)
+      // so query and document embeddings are directly comparable.
+      const queryText = composeQuestionEmbeddingText(input.title, input.description);
 
       // ── Generate embedding + fetch community question candidates in parallel ──
       // One embedding call serves both the FAQ scan and the community-question scan (Option C).
@@ -489,7 +504,7 @@ export const qnaService = {
     // Option C: generate and store a semantic embedding for community questions so
     // future checkExisting calls can use cosine similarity instead of keyword search.
     if (input.type === 'community') {
-      void scheduleQuestionEmbedding(created._id.toString(), input.title);
+      void scheduleQuestionEmbedding(created._id.toString(), input.title, input.description);
       // Cache invalidation: a new community question changes what `checkExisting` would
       // return for similar drafts. Drop the whole map so it warms fresh.
       checkExistingCache.clear();

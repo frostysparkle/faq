@@ -10,8 +10,6 @@ import { GlobalTooltip } from '../../components/ui/GlobalTooltip';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 
-const INTERNSHIP_URL = 'https://samagama.in/internship';
-
 export function LoginPage() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
@@ -471,14 +469,9 @@ export function LoginPage() {
         description="Community Q&A and Yaksha AI are available exclusively to registered students."
         width={420}
         footer={
-          <>
-            <Button variant="ghost" onClick={() => setLoginPromptOpen(false)}>
-              Login
-            </Button>
-            <a href={INTERNSHIP_URL} target="_blank" rel="noopener noreferrer">
-              <Button variant="primary">Register</Button>
-            </a>
-          </>
+          <Button variant="primary" onClick={() => setLoginPromptOpen(false)}>
+            Sign In
+          </Button>
         }
       >
         <div

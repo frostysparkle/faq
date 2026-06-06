@@ -47,7 +47,7 @@ void AnswerModel;
 import { FaqModel } from '../models/Faq.model.js';
 void FaqModel;
 import { qnaService } from '../services/qna.service.js';
-import { generateEmbedding } from '../services/embedding.service.js';
+import { generateEmbedding, composeQuestionEmbeddingText } from '../services/embedding.service.js';
 
 // ─── Test Data ────────────────────────────────────────────────────────────────
 //
@@ -418,7 +418,11 @@ async function main() {
       if (createdId) {
         // Generate and store embedding immediately so subsequent checkExisting
         // calls by other students can detect this as a duplicate via cosine scan.
-        const embedding = await generateEmbedding(title);
+        // Embed title + description (same as the create path) so the stored vector
+        // captures the whole question, not just its first line.
+        const embedding = await generateEmbedding(
+          composeQuestionEmbeddingText(title, q.description),
+        );
         await QuestionModel.updateOne({ _id: createdId }, { embedding });
 
         postedQuestions.push({ id: createdId, label: q.label, studentName: student.name, title });

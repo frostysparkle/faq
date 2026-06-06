@@ -6,7 +6,12 @@ import { chatbotController } from '../controllers/chatbot.controller.js';
 import { requireAuth, requireRole } from '../middlewares/auth.js';
 import { validate } from '../middlewares/validate.js';
 import { asyncHandler } from '../utils/async-handler.js';
-import { chatQuerySchema, chatFeedbackSchema, updateFeedbackStatusSchema } from '@samagama/shared';
+import {
+  chatQuerySchema,
+  chatFeedbackSchema,
+  chatRetractFeedbackSchema,
+  updateFeedbackStatusSchema,
+} from '@samagama/shared';
 
 const router = Router();
 
@@ -20,6 +25,20 @@ router.post(
   asyncHandler(chatbotController.sendMessage),
 );
 
+// Auto-restore the caller's current conversation thread (resolved by userId).
+router.get(
+  '/active',
+  requireRole('student', 'moderator', 'admin'),
+  asyncHandler(chatbotController.getActiveSession),
+);
+
+// "Clear / Start new" — close the active thread so the next message opens a fresh one.
+router.post(
+  '/new',
+  requireRole('student', 'moderator', 'admin'),
+  asyncHandler(chatbotController.startNewSession),
+);
+
 router.get(
   '/session/:sessionId',
   requireRole('student', 'moderator', 'admin'),
@@ -31,6 +50,13 @@ router.post(
   requireRole('student', 'moderator', 'admin'),
   validate(chatFeedbackSchema),
   asyncHandler(chatbotController.submitFeedback),
+);
+
+router.post(
+  '/feedback/retract',
+  requireRole('student', 'moderator', 'admin'),
+  validate(chatRetractFeedbackSchema),
+  asyncHandler(chatbotController.retractFeedback),
 );
 
 // ── Admin / moderator read paths ──────────────────────────────────────────────

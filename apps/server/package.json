@@ -22,6 +22,8 @@
     "seed:chat-conversations": "tsx src/scripts/seed-extended-chat-conversations.ts",
     "seed:faq-timestamps": "tsx src/scripts/seed-faq-timestamps.ts",
     "seed:faq-votes": "tsx src/scripts/seed-faq-votes.ts",
+    "seed:redistribute": "tsx src/scripts/redistribute-activity.ts",
+    "reembed:questions": "tsx src/scripts/reembed-community-questions.ts",
     "simulate:student-activity": "tsx src/scripts/simulate-student-activity.ts",
     "simulate:full": "tsx src/scripts/simulate-full.ts",
     "test:search": "tsx src/scripts/test-search-accuracy.ts",

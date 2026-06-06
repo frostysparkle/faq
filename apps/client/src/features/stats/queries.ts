@@ -3,19 +3,25 @@
 import { useQuery } from '@tanstack/react-query';
 import { statsApi } from './api';
 
-// Centralized query keys (leaderboard is parameterized by time range).
+// Centralized query keys (leaderboard is parameterized by search term — '' is the default view).
 export const statsKeys = {
-  studentHome: ['stats', 'student-home'] as const,
   studentDashboard: ['stats', 'student-dashboard'] as const,
-  leaderboard: (range: 'week' | 'month' | 'all') => ['stats', 'leaderboard', range] as const,
+  leaderboard: (search: string) => ['stats', 'leaderboard', search] as const,
+  leaderboardRange: (from: number, to: number) =>
+    ['stats', 'leaderboard-range', from, to] as const,
   communityIdle: ['stats', 'community-idle'] as const,
+  adminDashboard: ['stats', 'admin-dashboard'] as const,
 };
 
-export function useStudentHomeStats() {
+// Consolidated Admin Dashboard payload. Polls every 30s and refetches on focus so every
+// section (counters, trends, queue, activity) stays near-real-time from one cached snapshot.
+export function useAdminDashboard() {
   return useQuery({
-    queryKey: statsKeys.studentHome,
-    queryFn: statsApi.getStudentStats,
-    staleTime: 60_000,
+    queryKey: statsKeys.adminDashboard,
+    queryFn: statsApi.getAdminDashboard,
+    staleTime: 20_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -31,11 +37,27 @@ export function useStudentDashboard() {
   });
 }
 
-export function useLeaderboard(range: 'week' | 'month' | 'all') {
+// Home-dashboard leaderboard. `search` switches the payload into search mode. Polls every 30s
+// and refetches on focus so rankings update automatically as Spurti Points change. Search
+// queries keep the previous result on screen while the next one loads (no flicker per keystroke).
+export function useLeaderboard(search = '') {
   return useQuery({
-    queryKey: statsKeys.leaderboard(range),
-    queryFn: () => statsApi.getLeaderboard(range),
-    staleTime: 60_000,
+    queryKey: statsKeys.leaderboard(search),
+    queryFn: () => statsApi.getLeaderboard(search || undefined),
+    staleTime: 30_000,
+    refetchInterval: search ? false : 30_000,
+    refetchOnWindowFocus: !search,
+    placeholderData: (prev) => prev,
+  });
+}
+
+// Fetches the rows for one expanded collapsed-gap range. Disabled until the user expands the gap.
+export function useLeaderboardRange(from: number, to: number, enabled: boolean) {
+  return useQuery({
+    queryKey: statsKeys.leaderboardRange(from, to),
+    queryFn: () => statsApi.getLeaderboardRange(from, to),
+    enabled: enabled && from <= to,
+    staleTime: 30_000,
   });
 }
 

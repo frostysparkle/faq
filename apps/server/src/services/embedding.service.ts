@@ -41,6 +41,26 @@ export async function generateEmbedding(text: string): Promise<number[]> {
   }
 }
 
+/**
+ * Compose the text used to embed a community question — for BOTH the student's
+ * live draft (query side, in checkExisting) and stored questions (index side, in
+ * the create path, backfill job, and seed/test scripts).
+ *
+ * Why title + description (not title alone): a question's `title` is just
+ * `deriveTitle(description)` — the first line of the student's free-form text,
+ * which is often generic or partial ("NOC issue", "Hi, I have a problem"). An
+ * embedding of that line alone discards most of the question's meaning, so the
+ * community scan returns loose, low-relevance matches. FAQ titles are
+ * admin-curated canonical questions, which is why FAQ search feels sharper.
+ *
+ * Combining title + description gives the vector the whole question. The query
+ * side and the index side MUST use this identical construction — otherwise their
+ * vectors sit in mismatched regions of the space and cosine scores collapse.
+ */
+export function composeQuestionEmbeddingText(title: string, description?: string): string {
+  return `${title ?? ''} ${description ?? ''}`.trim();
+}
+
 /** Cosine similarity between two equal-length vectors. Returns -1 to 1. */
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length || a.length === 0) return 0;

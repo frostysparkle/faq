@@ -29,14 +29,22 @@ export const statsController = {
     return ok(res, await statsService.getStudentDashboardStats(req.user.id));
   },
 
-  /** Spurti Points leaderboard for the analytics page. */
+  /** Kaggle-style Spurti Points leaderboard for the student home dashboard. */
   async getLeaderboard(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized();
-    const range = (req.query.range as 'week' | 'month' | 'all' | undefined) ?? 'all';
-    if (!['week', 'month', 'all'].includes(range)) {
-      throw ApiError.badRequest('range must be week, month, or all');
+    const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+    return ok(res, await statsService.getLeaderboard(req.user.id, search));
+  },
+
+  /** Rows for one expanded collapsed-gap range on the leaderboard. */
+  async getLeaderboardRange(req: Request, res: Response) {
+    if (!req.user) throw ApiError.unauthorized();
+    const from = Number.parseInt(String(req.query.from), 10);
+    const to = Number.parseInt(String(req.query.to), 10);
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to < 1) {
+      throw ApiError.badRequest('from and to must be positive integers');
     }
-    return ok(res, await statsService.getLeaderboard(range, req.user.id));
+    return ok(res, await statsService.getLeaderboardRange(req.user.id, from, to));
   },
 
   /**
@@ -51,6 +59,11 @@ export const statsController = {
   /** Admin intelligence — system-wide health overview for the admin dashboard. */
   async getAdminIntelligence(_req: Request, res: Response) {
     return ok(res, await statsService.getAdminIntelligenceStats());
+  },
+
+  /** Consolidated Admin Dashboard payload — every section in one snapshot. */
+  async getAdminDashboard(_req: Request, res: Response) {
+    return ok(res, await statsService.getAdminDashboard());
   },
 
   /** Per-moderator performance metrics for the admin moderation-load page. */

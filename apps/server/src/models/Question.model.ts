@@ -76,8 +76,9 @@ const questionSchema = new Schema(
     trashedAt: { type: Date, default: undefined },
 
     /**
-     * 384-dim embedding of the question title for semantic duplicate detection.
-     * Populated asynchronously by the embedding service after creation.
+     * 384-dim embedding of the question (title + description) for semantic
+     * duplicate detection. Built via composeQuestionEmbeddingText so it matches
+     * the query side of checkExisting. Populated asynchronously after creation.
      */
     embedding: {
       type: [Number],

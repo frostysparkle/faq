@@ -2,13 +2,6 @@
 import type { ApiSuccess } from '@samagama/shared';
 import { apiClient } from '../../lib/api-client';
 
-export interface StudentHomeStats {
-  openCommunityQuestions: number;
-  unansweredCommunityQuestions: number;
-  questionsYouAnswered: number;
-  spurtiPoints: number;
-}
-
 export interface StudentDashboardStats {
   questionsAsked: { total: number; thisWeek: number };
   pending: number;
@@ -37,24 +30,123 @@ export interface IdleBuckets {
 
 export type IdleBucket = 'last24h' | 'over3days' | 'over1week';
 
-export interface LeaderboardEntry {
+export interface LeaderboardRow {
   rank: number;
   userId: string;
+  studentId: string;
   name: string;
   spurtiPoints: number;
   approvedAnswers: number;
-  isMe?: boolean;
+  isMe: boolean;
+}
+
+export interface LeaderboardGap {
+  fromRank: number;
+  toRank: number;
+  count: number;
 }
 
 export interface LeaderboardResponse {
-  range: 'week' | 'month' | 'all';
-  entries: LeaderboardEntry[];
-  myRank?: number;
+  totalStudents: number;
+  /** Whole list — populated only for small cohorts (< 10); render plainly when set. */
+  full: LeaderboardRow[] | null;
+  top: LeaderboardRow[];
+  me: LeaderboardRow | null;
+  bottom: LeaderboardRow[];
+  gapTop: LeaderboardGap | null;
+  gapBottom: LeaderboardGap | null;
+  search: { query: string; results: LeaderboardRow[] } | null;
+}
+
+export interface LeaderboardRangeResponse {
+  fromRank: number;
+  toRank: number;
+  rows: LeaderboardRow[];
+}
+
+// ─── Admin Dashboard ───────────────────────────────────────────────────────────
+
+export interface TrendPoint {
+  date: string;
+  value: number;
+}
+
+export interface TrendCard {
+  total: number;
+  deltaPct: number;
+  series: TrendPoint[];
+}
+
+export interface MetricDelta {
+  count: number;
+  deltaPct: number;
+}
+
+export interface RateDelta {
+  value: number;
+  deltaPct: number;
+}
+
+export interface ModerationQueueItem {
+  id: string;
+  title: string;
+  type: 'question' | 'answer';
+  author: string;
+  createdAt: string;
+}
+
+export interface RecentActivityItem {
+  id: string;
+  type: 'faq' | 'answer' | 'flag' | 'user';
+  message: string;
+  actor?: string;
+  createdAt: string;
+}
+
+export interface TopCategory {
+  id: string;
+  name: string;
+  count: number;
+  deltaPct: number;
+}
+
+export interface AdminDashboard {
+  actionRequired: {
+    pendingModeration: number;
+    flaggedContent: number;
+    unansweredQuestions: number;
+    faqReviewsPending: number;
+  };
+  todayOverview: {
+    questions: MetricDelta;
+    answers: MetricDelta;
+    newFaqs: MetricDelta;
+    activeStudents: MetricDelta;
+  };
+  performance: {
+    questionsTrend: TrendCard;
+    answersTrend: TrendCard;
+    faqsCreated: TrendCard;
+    avgResponseTime: TrendCard;
+  };
+  moderationQueue: {
+    count: number;
+    items: ModerationQueueItem[];
+  };
+  platformHealth: {
+    answerRate: RateDelta;
+    resolutionRate: RateDelta;
+    faqCoverage: RateDelta;
+    flagRate: RateDelta;
+  };
+  topCategories: TopCategory[];
+  recentActivity: RecentActivityItem[];
+  generatedAt: string;
 }
 
 export const statsApi = {
-  async getStudentStats(): Promise<StudentHomeStats> {
-    const res = await apiClient.get<ApiSuccess<StudentHomeStats>>('/api/stats/student');
+  async getAdminDashboard(): Promise<AdminDashboard> {
+    const res = await apiClient.get<ApiSuccess<AdminDashboard>>('/api/stats/admin-dashboard');
     return res.data.data;
   },
 
@@ -65,10 +157,18 @@ export const statsApi = {
     return res.data.data;
   },
 
-  async getLeaderboard(range: 'week' | 'month' | 'all'): Promise<LeaderboardResponse> {
+  async getLeaderboard(search?: string): Promise<LeaderboardResponse> {
     const res = await apiClient.get<ApiSuccess<LeaderboardResponse>>('/api/stats/leaderboard', {
-      params: { range },
+      params: search ? { search } : undefined,
     });
+    return res.data.data;
+  },
+
+  async getLeaderboardRange(from: number, to: number): Promise<LeaderboardRangeResponse> {
+    const res = await apiClient.get<ApiSuccess<LeaderboardRangeResponse>>(
+      '/api/stats/leaderboard/range',
+      { params: { from, to } },
+    );
     return res.data.data;
   },
 
