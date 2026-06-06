@@ -33,6 +33,42 @@ export interface StudentHomeStats {
   spurtiPoints: number;
 }
 
+/**
+ * Everything the redesigned Student Dashboard renders, in one fetch. Each field maps
+ * to a card/widget so the client never hardcodes a number:
+ *   - questionsAsked / answered carry a `thisWeek` delta for the "↑ N this week" tag.
+ *   - pending  = the student's own questions still awaiting a first response.
+ *   - community = open community-queue health (mirrors the idle-bucket semantics).
+ *   - contribution = the bottom "snapshot" strip.
+ */
+export interface StudentDashboardStats {
+  questionsAsked: { total: number; thisWeek: number };
+  /** Student's own questions still `open` (awaiting a response). */
+  pending: number;
+  answered: { total: number; thisWeek: number };
+  spurtiPoints: number;
+  community: {
+    /** Open community questions (status ∈ {open, answered}) — panel total. */
+    totalOpen: number;
+    /** Open community questions touched within the last hour. */
+    activeLastHour: number;
+    /** Open community questions idle 3–7 days (need attention). */
+    idleOver3Days: number;
+    /** Open community questions idle more than 7 days (follow-up). */
+    idleOver1Week: number;
+  };
+  contribution: {
+    /** Approved answers left on questions this student asked. */
+    acceptedAnswers: number;
+    /** Answers this student authored for the community. */
+    answersGiven: number;
+    /** Total upvotes across this student's approved answers. */
+    upvotesReceived: number;
+    /** % of this student's questions that received at least one answer. */
+    responseRate: number;
+  };
+}
+
 export interface LeaderboardEntry {
   rank: number;
   userId: string;
@@ -127,6 +163,106 @@ export const statsService = {
       unansweredCommunityQuestions,
       questionsYouAnswered,
       spurtiPoints: user?.spurtiPoints ?? 0,
+    };
+  },
+
+  /**
+   * Single-fetch payload for the redesigned Student Dashboard. Every metric is derived
+   * live from the database so the cards reflect the student's real activity; the client
+   * polls this endpoint (and invalidates it on relevant mutations) for near-real-time updates.
+   */
+  async getStudentDashboardStats(userId: string): Promise<StudentDashboardStats> {
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const now = Date.now();
+    const day = 24 * 60 * 60 * 1000;
+    const weekAgo = new Date(now - 7 * day);
+    const hourAgo = new Date(now - 60 * 60 * 1000);
+    const threeDaysAgo = new Date(now - 3 * day);
+    const sevenDaysAgo = new Date(now - 7 * day);
+    const openCommunity = { type: 'community', status: { $in: ['open', 'answered'] } };
+
+    const [
+      questionsAskedTotal,
+      questionsAskedThisWeek,
+      pending,
+      answeredTotal,
+      answeredThisWeek,
+      answeredQuestionsCount,
+      user,
+      communityTotalOpen,
+      communityActiveLastHour,
+      communityIdle3to7,
+      communityIdleOver7,
+      answersGiven,
+      acceptedAnswersAgg,
+      upvotesAgg,
+    ] = await Promise.all([
+      QuestionModel.countDocuments({ askedBy: userObjectId }),
+      QuestionModel.countDocuments({ askedBy: userObjectId, createdAt: { $gte: weekAgo } }),
+      QuestionModel.countDocuments({ askedBy: userObjectId, status: 'open' }),
+      QuestionModel.countDocuments({
+        askedBy: userObjectId,
+        status: { $in: ['answered', 'resolved'] },
+      }),
+      QuestionModel.countDocuments({
+        askedBy: userObjectId,
+        status: { $in: ['answered', 'resolved'] },
+        updatedAt: { $gte: weekAgo },
+      }),
+      QuestionModel.countDocuments({ askedBy: userObjectId, answerCount: { $gt: 0 } }),
+      UserModel.findById(userId).select('spurtiPoints').lean<{ spurtiPoints?: number }>(),
+      QuestionModel.countDocuments(openCommunity),
+      QuestionModel.countDocuments({ ...openCommunity, updatedAt: { $gte: hourAgo } }),
+      QuestionModel.countDocuments({
+        ...openCommunity,
+        updatedAt: { $lt: threeDaysAgo, $gte: sevenDaysAgo },
+      }),
+      QuestionModel.countDocuments({ ...openCommunity, updatedAt: { $lt: sevenDaysAgo } }),
+      AnswerModel.countDocuments({ answeredBy: userObjectId }),
+      // Approved answers left on questions this student asked ("accepted answers").
+      AnswerModel.aggregate<{ n: number }>([
+        { $match: { status: 'approved' } },
+        {
+          $lookup: {
+            from: 'questions',
+            localField: 'questionId',
+            foreignField: '_id',
+            as: 'q',
+          },
+        },
+        { $unwind: '$q' },
+        { $match: { 'q.askedBy': userObjectId } },
+        { $count: 'n' },
+      ]),
+      // Total upvotes across this student's approved answers.
+      AnswerModel.aggregate<{ total: number }>([
+        { $match: { answeredBy: userObjectId, status: 'approved' } },
+        { $group: { _id: null, total: { $sum: '$upvoteCount' } } },
+      ]),
+    ]);
+
+    const responseRate =
+      questionsAskedTotal > 0
+        ? Math.round((answeredQuestionsCount / questionsAskedTotal) * 100)
+        : 0;
+
+    return {
+      questionsAsked: { total: questionsAskedTotal, thisWeek: questionsAskedThisWeek },
+      pending,
+      answered: { total: answeredTotal, thisWeek: answeredThisWeek },
+      spurtiPoints: user?.spurtiPoints ?? 0,
+      community: {
+        totalOpen: communityTotalOpen,
+        activeLastHour: communityActiveLastHour,
+        idleOver3Days: communityIdle3to7,
+        idleOver1Week: communityIdleOver7,
+      },
+      contribution: {
+        acceptedAnswers: acceptedAnswersAgg[0]?.n ?? 0,
+        answersGiven,
+        upvotesReceived: upvotesAgg[0]?.total ?? 0,
+        responseRate,
+      },
     };
   },
 

@@ -18,6 +18,11 @@ router.get(
 
 // Student dashboard metrics.
 router.get('/student', requireRole('student'), asyncHandler(statsController.getStudentStats));
+router.get(
+  '/student-dashboard',
+  requireRole('student'),
+  asyncHandler(statsController.getStudentDashboard),
+);
 
 // Spurti Points leaderboard — students only (moderators/admins don't accumulate points).
 router.get('/leaderboard', requireRole('student'), asyncHandler(statsController.getLeaderboard));

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Clock, Eye, Folder, ThumbsDown, ThumbsUp } from 'lucide-react';
 import type { PublicFaq, UserRole } from '@samagama/shared';
+import { hasModeratorAccess } from '@samagama/shared';
 import { FlagFaqButton } from '../flag/FlagFaqDialog';
 import { useFaqFeedback, useRecordFaqView } from './queries';
 
@@ -52,11 +53,20 @@ interface FaqCardProps {
   role: UserRole;
   expanded?: boolean;
   onToggle?: () => void;
+  /** Show the "flag" action (students only). Off for anonymous/login-page browsing,
+   *  where flagging — an account action — isn't available. Defaults to true. */
+  allowFlag?: boolean;
 }
 
 // ─── FaqCard ──────────────────────────────────────────────────────────────────
 
-export function FaqCard({ faq, role, expanded: expandedProp, onToggle }: FaqCardProps) {
+export function FaqCard({
+  faq,
+  role,
+  expanded: expandedProp,
+  onToggle,
+  allowFlag = true,
+}: FaqCardProps) {
   const [expandedInternal, setExpandedInternal] = useState(false);
   const expanded = expandedProp !== undefined ? expandedProp : expandedInternal;
 
@@ -89,7 +99,7 @@ export function FaqCard({ faq, role, expanded: expandedProp, onToggle }: FaqCard
     });
   };
 
-  const showRawCounts = role === 'moderator' || role === 'admin';
+  const showRawCounts = hasModeratorAccess(role);
   const currentVote = faq.userVote ?? null;
   const helpfulCount = faq.helpfulCount ?? 0;
   const unhelpfulCount = faq.unhelpfulCount ?? 0;
@@ -288,7 +298,9 @@ export function FaqCard({ faq, role, expanded: expandedProp, onToggle }: FaqCard
               isPending={feedback.isPending}
               onVote={role === 'student' ? handleVote : null}
             />
-            {role === 'student' && <FlagFaqButton faqId={faq.id} faqUpdatedAt={faq.updatedAt} />}
+            {role === 'student' && allowFlag && (
+              <FlagFaqButton faqId={faq.id} faqUpdatedAt={faq.updatedAt} />
+            )}
           </div>
         </div>
       )}

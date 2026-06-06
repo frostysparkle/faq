@@ -6,8 +6,10 @@ import { LoginPage } from './features/auth/LoginPage';
 import { RequireAuth } from './features/auth/RequireAuth';
 import { HomePage } from './pages/HomePage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { InternshipOverviewPage } from './pages/InternshipOverviewPage';
 import { ChatbotPage } from './features/chatbot/ChatbotPage';
 import { FaqsPage } from './features/faq/FaqsPage';
+import { CuratedFaqsPage } from './features/faq/CuratedFaqsPage';
 import { AskQuestionPage } from './features/qna/AskQuestionPage';
 import { CommunityPage } from './features/qna/CommunityPage';
 import { MyQuestionsPage } from './features/qna/MyQuestionsPage';
@@ -30,6 +32,10 @@ export function App() {
     <ExclusiveOpenProvider>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {/* Public knowledge base — open to anonymous visitors (no AppShell/auth). */}
+      <Route path="/browse-faqs" element={<CuratedFaqsPage />} />
+      {/* Public internship overview — full programme details mirrored from samagama.in/internship. */}
+      <Route path="/internship-overview" element={<InternshipOverviewPage />} />
 
       <Route
         element={

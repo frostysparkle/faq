@@ -36,36 +36,46 @@ export interface NavItem {
   badge?: string;
 }
 
+const studentNav: NavItem[] = [
+  { section: 'Main', label: 'Home', path: '/', icon: Home },
+  { label: 'Browse FAQs', path: '/faqs', icon: BookOpen },
+  { label: 'Community Q&A', path: '/community', icon: MessageCircle },
+  { section: 'My Activity', label: 'Ask a Question', path: '/ask', icon: MessageSquarePlus },
+  { label: 'My Questions', path: '/my-questions', icon: Bookmark },
+  { label: 'Analytics', path: '/analytics', icon: BarChart3 },
+];
+
+const moderatorNav: NavItem[] = [
+  { section: 'Moderation', label: 'Dashboard', path: '/moderation', icon: LayoutDashboard },
+  {
+    label: 'Unresolved Questions',
+    path: '/moderation/unresolved',
+    icon: MessageSquare,
+  },
+  { section: 'Knowledge', label: 'FAQ Management', path: '/admin/faqs', icon: BookOpen },
+  { label: 'Chatbot Feedback', path: '/admin/bot-feedback', icon: Bot },
+];
+
+const adminNav: NavItem[] = [
+  { section: 'Overview', label: 'Admin Overview', path: '/admin', icon: LayoutDashboard },
+  { section: 'Knowledge', label: 'FAQ Management', path: '/admin/faqs', icon: BookOpen },
+  { section: 'People', label: 'User Management', path: '/admin/users', icon: Users },
+  {
+    section: 'System',
+    label: 'Unresolved Questions',
+    path: '/moderation/unresolved',
+    icon: MessageSquare,
+  },
+  { label: 'Chatbot Feedback', path: '/admin/bot-feedback', icon: Bot },
+  { label: 'Settings', path: '/admin/settings', icon: Settings },
+];
+
+// Trainee roles share the full menu of the role they temporarily impersonate:
+// t-moderator → moderator menu, t-admin → admin menu.
 export const navByRole: Record<UserRole, NavItem[]> = {
-  student: [
-    { section: 'Main', label: 'Home', path: '/', icon: Home },
-    { label: 'Browse FAQs', path: '/faqs', icon: BookOpen },
-    { label: 'Community Q&A', path: '/community', icon: MessageCircle },
-    { section: 'My Activity', label: 'Ask a Question', path: '/ask', icon: MessageSquarePlus },
-    { label: 'My Questions', path: '/my-questions', icon: Bookmark },
-    { label: 'Analytics', path: '/analytics', icon: BarChart3 },
-  ],
-  moderator: [
-    { section: 'Moderation', label: 'Dashboard', path: '/moderation', icon: LayoutDashboard },
-    {
-      label: 'Unresolved Questions',
-      path: '/moderation/unresolved',
-      icon: MessageSquare,
-    },
-    { section: 'Knowledge', label: 'FAQ Management', path: '/admin/faqs', icon: BookOpen },
-    { label: 'Chatbot Feedback', path: '/admin/bot-feedback', icon: Bot },
-  ],
-  admin: [
-    { section: 'Overview', label: 'Admin Overview', path: '/admin', icon: LayoutDashboard },
-    { section: 'Knowledge', label: 'FAQ Management', path: '/admin/faqs', icon: BookOpen },
-    { section: 'People', label: 'User Management', path: '/admin/users', icon: Users },
-    {
-      section: 'System',
-      label: 'Unresolved Questions',
-      path: '/moderation/unresolved',
-      icon: MessageSquare,
-    },
-    { label: 'Chatbot Feedback', path: '/admin/bot-feedback', icon: Bot },
-    { label: 'Settings', path: '/admin/settings', icon: Settings },
-  ],
+  student: studentNav,
+  't-moderator': moderatorNav,
+  moderator: moderatorNav,
+  't-admin': adminNav,
+  admin: adminNav,
 };

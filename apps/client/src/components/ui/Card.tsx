@@ -17,8 +17,8 @@ export function Card({ children, style, onClick, as: Tag = 'div' }: CardProps) {
       style={{
         background: 'var(--color-card)',
         border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '18px 20px',
+        borderRadius: 'var(--radius-xl)',
+        padding: '20px 22px',
         boxShadow: 'var(--shadow-sm)',
         textAlign: 'left',
         width: '100%',

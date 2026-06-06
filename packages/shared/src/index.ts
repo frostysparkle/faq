@@ -12,4 +12,5 @@ export * from './schemas/qna.schema.js';
 export * from './schemas/common.schema.js';
 export * from './schemas/user.schema.js';
 export * from './schemas/notification.schema.js';
+export * from './schemas/settings.schema.js';
 export * from './types.js';

@@ -23,6 +23,12 @@ export const statsController = {
     return ok(res, await statsService.getStudentHomeStats(req.user.id));
   },
 
+  /** Full payload for the redesigned student dashboard (stat cards + community + snapshot). */
+  async getStudentDashboard(req: Request, res: Response) {
+    if (!req.user) throw ApiError.unauthorized();
+    return ok(res, await statsService.getStudentDashboardStats(req.user.id));
+  },
+
   /** Spurti Points leaderboard for the analytics page. */
   async getLeaderboard(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized();

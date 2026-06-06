@@ -6,19 +6,39 @@ import type {
   FaqFeedbackInput,
   FaqListQuery,
   FaqUpdateInput,
+  UserRole,
 } from '@samagama/shared';
 import { faqService } from '../services/faq.service.js';
 import { created, noContent, ok } from '../utils/api-response.js';
 import { ApiError } from '../utils/api-error.js';
 
+// Matches a Mongo ObjectId string — the shape the client's anon id must take so it can
+// slot into the existing ObjectId-keyed vote arrays without a separate code path.
+const OBJECT_ID_RE = /^[0-9a-fA-F]{24}$/;
+
+/**
+ * Resolve who is acting on a public FAQ route. A signed-in user keeps their real role and id.
+ * An anonymous caller is treated as a `student` (so they see only published FAQs and get
+ * per-visitor vote state), identified by a stable `X-Anon-Id` header the client persists.
+ * The header is only trusted when it's ObjectId-shaped; otherwise the caller is anonymous
+ * with no vote identity.
+ */
+function resolveFaqActor(req: Request): { role: UserRole; userId?: string } {
+  if (req.user) return { role: req.user.role, userId: req.user.id };
+  const anon = req.header('x-anon-id');
+  const userId = anon && OBJECT_ID_RE.test(anon) ? anon.toLowerCase() : undefined;
+  return { role: 'student', userId };
+}
+
 export const faqController = {
-  // Paginated, filterable FAQ list. Returns items plus pagination meta.
+  // Paginated, filterable FAQ list. Returns items plus pagination meta. Public — anonymous
+  // callers are scoped to published FAQs (resolved as a student).
   async list(req: Request, res: Response) {
-    if (!req.user) throw ApiError.unauthorized();
+    const { role, userId } = resolveFaqActor(req);
     const result = await faqService.list({
       query: req.query as unknown as FaqListQuery,
-      role: req.user.role,
-      userId: req.user.id,
+      role,
+      userId,
     });
     return ok(res, result.items, {
       page: result.page,
@@ -28,10 +48,10 @@ export const faqController = {
     });
   },
 
-  // Fetch a single FAQ by id (visibility enforced in the service by role).
+  // Fetch a single FAQ by id (visibility enforced in the service by role). Public.
   async getById(req: Request, res: Response) {
-    if (!req.user) throw ApiError.unauthorized();
-    const faq = await faqService.getById(req.params.id!, req.user.role, req.user.id);
+    const { role, userId } = resolveFaqActor(req);
+    const faq = await faqService.getById(req.params.id!, role, userId);
     return ok(res, faq);
   },
 
@@ -82,18 +102,22 @@ export const faqController = {
     return noContent(res);
   },
 
-  // Record that the current user opened this FAQ (drives view counts + recently-viewed).
+  // Record that the caller opened this FAQ (drives view counts + recently-viewed). Public:
+  // an anonymous caller still bumps the view count; the per-user recently-viewed list is
+  // skipped when there's no real user behind the id.
   async recordView(req: Request, res: Response) {
-    if (!req.user) throw ApiError.unauthorized();
-    await faqService.recordView(req.params.id!, req.user.id);
+    const { userId } = resolveFaqActor(req);
+    await faqService.recordView(req.params.id!, userId);
     return noContent(res);
   },
 
-  // Record a helpful/not-helpful rating on an FAQ.
+  // Record a helpful/not-helpful rating on an FAQ. Public — anonymous voters are tracked by
+  // their stable X-Anon-Id so toggling/switching a vote behaves the same as a signed-in user.
   async submitFeedback(req: Request, res: Response) {
-    if (!req.user) throw ApiError.unauthorized();
+    const { userId } = resolveFaqActor(req);
+    if (!userId) throw ApiError.badRequest('Voting requires a session or an anonymous id');
     const { rating } = req.body as FaqFeedbackInput;
-    const result = await faqService.submitFeedback(req.params.id!, req.user.id, rating);
+    const result = await faqService.submitFeedback(req.params.id!, userId, rating);
     return ok(res, result);
   },
 

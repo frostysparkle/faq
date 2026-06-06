@@ -345,11 +345,15 @@ export const faqService = {
   },
 
   /** Idempotent view recording: increments counter and prepends to user's recent list. */
-  async recordView(faqId: string, userId: string): Promise<void> {
+  async recordView(faqId: string, userId?: string): Promise<void> {
     if (!Types.ObjectId.isValid(faqId)) throw ApiError.badRequest('Invalid FAQ id');
 
-    // Atomic counter bump.
+    // Atomic counter bump — happens for anonymous and signed-in views alike.
     await FaqModel.updateOne({ _id: faqId, status: 'published' }, { $inc: { viewCount: 1 } });
+
+    // The recently-viewed LRU is a per-account feature; anonymous visitors have no User doc,
+    // so skip it (and the keyed analytics event) when there's no real user behind the id.
+    if (!userId) return;
 
     // Maintain a bounded LRU of recently-viewed FAQs on the user.
     await UserModel.updateOne({ _id: userId }, { $pull: { recentlyViewedFaqs: { faqId } } });

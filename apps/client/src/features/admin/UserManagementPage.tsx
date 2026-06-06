@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { UserRole } from '@samagama/shared';
 import type { PublicUserAdmin } from '@samagama/shared';
+import { hasAdminAccess } from '@samagama/shared';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { useAuth } from '../auth/AuthProvider';
 import { useUsers, useChangeRole, useSuspendUser, useActivateUser, useDeleteUser } from './queries';
@@ -160,7 +161,8 @@ const DIALOG_META: Record<
 
 export function UserManagementPage() {
   const { user: viewer } = useAuth();
-  const isFullAdmin = viewer?.role === 'admin';
+  // A temporary admin (t-admin) gets the same management capabilities as a full admin.
+  const isFullAdmin = !!viewer && hasAdminAccess(viewer.role);
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
