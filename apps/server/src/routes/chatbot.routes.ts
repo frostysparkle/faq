@@ -27,6 +27,12 @@ router.get(
 );
 
 router.post(
+  '/stream/:sessionId',
+  requireRole('student', 'moderator', 'admin'),
+  asyncHandler(chatbotController.streamMessage),
+);
+
+router.post(
   '/feedback',
   requireRole('student', 'moderator', 'admin'),
   validate(chatFeedbackSchema),

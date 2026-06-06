@@ -2,6 +2,7 @@
 // feedback management surfaces used by admins. All RAG logic lives in chatbotService.
 import type { Request, Response } from 'express';
 import { chatbotService } from '../services/chatbot.service.js';
+import { logger } from '../config/logger.js';
 import { ok } from '../utils/api-response.js';
 
 export const chatbotController = {
@@ -56,5 +57,31 @@ export const chatbotController = {
     const { id } = req.params;
     await chatbotService.deleteFeedback(id);
     return ok(res, { success: true });
+  },
+
+  async streamMessage(req: Request, res: Response) {
+    const { sessionId } = req.params;
+    const { message } = req.body as { message: string };
+    const userId = (req as Request & { user: { id: string } }).user.id;
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    const sendEvent = (type: string, data: unknown) => {
+      res.write(`data: ${JSON.stringify({ type, data })}\n\n`);
+    };
+
+    try {
+      for await (const event of chatbotService.streamQuery(userId, sessionId, message)) {
+        sendEvent(event.type, event.data);
+      }
+    } catch (err) {
+      logger.error({ err }, 'Stream processing error');
+      sendEvent('error', { message: err instanceof Error ? err.message : 'Unknown error' });
+    }
+
+    res.end();
   },
 };

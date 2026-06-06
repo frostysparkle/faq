@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { ChatQueryResponse } from '@samagama/shared';
 import { useSendMessage, useSubmitChatFeedback } from './queries';
+import { streamChatMessage } from './api';
 
 interface DisplayMessage {
   role: 'user' | 'assistant';
@@ -37,6 +38,7 @@ export function ChatbotPage() {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [ollamaError, setOllamaError] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const sendMutation = useSendMessage();
@@ -52,44 +54,71 @@ export function ChatbotPage() {
     setInput('');
     setMessages((prev) => [...prev, { role: 'user', content: text }]);
     setIsTyping(true);
-    try {
-      const result: ChatQueryResponse = await sendMutation.mutateAsync({
-        message: text,
-        sessionId: sessionId ?? undefined,
-      });
-      if (!sessionId) setSessionId(result.sessionId);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: result.answer,
-          sources: result.sources,
-          fallback_triggered: result.fallback_triggered,
-          escalated: result.escalated,
-          messageIndex: result.messageIndex,
-        },
-      ]);
-    } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.data?.error?.code === 'OLLAMA_NOT_CONNECTED') {
-        setOllamaError(true);
-      } else {
-        // A timeout (no response received) means the model is just slow, not broken.
-        const timedOut = axios.isAxiosError(err) && err.code === 'ECONNABORTED';
+    setElapsedSeconds(0);
+
+    const startTime = Date.now();
+    const intervalId = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
+    let cleanup: (() => void) | null = null;
+
+    const handleEvent = (event: { type: string; data?: unknown }) => {
+      if (event.type === 'ping') {
+        // Ping received - still processing
+      } else if (event.type === 'response') {
+        clearInterval(intervalId);
+        cleanup?.();
+        const result = event.data as ChatQueryResponse;
+        if (!sessionId) setSessionId(result.sessionId);
         setMessages((prev) => [
           ...prev,
           {
             role: 'assistant',
-            content: timedOut
-              ? "That took longer than expected and timed out. The assistant may be busy — please try asking again."
-              : 'Sorry, something went wrong. Please try again.',
+            content: result.answer,
+            sources: result.sources,
+            fallback_triggered: result.fallback_triggered,
+            escalated: result.escalated,
+            messageIndex: result.messageIndex,
+          },
+        ]);
+        setIsTyping(false);
+        inputRef.current?.focus();
+      } else if (event.type === 'error') {
+        clearInterval(intervalId);
+        cleanup?.();
+        const err = event.data as { message: string };
+        if (err.message.includes('OLLAMA')) {
+          setOllamaError(true);
+        }
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: 'Sorry, something went wrong. Please try again.',
             sources: [],
           },
         ]);
+        setIsTyping(false);
+        inputRef.current?.focus();
+      } else if (event.type === 'timeout') {
+        clearInterval(intervalId);
+        cleanup?.();
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content:
+              "This is taking longer than expected. The assistant may be busy — please try again.",
+            sources: [],
+          },
+        ]);
+        setIsTyping(false);
+        inputRef.current?.focus();
       }
-    } finally {
-      setIsTyping(false);
-      inputRef.current?.focus();
-    }
+    };
+
+    cleanup = streamChatMessage(sessionId, text, handleEvent);
   };
 
   const handleFeedback = (msgIdx: number, displayIdx: number, rating: 'helpful' | 'incorrect') => {
@@ -284,7 +313,12 @@ export function ChatbotPage() {
                 color: 'var(--color-text-muted)',
               }}
             >
-              <TypingDots />
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <TypingDots />
+                <span style={{ fontSize: 12 }}>
+                  {elapsedSeconds > 0 ? `Thinking... (${elapsedSeconds}s)` : 'Thinking...'}
+                </span>
+              </span>
             </div>
           </div>
         )}
